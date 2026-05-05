@@ -46,10 +46,16 @@ export default function Conference() {
   })
 
   const updateItemMutation = useMutation({
-    mutationFn: ({ itemId, qty, expected, status }: { itemId: string, qty: number, expected?: number, status: OperationItem['status'] }) => 
-      expected !== undefined 
-        ? Promise.all([operationsApi.updateItemQuantity(itemId, qty, status), operationsApi.updateItemExpectedQty(itemId, expected)])
-        : operationsApi.updateItemQuantity(itemId, qty, status),
+    mutationFn: async ({ itemId, qty, expected, status }: { itemId: string, qty: number, expected?: number, status: OperationItem['status'] }) => {
+      if (expected !== undefined) {
+        const [res] = await Promise.all([
+          operationsApi.updateItemQuantity(itemId, qty, status), 
+          operationsApi.updateItemExpectedQty(itemId, expected)
+        ])
+        return res
+      }
+      return operationsApi.updateItemQuantity(itemId, qty, status)
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['operation_items', id] })
   })
 
