@@ -127,6 +127,9 @@ export default function Conference() {
     let nextExpected = item.quantity_expected
     
     if (cur >= item.quantity_expected) { 
+      const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
+      if (!ok) return
+
       nextExpected = cur + 1
       toast.success(`${item.description}: Quantidade extra (+1) adicionada à rota!`)
     } else {
