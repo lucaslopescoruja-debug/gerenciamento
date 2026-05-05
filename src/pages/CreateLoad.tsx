@@ -67,7 +67,9 @@ export default function CreateLoad() {
 
     const reader = new FileReader()
     reader.onload = (evt) => {
-      const text = evt.target?.result as string
+      const rawText = evt.target?.result as string
+      // Some ERPs export XLS that is actually HTML. Let's strip HTML tags and replace them with tabs to preserve columns.
+      const text = rawText.replace(/<[^>]+>/g, '\t')
       const lines = text.split('\n')
       let addedCount = 0
       let notFoundCount = 0
@@ -75,31 +77,36 @@ export default function CreateLoad() {
       const newItems: NewItem[] = []
 
       for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim().replace(/"/g, '')
+        let line = lines[i].trim().replace(/"/g, '')
         if (!line) continue
 
-        let parts = line.split('\t')
-        if (parts.length < 2) parts = line.split(';')
-        if (parts.length < 2) parts = line.split(',')
-        if (parts.length < 2) parts = line.split(/\s{2,}/)
+        // Split by tab, semicolon, comma, or multiple spaces, and clean up empty parts
+        let parts = line.split('\t').map(p => p.trim()).filter(Boolean)
+        if (parts.length < 2) parts = line.split(';').map(p => p.trim()).filter(Boolean)
+        if (parts.length < 2) parts = line.split(',').map(p => p.trim()).filter(Boolean)
+        if (parts.length < 2) parts = line.split(/\s{2,}/).map(p => p.trim()).filter(Boolean)
 
         if (parts.length < 2) continue
 
-        // Skip header if it exists
-        if (i === 0 && (parts[0].toLowerCase().includes('cod') || parts[0].toLowerCase().includes('código') || parts[0].toLowerCase().includes('itens'))) {
+        // Skip obvious header strings
+        const firstPart = parts[0].toLowerCase()
+        if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório')) {
           continue
         }
 
-        let rawCode = parts[0]?.trim()
-        // If format is "00507 - DESCRIÇÃO", extract just the "00507"
-        if (rawCode && rawCode.includes(' - ')) {
+        // The code is usually in the first part, the quantity in the last
+        const codePart = parts[0]
+        const qtyPart = parts[parts.length - 1]
+
+        let rawCode = codePart
+        if (rawCode.includes(' - ')) {
           rawCode = rawCode.split(' - ')[0].trim()
         }
-        const code = rawCode
+        // Remove brackets or weird characters that might come from pivot tables like [-]
+        const code = rawCode.replace(/[^a-zA-Z0-9]/g, '')
 
-        const qtyStr = parts[1]?.trim()
         // Safely parse formats like "1,00" or "1.00" to integer 1
-        const qty = qtyStr ? Math.round(parseFloat(qtyStr.replace(',', '.'))) : 1
+        const qty = Math.round(parseFloat(qtyPart.replace(',', '.')))
 
         if (code && !isNaN(qty)) {
           const product = products.find(p => p.code === code || p.external_code === code)
