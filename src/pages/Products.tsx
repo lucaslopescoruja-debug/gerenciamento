@@ -97,20 +97,24 @@ export default function Products() {
       const lines = text.split('\n')
       let count = 0
 
+      let errors = 0
+      let lastError = ''
+
       for (const line of lines) {
-        const trimmed = line.trim()
+        const trimmed = line.trim().replace(/"/g, '')
         if (!trimmed) continue
         let parts = trimmed.split('\t')
         if (parts.length < 2) parts = trimmed.split(';')
         if (parts.length < 2) parts = trimmed.split(',')
+        if (parts.length < 2) parts = trimmed.split(/\s{2,}/)
         if (parts.length < 2) continue
 
         if (type === 'new') {
-          if (parts[0]?.trim().toLowerCase().includes('cod interno')) continue // skip header
+          if (parts[0]?.trim().toLowerCase().includes('cod interno') || parts[0]?.trim().toLowerCase().includes('ean')) continue // skip header
 
           const codInterno = parts[0]?.trim() || ''
-          const codPrincipal = parts[1]?.trim() || ''
-          const desc = parts[2]?.trim() || ''
+          const codPrincipal = parts.length >= 3 ? parts[1]?.trim() : ''
+          const desc = parts.length >= 3 ? parts[2]?.trim() : parts[1]?.trim()
           const group_name = parts[3]?.trim() || ''
           const qty = parseInt(parts[4]?.trim() || '0')
           const batch = parts[5]?.trim() || ''
@@ -129,8 +133,10 @@ export default function Products() {
                 batch,
               })
               count++
-            } catch (err) {
+            } catch (err: any) {
               console.error(err)
+              errors++
+              lastError = err.message || JSON.stringify(err)
             }
           }
         } else {
@@ -151,7 +157,17 @@ export default function Products() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      toast.success(type === 'new' ? `${count} produtos importados com sucesso!` : `${count} estoques atualizados com sucesso!`)
+      
+      if (errors > 0) {
+        toast.error(`${errors} itens falharam. Último erro: ${lastError}`)
+      }
+      
+      if (count > 0) {
+        toast.success(type === 'new' ? `${count} produtos importados com sucesso!` : `${count} estoques atualizados com sucesso!`)
+      } else if (errors === 0) {
+        toast.warning('Nenhum produto válido encontrado no arquivo.')
+      }
+
       setSelectedFile(null)
       setIsImporting(false)
       setIsImportOpen(false)
