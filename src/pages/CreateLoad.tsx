@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, Plus, Trash2, ClipboardList, Truck, User, Search, Upload } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 interface NewItem {
   tempId: string
@@ -67,32 +68,32 @@ export default function CreateLoad() {
 
     const reader = new FileReader()
     reader.onload = (evt) => {
-      const rawText = evt.target?.result as string
-      // Some ERPs export XLS that is actually HTML. Let's strip HTML tags and replace them with tabs to preserve columns.
-      const text = rawText.replace(/<[^>]+>/g, '\t')
-      const lines = text.split('\n')
-      let addedCount = 0
-      let notFoundCount = 0
+      try {
+        const bstr = evt.target?.result
+        const workbook = XLSX.read(bstr, { type: 'binary' })
+        const wsname = workbook.SheetNames[0]
+        const ws = workbook.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
 
-      const newItems: NewItem[] = []
+        let addedCount = 0
+        let notFoundCount = 0
 
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim().replace(/"/g, '')
-        if (!line) continue
+        const newItems: NewItem[] = []
 
-        // Split by tab, semicolon, comma, or multiple spaces, and clean up empty parts
-        let parts = line.split('\t').map(p => p.trim()).filter(Boolean)
-        if (parts.length < 2) parts = line.split(';').map(p => p.trim()).filter(Boolean)
-        if (parts.length < 2) parts = line.split(',').map(p => p.trim()).filter(Boolean)
-        if (parts.length < 2) parts = line.split(/\s{2,}/).map(p => p.trim()).filter(Boolean)
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i]
+          if (!row || row.length === 0) continue
 
-        if (parts.length < 2) continue
+          // Clean up row and extract non-empty cells
+          let parts = row.map(cell => cell != null ? String(cell).trim() : '').filter(Boolean)
 
-        // Skip obvious header strings
-        const firstPart = parts[0].toLowerCase()
-        if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório')) {
-          continue
-        }
+          if (parts.length < 2) continue
+
+          // Skip obvious header strings
+          const firstPart = parts[0].toLowerCase()
+          if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório') || firstPart.includes('delicius') || firstPart.includes('quantidade')) {
+            continue
+          }
 
         // The code is usually in the first part, the quantity in the last
         const codePart = parts[0]
@@ -129,21 +130,23 @@ export default function CreateLoad() {
         }
       }
 
-      if (newItems.length > 0) {
-        setItems(prev => [...prev, ...newItems])
-        toast.success(`${addedCount} itens importados com sucesso.`)
-      }
-      
-      if (notFoundCount > 0) {
-        // We log it as info instead of warning because group headers in pivot tables will also fail to match and that is normal.
-        toast.info(`${notFoundCount} linhas ignoradas (cabeçalhos de grupo ou não encontrados).`)
+        if (newItems.length > 0) {
+          setItems(prev => [...prev, ...newItems])
+          toast.success(`${addedCount} itens importados com sucesso.`)
+        }
+        
+        if (notFoundCount > 0) {
+          toast.info(`${notFoundCount} linhas ignoradas (cabeçalhos de grupo ou não encontrados).`)
+        }
+      } catch (error) {
+        toast.error('Erro ao processar arquivo. Verifique o formato.')
       }
 
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     }
-    reader.readAsText(file)
+    reader.readAsBinaryString(file)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -212,9 +215,9 @@ export default function CreateLoad() {
               <User className="h-4 w-4 text-primary" />Itens da Carga
             </CardTitle>
             <div>
-              <input type="file" accept=".csv,.txt" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+              <input type="file" accept=".csv,.txt,.xls,.xlsx" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
               <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="h-4 w-4 mr-1.5" /> Importar CSV
+                <Upload className="h-4 w-4 mr-1.5" /> Importar Planilha
               </Button>
             </div>
           </CardHeader>
