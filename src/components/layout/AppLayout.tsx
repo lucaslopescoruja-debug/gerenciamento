@@ -11,7 +11,10 @@ import {
   Menu,
   X,
   Boxes,
+  Moon,
+  Sun,
 } from 'lucide-react'
+import { useTheme } from '@/components/ThemeProvider'
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
@@ -25,6 +28,7 @@ const navItems = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -34,12 +38,20 @@ export default function AppLayout() {
           <Boxes className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg gradient-text">Estoque Fácil</span>
         </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-        >
-          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </header>
 
       {/* Sidebar Overlay (mobile) */}
@@ -93,6 +105,15 @@ export default function AppLayout() {
 
         {/* Footer */}
         <div className="p-4 border-t border-border">
+          <div className="flex items-center justify-between glass-card p-3 mb-3">
+            <span className="text-sm font-medium text-muted-foreground">Aparência</span>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground bg-background/50"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+          </div>
           <div className="glass-card p-3">
             <p className="text-xs text-muted-foreground">Modo Demo</p>
             <p className="text-xs text-primary/80 mt-0.5">Supabase não conectado</p>
