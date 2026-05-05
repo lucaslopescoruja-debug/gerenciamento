@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from '@/components/ui/toaster'
 import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 export default function Products() {
   const queryClient = useQueryClient()
@@ -93,79 +94,100 @@ export default function Products() {
 
     const reader = new FileReader()
     reader.onload = async (evt) => {
-      const text = evt.target?.result as string
-      const lines = text.split('\n')
-      let count = 0
+      try {
+        const bstr = evt.target?.result
+        const workbook = XLSX.read(bstr, { type: 'binary' })
+        const wsname = workbook.SheetNames[0]
+        const ws = workbook.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][]
 
-      let errors = 0
-      let lastError = ''
+        let count = 0
+        let errors = 0
+        let lastError = ''
 
-      for (const line of lines) {
-        const trimmed = line.trim().replace(/"/g, '')
-        if (!trimmed) continue
-        let parts = trimmed.split('\t')
-        if (parts.length < 2) parts = trimmed.split(';')
-        if (parts.length < 2) parts = trimmed.split(',')
-        if (parts.length < 2) parts = trimmed.split(/\s{2,}/)
-        if (parts.length < 2) continue
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i]
+          if (!row || row.length === 0) continue
 
-        if (type === 'new') {
-          if (parts[0]?.trim().toLowerCase().includes('cod interno') || parts[0]?.trim().toLowerCase().includes('ean')) continue // skip header
+          let parts = row.map(cell => cell != null ? String(cell).trim() : '').filter(Boolean)
+          if (parts.length < 2) continue
 
-          const codInterno = parts[0]?.trim() || ''
-          const codPrincipal = parts.length >= 3 ? parts[1]?.trim() : ''
-          const desc = parts.length >= 3 ? parts[2]?.trim() : parts[1]?.trim()
-          const group_name = parts[3]?.trim() || ''
-          const qty = parseInt(parts[4]?.trim() || '0')
-          const batch = parts[5]?.trim() || ''
+          if (type === 'new') {
+            const firstPart = parts[0].toLowerCase()
+            if (firstPart.includes('cod interno') || firstPart.includes('ean') || firstPart.includes('código')) continue
 
-          const code = codPrincipal || codInterno
-          const ext = codInterno !== code ? codInterno : ''
+            const codInterno = parts[0]?.trim() || ''
+            const codPrincipal = parts.length >= 3 ? parts[1]?.trim() : ''
+            const desc = parts.length >= 3 ? parts[2]?.trim() : parts[1]?.trim()
+            const group_name = parts[3]?.trim() || ''
+            const qty = parseInt(parts[4]?.trim() || '0')
+            const batch = parts[5]?.trim() || ''
 
-          if (code && desc) {
-            try {
-              await productsApi.createProduct({
-                code,
-                external_code: ext,
-                description: desc,
-                group_name,
-                stock: qty,
-                batch,
-              })
-              count++
-            } catch (err: any) {
-              console.error(err)
-              errors++
-              lastError = err.message || JSON.stringify(err)
-            }
-          }
-        } else {
-          const codeOrExt = parts[0]?.trim()
-          const qtyToAdd = parseInt(parts[2]?.trim() || '0')
-          if (codeOrExt && qtyToAdd) {
-            const prod = products.find(p => p.code === codeOrExt || p.external_code === codeOrExt)
-            if (prod) {
+            const code = codPrincipal || codInterno
+            const ext = codInterno !== code ? codInterno : ''
+
+            if (code && desc) {
               try {
-                await productsApi.updateProduct(prod.id, { stock: (prod.stock || 0) + qtyToAdd })
+                await productsApi.createProduct({
+                  code,
+                  external_code: ext,
+                  description: desc,
+                  group_name,
+                  stock: qty,
+                  batch,
+                })
                 count++
-              } catch (err) {
+              } catch (err: any) {
                 console.error(err)
+                errors++
+                lastError = err.message || JSON.stringify(err)
+              }
+            }
+          } else {
+            // STOCK UPDATE - Robust logic to handle Pivot tables "CODE - DESC \t QTY"
+            const firstPart = parts[0].toLowerCase()
+            if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório') || firstPart.includes('delicius') || firstPart.includes('quantidade')) {
+              continue
+            }
+
+            const codePart = parts[0]
+            const qtyPart = parts[parts.length - 1]
+
+            let rawCode = codePart
+            if (rawCode.includes(' - ')) {
+              rawCode = rawCode.split(' - ')[0].trim()
+            }
+            const codeOrExt = rawCode.replace(/[^a-zA-Z0-9]/g, '')
+            const qtyToAdd = Math.round(parseFloat(qtyPart.replace(',', '.')))
+
+            if (codeOrExt && !isNaN(qtyToAdd)) {
+              const prod = products.find(p => p.code === codeOrExt || p.external_code === codeOrExt)
+              if (prod) {
+                try {
+                  await productsApi.updateProduct(prod.id, { stock: (prod.stock || 0) + qtyToAdd })
+                  count++
+                } catch (err) {
+                  console.error(err)
+                }
               }
             }
           }
         }
-      }
 
-      queryClient.invalidateQueries({ queryKey: ['products'] })
-      
-      if (errors > 0) {
-        toast.error(`${errors} itens falharam. Último erro: ${lastError}`)
-      }
-      
-      if (count > 0) {
-        toast.success(type === 'new' ? `${count} produtos importados com sucesso!` : `${count} estoques atualizados com sucesso!`)
-      } else if (errors === 0) {
-        toast.warning('Nenhum produto válido encontrado no arquivo.')
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+        
+        if (errors > 0) {
+          toast.error(`${errors} itens falharam. Último erro: ${lastError}`)
+        }
+        
+        if (count > 0) {
+          toast.success(type === 'new' ? `${count} produtos importados com sucesso!` : `${count} estoques atualizados com sucesso!`)
+        } else if (errors === 0) {
+          toast.warning('Nenhum produto válido encontrado no arquivo.')
+        }
+
+      } catch (error) {
+        toast.error('Erro ao ler a planilha. Verifique o formato do arquivo.')
       }
 
       setSelectedFile(null)
@@ -173,8 +195,10 @@ export default function Products() {
       setIsImportOpen(false)
       setIsStockEntryOpen(false)
     }
-    reader.readAsText(selectedFile)
+    reader.readAsBinaryString(selectedFile)
   }
+
+
 
   return (
     <div className="space-y-6">
@@ -304,7 +328,7 @@ export default function Products() {
           <DialogHeader><DialogTitle>Importar Produtos (CSV / Excel)</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">Cole a sua planilha ou importe o arquivo (.csv, .txt).<br/>Formato esperado: <b>Cod Interno | Cod Principal (EAN) | Descrição</b></p>
-            <Input type="file" accept=".csv,.txt" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+            <Input type="file" accept=".csv,.txt,.xls,.xlsx" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setIsImportOpen(false)}>Cancelar</Button>
               <Button onClick={() => executeImport('new')} disabled={!selectedFile || isImporting}>
@@ -320,7 +344,7 @@ export default function Products() {
           <DialogHeader><DialogTitle>Entrada de Estoque (CSV)</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">Formato: Cód (ou Externo); Descrição (ignorada); Qtd a somar</p>
-            <Input type="file" accept=".csv,.txt" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
+            <Input type="file" accept=".csv,.txt,.xls,.xlsx" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setIsStockEntryOpen(false)}>Cancelar</Button>
               <Button onClick={() => executeImport('stock')} disabled={!selectedFile || isImporting}>
