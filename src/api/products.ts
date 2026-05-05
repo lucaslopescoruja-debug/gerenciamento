@@ -39,5 +39,25 @@ export const productsApi = {
       .eq('id', id)
     if (error) throw error
     return true
+  },
+
+  async incrementStockByCode(code: string, qtyToAdd: number) {
+    const { data: prods, error: err1 } = await supabase
+      .from('products')
+      .select('*')
+      .or(`code.eq.${code},external_code.eq.${code}`)
+      .limit(1)
+    if (err1) throw err1
+    if (!prods || prods.length === 0) return null
+    
+    const p = prods[0]
+    const { data, error } = await supabase
+      .from('products')
+      .update({ stock: (p.stock || 0) + qtyToAdd })
+      .eq('id', p.id)
+      .select()
+      .single()
+    if (error) throw error
+    return data as Product
   }
 }

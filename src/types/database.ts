@@ -3,7 +3,7 @@
 // ============================================
 
 export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT'
-export type OperationStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
 export type UserRole = 'admin' | 'operator' | 'driver'
 

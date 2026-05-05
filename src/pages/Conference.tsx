@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { operationsApi } from '@/api/operations'
+import { productsApi } from '@/api/products'
 import type { OperationItem } from '@/types/database'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,11 @@ export default function Conference() {
   const [scanInput, setScanInput] = useState('')
   const [activeTab, setActiveTab] = useState('scan')
   const [lastScanned, setLastScanned] = useState<OperationItem | null>(null)
+  
+  // Return state: maps product_code to quantity returned
+  const [returnedItems, setReturnedItems] = useState<Record<string, number>>({})
+  const [returnScanInput, setReturnScanInput] = useState('')
+  const [lastReturned, setLastReturned] = useState<{ code: string, desc: string, qty: number } | null>(null)
 
   const { data: op, isLoading: isOpLoading } = useQuery({
     queryKey: ['operation', id],
@@ -41,7 +47,16 @@ export default function Conference() {
     }
   })
 
-  useEffect(() => { if (activeTab === 'scan') scanRef.current?.focus() }, [activeTab])
+  const updateOpMutation = useMutation({
+    mutationFn: ({ status }: { status: OperationItem['status'] | 'dispatched' | 'completed' }) => 
+      operationsApi.updateOperationStatus(id!, status as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operation', id] })
+      queryClient.invalidateQueries({ queryKey: ['operations'] })
+    }
+  })
+
+  useEffect(() => { if (activeTab === 'scan' || activeTab === 'return') scanRef.current?.focus() }, [activeTab])
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault()
@@ -93,13 +108,56 @@ export default function Conference() {
   const totalS = items.reduce((a, i) => a + (i.quantity_scanned || 0), 0)
   const totalE = items.reduce((a, i) => a + i.quantity_expected, 0)
 
-  const handleFinish = () => {
+  const handleDispatch = () => {
     const missing = items.filter(i => i.quantity_scanned < i.quantity_expected)
     if (missing.length > 0) {
-      const ok = window.confirm(`Faltam ${missing.length} item(ns). Finalizar mesmo assim?`)
+      const ok = window.confirm(`Faltam ${missing.length} item(ns). Despachar rota mesmo assim?`)
       if (!ok) return
     }
-    navigate(`/comprovante/${id}`)
+    updateOpMutation.mutate({ status: 'dispatched' })
+    toast.success('Rota despachada com sucesso!')
+    setActiveTab('return')
+  }
+
+  const handleReturnScan = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!returnScanInput.trim()) return
+    const code = returnScanInput.trim()
+    setReturnScanInput('')
+    
+    // Allow scanning any product that was on the route, or even ones that weren't?
+    // Usually, you only return what was on the route.
+    const item = items.find(i => i.product_code === code || i.product_id === code)
+    if (!item) { toast.error(`Produto não fazia parte da rota: ${code}`); return }
+    
+    setReturnedItems(prev => {
+      const cur = prev[code] || 0
+      const next = cur + 1
+      setLastReturned({ code, desc: item.description, qty: next })
+      return { ...prev, [code]: next }
+    })
+    toast.info(`${item.description}: Retornado +1`)
+  }
+
+  const handleFinishReturn = async () => {
+    if (Object.keys(returnedItems).length > 0) {
+      const ok = window.confirm(`Confirmar o retorno de ${Object.values(returnedItems).reduce((a,b)=>a+b,0)} unidades para o estoque?`)
+      if (!ok) return
+      
+      try {
+        for (const [code, qty] of Object.entries(returnedItems)) {
+          await productsApi.incrementStockByCode(code, qty)
+        }
+        toast.info('Retorno salvo! Estoque atualizado.')
+      } catch (err) {
+        toast.error('Erro ao retornar estoque. Verifique os códigos.')
+        return
+      }
+    }
+    
+    updateOpMutation.mutate({ status: 'completed' })
+    toast.success('Rota finalizada!')
+    navigate('/cargas')
   }
 
   return (
@@ -110,8 +168,8 @@ export default function Conference() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-foreground truncate">{op.client_name}</h1>
-            <span className="text-xs text-muted-foreground">Carga: {op.load_number}</span>
+            <h1 className="text-lg font-bold text-foreground truncate">{op.load_number}</h1>
+            <span className="text-xs text-muted-foreground">{op.status === 'dispatched' ? 'Em Rota' : op.status === 'completed' ? 'Finalizada' : 'Em Separação'}</span>
           </div>
         </div>
         <Card>
@@ -130,10 +188,12 @@ export default function Conference() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <TabsList>
-          <TabsTrigger value="scan"><ScanLine className="h-4 w-4 mr-1.5" />Conferência</TabsTrigger>
+          {op.status !== 'dispatched' && op.status !== 'completed' && <TabsTrigger value="scan"><ScanLine className="h-4 w-4 mr-1.5" />Carregamento</TabsTrigger>}
+          {(op.status === 'dispatched' || activeTab === 'return') && <TabsTrigger value="return"><ArrowLeft className="h-4 w-4 mr-1.5" />Retorno</TabsTrigger>}
           <TabsTrigger value="list"><CheckCircle2 className="h-4 w-4 mr-1.5" />Lista</TabsTrigger>
         </TabsList>
 
+        {op.status !== 'dispatched' && op.status !== 'completed' && (
         <TabsContent value="scan" className="flex-1 flex flex-col gap-4 mt-4">
           <Card className="border-primary/20">
             <CardContent className="p-4">
@@ -169,11 +229,55 @@ export default function Conference() {
           )}
 
           <div className="mt-auto pt-4">
-            <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleFinish}>
-              <FileSignature className="mr-2 h-5 w-5" /> Finalizar & Assinar
+            <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleDispatch} disabled={updateOpMutation.isPending}>
+              <Truck className="mr-2 h-5 w-5" /> Despachar Rota
             </Button>
           </div>
         </TabsContent>
+        )}
+
+        {(op.status === 'dispatched' || activeTab === 'return') && (
+        <TabsContent value="return" className="flex-1 flex flex-col gap-4 mt-4">
+          <Card className="border-amber-500/20">
+            <CardContent className="p-4">
+              <form onSubmit={handleReturnScan} className="flex gap-2">
+                <div className="relative flex-1">
+                  <ScanLine className="absolute left-3 top-3.5 h-5 w-5 text-amber-500/50 scan-pulse" />
+                  <Input ref={scanRef} value={returnScanInput} onChange={e => setReturnScanInput(e.target.value)} placeholder="Bipar mercadoria que retornou..." className="pl-11 h-12 text-lg font-mono border-amber-500/30 focus-visible:ring-amber-500" autoFocus />
+                </div>
+                <Button type="submit" size="icon" className="h-12 w-12 bg-amber-600 hover:bg-amber-700 text-white"><Search className="h-5 w-5" /></Button>
+              </form>
+              <p className="text-xs text-muted-foreground text-center mt-2">Bipe os produtos que não foram entregues</p>
+            </CardContent>
+          </Card>
+
+          {lastReturned ? (
+            <div className="glass-card p-4 flex items-center gap-4 slide-up border-amber-500/30">
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-500/15 text-amber-500">
+                <ArrowLeft className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-foreground truncate">{lastReturned.desc}</p>
+                <div className="flex justify-between mt-1">
+                  <span className="text-xs text-muted-foreground font-mono">{lastReturned.code}</span>
+                  <span className="font-mono font-bold text-lg text-amber-500">Voltou: {lastReturned.qty}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/40 glass-card min-h-[200px]">
+              <Truck className="h-14 w-14 mb-3 opacity-30" />
+              <p className="text-sm">Aguardando devoluções...</p>
+            </div>
+          )}
+
+          <div className="mt-auto pt-4">
+            <Button className="w-full h-12 text-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 glow-warning text-white" onClick={handleFinishReturn} disabled={updateOpMutation.isPending}>
+              <CheckCircle2 className="mr-2 h-5 w-5" /> Finalizar Rota
+            </Button>
+          </div>
+        </TabsContent>
+        )}
 
         <TabsContent value="list" className="flex-1 mt-4">
           <div className="space-y-2 pb-20">

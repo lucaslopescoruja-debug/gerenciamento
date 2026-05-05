@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { operationsApi } from '@/api/operations'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, Trash2, ClipboardList, Truck, User, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ClipboardList, Truck, User, Search, Upload } from 'lucide-react'
 
 interface NewItem {
   tempId: string
@@ -21,12 +21,12 @@ interface NewItem {
 export default function CreateLoad() {
   const navigate = useNavigate()
   const [loadNumber, setLoadNumber] = useState('')
-  const [clientName, setClientName] = useState('')
   const [driverName, setDriverName] = useState('')
   const [vehiclePlate, setVehiclePlate] = useState('')
   const [notes, setNotes] = useState('')
   const [items, setItems] = useState<NewItem[]>([])
   const [codeSearch, setCodeSearch] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -61,10 +61,80 @@ export default function CreateLoad() {
     setItems(prev => prev.filter(i => i.tempId !== tempId))
   }
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string
+      const lines = text.split('\n')
+      let addedCount = 0
+      let notFoundCount = 0
+
+      const newItems: NewItem[] = []
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim().replace(/"/g, '')
+        if (!line) continue
+
+        let parts = line.split('\t')
+        if (parts.length < 2) parts = line.split(';')
+        if (parts.length < 2) parts = line.split(',')
+        if (parts.length < 2) parts = line.split(/\s{2,}/)
+
+        if (parts.length < 2) continue
+
+        // Skip header if it exists
+        if (i === 0 && (parts[0].toLowerCase().includes('cod') || parts[0].toLowerCase().includes('código'))) {
+          continue
+        }
+
+        const code = parts[0]?.trim()
+        const qtyStr = parts[1]?.trim()
+        const qty = parseInt(qtyStr || '1', 10)
+
+        if (code && !isNaN(qty)) {
+          const product = products.find(p => p.code === code || p.external_code === code)
+          if (product) {
+            // Check if already in items list (existing)
+            const exists = items.some(it => it.product_code === product.code) || newItems.some(it => it.product_code === product.code)
+            if (!exists) {
+              newItems.push({
+                tempId: `t${Date.now()}_${addedCount}`,
+                product_id: product.id,
+                product_code: product.code,
+                description: product.description, // User description discarded, fetched from DB
+                quantity_expected: Math.max(1, qty)
+              })
+              addedCount++
+            }
+          } else {
+            notFoundCount++
+          }
+        }
+      }
+
+      if (newItems.length > 0) {
+        setItems(prev => [...prev, ...newItems])
+        toast.success(`${addedCount} itens importados com sucesso.`)
+      }
+      
+      if (notFoundCount > 0) {
+        toast.warning(`${notFoundCount} códigos não encontrados no sistema.`)
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+    reader.readAsText(file)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!loadNumber || !clientName || items.length === 0) {
-      toast.error('Preencha todos os campos obrigatórios e adicione itens')
+    if (!loadNumber || items.length === 0) {
+      toast.error('Preencha o Nome da Rota e adicione itens')
       return
     }
 
@@ -72,7 +142,7 @@ export default function CreateLoad() {
       type: 'LOAD' as const,
       status: 'pending' as const,
       load_number: loadNumber,
-      client_name: clientName,
+      client_name: 'Diversos', // Temporary default since we removed client
       driver_name: driverName,
       vehicle_plate: vehiclePlate,
       notes,
@@ -95,18 +165,17 @@ export default function CreateLoad() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
         <div>
-          <h1 className="text-2xl font-bold gradient-text">Nova Carga</h1>
+          <h1 className="text-2xl font-bold gradient-text">Nova Rota</h1>
           <p className="text-sm text-muted-foreground">Criar operação de expedição</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4 text-primary" />Dados da Carga</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4 text-primary" />Dados da Rota</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Número da Carga *</Label><Input value={loadNumber} onChange={e => setLoadNumber(e.target.value)} placeholder="CG-2024-005" required /></div>
-              <div className="space-y-2"><Label>Cliente *</Label><Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Nome do cliente" required /></div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2"><Label>Nome da Rota *</Label><Input value={loadNumber} onChange={e => setLoadNumber(e.target.value)} placeholder="Ex: Rota Centro 01" required /></div>
             </div>
           </CardContent>
         </Card>
@@ -123,7 +192,17 @@ export default function CreateLoad() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><User className="h-4 w-4 text-primary" />Itens da Carga</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="h-4 w-4 text-primary" />Itens da Carga
+            </CardTitle>
+            <div>
+              <input type="file" accept=".csv,.txt" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-1.5" /> Importar CSV
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -155,7 +234,7 @@ export default function CreateLoad() {
         </Card>
 
         <Button type="submit" className="w-full h-12 text-lg" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Criando...' : 'Criar Carga'}
+          {createMutation.isPending ? 'Criando...' : 'Criar Rota'}
         </Button>
       </form>
     </div>
