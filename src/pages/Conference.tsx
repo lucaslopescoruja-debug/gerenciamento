@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil } from 'lucide-react'
 
 export default function Conference() {
   const { id } = useParams()
@@ -128,16 +128,16 @@ export default function Conference() {
     
     if (cur >= item.quantity_expected) { 
       nextExpected = cur + 1
-      toast.info(`${item.description}: Quantidade extra adicionada à rota!`)
+      toast.success(`${item.description}: Quantidade extra (+1) adicionada à rota!`)
+    } else {
+      const nq = cur + 1
+      const ns = nq >= nextExpected ? 'ok' : 'pending'
+      if (ns === 'ok') toast.success(`${item.description}: Conferido! ✓`)
+      else toast.info(`${item.description}: +1 (${nq}/${nextExpected})`)
     }
     
     const nq = cur + 1
     const ns = nq >= nextExpected ? 'ok' : 'pending'
-    
-    if (cur < item.quantity_expected) {
-      if (ns === 'ok') toast.success(`${item.description}: Conferido! ✓`)
-      else toast.info(`${item.description}: +1 (${nq}/${nextExpected})`)
-    }
     
     const updated = { ...item, quantity_scanned: nq, quantity_expected: nextExpected, status: ns } as OperationItem
     
@@ -426,7 +426,7 @@ export default function Conference() {
                 }
 
                 return (
-                  <div key={item.id} className={`glass-card p-3 flex items-center justify-between slide-up ${done ? 'border-emerald-500/20' : ''}`} style={{ animationDelay: `${i * 50}ms` }} onClick={() => { if (op.status !== 'dispatched' && op.status !== 'completed') { setEditingItem(item); setEditQty(item.quantity_expected) }}}>
+                  <div key={item.id} className={`glass-card p-3 flex items-center justify-between slide-up ${done ? 'border-emerald-500/20' : ''}`} style={{ animationDelay: `${i * 50}ms` }}>
                     <div className="min-w-0 flex-1">
                       <p className={`font-medium truncate ${done ? 'text-emerald-300' : 'text-foreground'}`}>{item.description}</p>
                       <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
@@ -437,6 +437,12 @@ export default function Conference() {
                         <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
                       </div>
                       {done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
+                      
+                      {op.status !== 'dispatched' && op.status !== 'completed' && (
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )
