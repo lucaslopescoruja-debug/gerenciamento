@@ -39,6 +39,11 @@ export default function Conference() {
     enabled: !!id,
   })
 
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: productsApi.getProducts,
+  })
+
   const updateItemMutation = useMutation({
     mutationFn: ({ itemId, qty, status }: { itemId: string, qty: number, status: OperationItem['status'] }) => 
       operationsApi.updateItemQuantity(itemId, qty, status),
@@ -64,8 +69,13 @@ export default function Conference() {
     const code = scanInput.trim()
     setScanInput('')
     
-    const item = items.find(i => i.product_code === code)
-    if (!item) { toast.error(`Produto não encontrado: ${code}`); return }
+    const matchedProduct = allProducts.find(p => p.code === code || p.external_code === code)
+    const item = items.find(i => 
+      i.product_code === code || 
+      (matchedProduct && i.product_id === matchedProduct.id)
+    )
+    
+    if (!item) { toast.error(`Produto não encontrado na rota: ${code}`); return }
     
     const cur = item.quantity_scanned || 0
     if (cur >= item.quantity_expected) { toast.warning(`${item.description}: Já atingido!`); return }
@@ -125,16 +135,20 @@ export default function Conference() {
     const code = returnScanInput.trim()
     setReturnScanInput('')
     
-    // Allow scanning any product that was on the route, or even ones that weren't?
-    // Usually, you only return what was on the route.
-    const item = items.find(i => i.product_code === code || i.product_id === code)
+    const matchedProduct = allProducts.find(p => p.code === code || p.external_code === code)
+    const item = items.find(i => 
+      i.product_code === code || i.product_id === code ||
+      (matchedProduct && i.product_id === matchedProduct.id)
+    )
     if (!item) { toast.error(`Produto não fazia parte da rota: ${code}`); return }
     
+    const primaryCode = item.product_code
+    
     setReturnedItems(prev => {
-      const cur = prev[code] || 0
+      const cur = prev[primaryCode] || 0
       const next = cur + 1
-      setLastReturned({ code, desc: item.description, qty: next })
-      return { ...prev, [code]: next }
+      setLastReturned({ code: primaryCode, desc: item.description, qty: next })
+      return { ...prev, [primaryCode]: next }
     })
     toast.info(`${item.description}: Retornado +1`)
   }
