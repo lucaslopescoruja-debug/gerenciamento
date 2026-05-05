@@ -104,13 +104,19 @@ export default function Products() {
         if (parts.length < 2) continue
 
         if (type === 'new') {
-          // Expected format from user: EAN 13 (Code) | SKU's (Description) | DUN 14 (External Code)
-          const code = parts[0]?.trim()
-          const desc = parts[1]?.trim()
-          const ext = parts[2]?.trim() || ''
+          // Expected format: Cod Interno | Cod Principal (EAN) | Descrição
+          if (parts[0]?.trim().toLowerCase().includes('cod interno')) continue // skip header
+
+          const codInterno = parts[0]?.trim() || ''
+          const codPrincipal = parts[1]?.trim() || ''
+          const desc = parts[2]?.trim() || ''
           const group_name = parts[3]?.trim() || ''
           const qty = parseInt(parts[4]?.trim() || '0')
           const batch = parts[5]?.trim() || ''
+
+          // Use the EAN (Cod Principal) as the main code for scanning. If it doesn't exist, fallback to Cod Interno.
+          const code = codPrincipal || codInterno
+          const ext = codInterno !== code ? codInterno : ''
 
           if (code && desc) {
             try {
@@ -279,7 +285,7 @@ export default function Products() {
         <DialogContent>
           <DialogHeader><DialogTitle>Importar Produtos (CSV / Excel)</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">Cole a sua planilha ou importe o arquivo (.csv, .txt).<br/>Formato esperado: <b>Código (EAN) | Descrição | DUN14 (Opcional)</b></p>
+            <p className="text-sm text-muted-foreground">Cole a sua planilha ou importe o arquivo (.csv, .txt).<br/>Formato esperado: <b>Cod Interno | Cod Principal (EAN) | Descrição</b></p>
             <Input type="file" accept=".csv,.txt" onChange={(e) => handleImport(e, 'new')} />
           </div>
         </DialogContent>
