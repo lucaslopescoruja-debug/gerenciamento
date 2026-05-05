@@ -86,13 +86,20 @@ export default function CreateLoad() {
         if (parts.length < 2) continue
 
         // Skip header if it exists
-        if (i === 0 && (parts[0].toLowerCase().includes('cod') || parts[0].toLowerCase().includes('código'))) {
+        if (i === 0 && (parts[0].toLowerCase().includes('cod') || parts[0].toLowerCase().includes('código') || parts[0].toLowerCase().includes('itens'))) {
           continue
         }
 
-        const code = parts[0]?.trim()
+        let rawCode = parts[0]?.trim()
+        // If format is "00507 - DESCRIÇÃO", extract just the "00507"
+        if (rawCode && rawCode.includes(' - ')) {
+          rawCode = rawCode.split(' - ')[0].trim()
+        }
+        const code = rawCode
+
         const qtyStr = parts[1]?.trim()
-        const qty = parseInt(qtyStr || '1', 10)
+        // Safely parse formats like "1,00" or "1.00" to integer 1
+        const qty = qtyStr ? Math.round(parseFloat(qtyStr.replace(',', '.'))) : 1
 
         if (code && !isNaN(qty)) {
           const product = products.find(p => p.code === code || p.external_code === code)
@@ -121,7 +128,8 @@ export default function CreateLoad() {
       }
       
       if (notFoundCount > 0) {
-        toast.warning(`${notFoundCount} códigos não encontrados no sistema.`)
+        // We log it as info instead of warning because group headers in pivot tables will also fail to match and that is normal.
+        toast.info(`${notFoundCount} linhas ignoradas (cabeçalhos de grupo ou não encontrados).`)
       }
 
       if (fileInputRef.current) {
