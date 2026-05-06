@@ -114,17 +114,14 @@ export default function Products() {
 
           if (type === 'new') {
             const firstPart = parts[0].toLowerCase()
-            if (firstPart.includes('cod interno') || firstPart.includes('ean') || firstPart.includes('código')) continue
+            if (firstPart.includes('cod') || firstPart.includes('código')) continue
 
-            const codInterno = parts[0]?.trim() || ''
-            const codPrincipal = parts.length >= 3 ? parts[1]?.trim() : ''
-            const desc = parts.length >= 3 ? parts[2]?.trim() : parts[1]?.trim()
+            const code = parts[0]?.trim() || ''
+            const desc = parts[1]?.trim() || ''
+            const ext = parts[2]?.trim() || ''
             const group_name = parts[3]?.trim() || ''
             const qty = parseInt(parts[4]?.trim() || '0')
             const batch = parts[5]?.trim() || ''
-
-            const code = codPrincipal || codInterno
-            const ext = codInterno !== code ? codInterno : ''
 
             if (code && desc) {
               try {
@@ -327,7 +324,7 @@ export default function Products() {
         <DialogContent>
           <DialogHeader><DialogTitle>Importar Produtos (CSV / Excel)</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">Cole a sua planilha ou importe o arquivo (.csv, .txt).<br/>Formato esperado: <b>Cod Interno | Cod Principal (EAN) | Descrição</b></p>
+            <p className="text-sm text-muted-foreground">Cole a sua planilha ou importe o arquivo (.csv, .txt, .xlsx).<br/>Formato esperado: <b>Cod. | Descrição | Cod Externo (opcional) | Grupo (opcional) | Quantidade (opcional) | Lote (opcional)</b></p>
             <Input type="file" accept=".csv,.txt,.xls,.xlsx" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setIsImportOpen(false)}>Cancelar</Button>
