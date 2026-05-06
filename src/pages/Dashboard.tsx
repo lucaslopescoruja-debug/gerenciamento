@@ -62,10 +62,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard title="Total Cargas" value={stats.total} icon={Truck} gradient="from-indigo-500/20 to-purple-500/20" iconColor="text-indigo-400" link="/cargas" />
-        <StatsCard title="Pendentes" value={stats.pending} icon={Clock} gradient="from-amber-500/20 to-orange-500/20" iconColor="text-amber-400" link="/cargas?status=pending" />
-        <StatsCard title="Em Conferência" value={stats.in_progress} icon={PackageCheck} gradient="from-violet-500/20 to-fuchsia-500/20" iconColor="text-violet-400" link="/cargas?status=in_progress" />
-        <StatsCard title="Finalizadas" value={stats.completed} icon={CheckCircle2} gradient="from-emerald-500/20 to-teal-500/20" iconColor="text-emerald-400" link="/cargas?status=completed" />
+        <StatsCard title="Total" value={stats.total} icon={Truck} gradient="from-indigo-500/20 to-purple-500/20" iconColor="text-indigo-400" link="/cargas" />
+        <StatsCard title="Pendente" value={stats.pending} icon={Clock} gradient="from-amber-500/20 to-orange-500/20" iconColor="text-amber-400" link="/cargas?status=pending" />
+        <StatsCard title="Em rota" value={stats.in_progress} icon={PackageCheck} gradient="from-violet-500/20 to-fuchsia-500/20" iconColor="text-violet-400" link="/cargas?status=in_progress" />
+        <StatsCard title="Finalizado" value={stats.completed} icon={CheckCircle2} gradient="from-emerald-500/20 to-teal-500/20" iconColor="text-emerald-400" link="/cargas?status=completed" />
       </div>
 
       <Card>
