@@ -20,8 +20,6 @@ export default function Dashboard() {
     queryFn: operationsApi.getOperations,
   })
 
-  })
-
   const stats = useMemo(() => ({
     total: operations.length,
     pending: operations.filter(l => l.status === 'pending').length,
