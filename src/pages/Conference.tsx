@@ -83,6 +83,16 @@ export default function Conference() {
     }
   })
 
+  const deleteOpMutation = useMutation({
+    mutationFn: () => operationsApi.deleteOperation(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operations'] })
+      toast.info('Rota excluída com sucesso.')
+      navigate('/cargas')
+    },
+    onError: (e: any) => toast.error(`Erro ao excluir rota: ${e.message}`)
+  })
+
   // List editing states
   const [editingItem, setEditingItem] = useState<OperationItem | null>(null)
   const [editQty, setEditQty] = useState(0)
@@ -247,6 +257,12 @@ export default function Conference() {
     }
   }
 
+  const handleDeleteOp = () => {
+    if (window.confirm('CUIDADO: Tem certeza que deseja apagar esta rota inteira? Esta ação não pode ser desfeita.')) {
+      deleteOpMutation.mutate()
+    }
+  }
+
   const handleManualAdd = (productCodeOrName: string) => {
     const term = productCodeOrName.toLowerCase()
     const product = allProducts.find(p => p.code.toLowerCase() === term || p.external_code?.toLowerCase() === term || p.description.toLowerCase().includes(term))
@@ -277,10 +293,19 @@ export default function Conference() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-foreground truncate">{op.load_number}</h1>
             <span className="text-xs text-muted-foreground">{op.status === 'dispatched' ? 'Em Rota' : op.status === 'completed' ? 'Finalizada' : 'Em Separação'}</span>
           </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0" 
+            onClick={handleDeleteOp} 
+            disabled={deleteOpMutation.isPending}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
         </div>
         <Card>
           <CardContent className="p-4">

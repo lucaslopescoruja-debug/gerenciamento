@@ -108,5 +108,19 @@ export const operationsApi = {
     if (itemsError) throw itemsError
 
     return opData as Operation
+  },
+
+  async deleteOperation(id: string) {
+    // Excluir os itens primeiro para evitar problemas de constraint de chave estrangeira
+    await supabase.from('operation_items').delete().eq('operation_id', id)
+    
+    // Depois exclui a rota
+    const { error } = await supabase
+      .from('operations')
+      .delete()
+      .eq('id', id)
+    
+    if (error) throw error
+    return true
   }
 }
