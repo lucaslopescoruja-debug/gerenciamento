@@ -83,6 +83,29 @@ export default function Conference() {
     }
   })
 
+  const dispatchMutation = useMutation({
+    mutationFn: async () => {
+      // 1. Deduct stock for all scanned items
+      for (const item of items) {
+        if (item.quantity_scanned > 0) {
+          await productsApi.incrementStockByCode(item.product_code, -item.quantity_scanned)
+        }
+      }
+      // 2. Update operation status
+      return operationsApi.updateOperationStatus(id!, 'dispatched')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operation', id] })
+      queryClient.invalidateQueries({ queryKey: ['operations'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast.success('Rota despachada e estoque deduzido!')
+      setActiveTab('return')
+    },
+    onError: (e: any) => {
+      toast.error(`Erro ao despachar rota: ${e.message}`)
+    }
+  })
+
   const deleteOpMutation = useMutation({
     mutationFn: () => operationsApi.deleteOperation(id!),
     onSuccess: () => {
@@ -188,9 +211,7 @@ export default function Conference() {
       const ok = window.confirm(`Faltam ${missing.length} item(ns). Despachar rota mesmo assim?`)
       if (!ok) return
     }
-    updateOpMutation.mutate({ status: 'dispatched' })
-    toast.success('Rota despachada com sucesso!')
-    setActiveTab('return')
+    dispatchMutation.mutate()
   }
 
   const handleReturnScan = (e: React.FormEvent) => {
@@ -375,8 +396,8 @@ export default function Conference() {
           )}
 
           <div className="mt-auto pt-4">
-            <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleDispatch} disabled={updateOpMutation.isPending}>
-              <Truck className="mr-2 h-5 w-5" /> Despachar Rota
+            <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleDispatch} disabled={dispatchMutation.isPending}>
+              {dispatchMutation.isPending ? 'Despachando...' : <><Truck className="mr-2 h-5 w-5" /> Despachar Rota</>}
             </Button>
           </div>
         </TabsContent>
