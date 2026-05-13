@@ -499,8 +499,8 @@ export default function Conference() {
             </CardContent>
           </Card>
 
-          {lastReturned ? (
-            <div className="glass-card p-4 flex items-center gap-4 slide-up border-amber-500/30">
+          {lastReturned && (
+            <div className="glass-card p-4 flex items-center gap-4 slide-up border-amber-500/30 shrink-0">
               <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 bg-amber-500/15 text-amber-500">
                 <ArrowLeft className="h-6 w-6" />
               </div>
@@ -511,6 +511,30 @@ export default function Conference() {
                   <span className="font-mono font-bold text-lg text-amber-500">Voltou: {lastReturned.qty}</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {Object.keys(returnedItems).length > 0 ? (
+            <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-[200px]">
+              <div className="pt-2 pb-1">
+                <h3 className="text-sm font-bold text-amber-500">Itens Bipados ({Object.values(returnedItems).reduce((a,b)=>a+b,0)} un)</h3>
+              </div>
+              {Object.entries(returnedItems).map(([code, qty], i) => {
+                const itemDesc = items.find(it => it.product_code === code)?.description || allProducts.find(p => p.code === code)?.description || 'Produto'
+                return (
+                  <div key={code} className="glass-card p-3 flex items-center justify-between slide-up border-amber-500/20 bg-amber-500/5" style={{ animationDelay: `${i * 10}ms` }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate text-amber-500">{itemDesc}</p>
+                      <p className="text-xs text-amber-500/70 font-mono">{code}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <span className="text-lg font-bold font-mono text-amber-500">+{qty}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/40 glass-card min-h-[200px]">
