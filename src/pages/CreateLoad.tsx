@@ -215,13 +215,7 @@ export default function CreateLoad() {
         if (rawCode.includes(' - ')) {
           rawCode = rawCode.split(' - ')[0].trim()
         }
-        // Preserve leading zeros: keep the code as‑is (string)
-        // If the cell was interpreted as a plain number (e.g., "122"), pad it to the expected length (5 digits)
         let code = rawCode;
-        if (!isNaN(Number(code))) {
-        // Typical product codes in this project have 5 characters; adjust if your data uses another length
-        code = code.padStart(5, '0');
-      }
 
       const normalizedImportCode = normalizeCode(code);
       const product = products.find(p => normalizeCode(p.code) === normalizedImportCode || (p.external_code && normalizeCode(p.external_code) === normalizedImportCode));
