@@ -210,7 +210,43 @@ export default function Products() {
     reader.readAsBinaryString(selectedFile)
   }
 
+  const exportToCSV = () => {
+    if (products.length === 0) {
+      toast.warning('Nenhum produto para exportar.')
+      return
+    }
 
+    const headers = ['ID', 'Código', 'Código Externo', 'Descrição', 'Grupo', 'Estoque', 'Lote', 'Peso Unit.', 'Qtd. Caixa', 'Data Criação']
+    
+    const rows = products.map(p => [
+      p.id,
+      p.code || '',
+      p.external_code || '',
+      p.description || '',
+      p.group_name || '',
+      p.stock || 0,
+      p.batch || '',
+      p.unit_weight || '',
+      p.box_quantity || '',
+      p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : ''
+    ])
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n')
+
+    // Add BOM to ensure Excel reads UTF-8 correctly
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `produtos_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success('Relatório exportado com sucesso!')
+  }
 
   return (
     <div className="space-y-6">
@@ -231,6 +267,9 @@ export default function Products() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
             <Upload className="h-4 w-4 mr-1.5" /> Importar
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToCSV}>
+            <FileDown className="h-4 w-4 mr-1.5" /> Exportar
           </Button>
           <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10" onClick={() => setIsStockEntryOpen(true)}>
             <Archive className="h-4 w-4 mr-1.5" /> Entrada Estoque
