@@ -400,10 +400,7 @@ export default function Conference() {
           {op.status !== 'dispatched' && op.status !== 'completed' ? (
              <TabsTrigger value="scan" className="flex-1"><ScanLine className="h-4 w-4 mr-1.5" />Conferência e Lista</TabsTrigger>
           ) : (
-             <>
-               <TabsTrigger value="return"><ArrowLeft className="h-4 w-4 mr-1.5" />Retorno</TabsTrigger>
-               <TabsTrigger value="list"><CheckCircle2 className="h-4 w-4 mr-1.5" />Lista</TabsTrigger>
-             </>
+             <TabsTrigger value="return" className="flex-1"><ArrowLeft className="h-4 w-4 mr-1.5" />Retorno e Lista</TabsTrigger>
           )}
         </TabsList>
 
@@ -539,7 +536,7 @@ export default function Conference() {
           {Object.keys(returnedItems).length > 0 ? (
             <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-[200px]">
               <div className="pt-2 pb-1">
-                <h3 className="text-sm font-bold text-amber-500">Itens Bipados ({Object.values(returnedItems).reduce((a,b)=>a+b,0)} un)</h3>
+                <h3 className="text-sm font-bold text-amber-500">Itens Bipados Agora ({Object.values(returnedItems).reduce((a,b)=>a+b,0)} un)</h3>
               </div>
               {Object.entries(returnedItems).map(([code, qty], i) => {
                 const itemDesc = items.find(it => it.product_code === code)?.description || allProducts.find(p => p.code === code)?.description || 'Produto'
@@ -559,25 +556,16 @@ export default function Conference() {
               })}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/40 glass-card min-h-[200px]">
-              <Truck className="h-14 w-14 mb-3 opacity-30" />
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground/40 glass-card py-6">
+              <Truck className="h-10 w-10 mb-2 opacity-30" />
               <p className="text-sm">Aguardando devoluções...</p>
             </div>
           )}
 
-          <div className="mt-auto pt-4">
-            <Button className="w-full h-12 text-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 glow-warning text-white" onClick={handleFinishReturn} disabled={updateOpMutation.isPending}>
-              <CheckCircle2 className="mr-2 h-5 w-5" /> Finalizar Rota
-            </Button>
-          </div>
-        </TabsContent>
-        )}
-
-        {(op.status === 'dispatched' || op.status === 'completed') && (
-        <TabsContent value="list" className="flex-1 mt-4">
-          <div className="space-y-4 pb-20">
-
-            <div className="space-y-2">
+          <div className="space-y-2 mt-6">
+            <div className="pt-2 pb-1">
+              <h3 className="text-sm font-bold text-foreground">Lista de Produtos da Rota</h3>
+            </div>
               {regularItems.map((item, i) => {
                 const done = item.quantity_scanned >= item.quantity_expected
                 const isEditing = editingItem?.id === item.id
@@ -625,7 +613,7 @@ export default function Conference() {
                 <>
                   <div className="pt-6 pb-2">
                     <h3 className="text-sm font-bold text-amber-500 flex items-center gap-2">
-                      <ArrowLeft className="h-4 w-4" /> Itens Retornados da Rota
+                      <ArrowLeft className="h-4 w-4" /> Devoluções Anteriores
                     </h3>
                   </div>
                   {returnItemsList.map((item, i) => (
@@ -644,6 +632,12 @@ export default function Conference() {
                   ))}
                 </>
               )}
+            </div>
+
+            <div className="mt-auto pt-4">
+              <Button className="w-full h-12 text-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 glow-warning text-white" onClick={handleFinishReturn} disabled={updateOpMutation.isPending}>
+                <CheckCircle2 className="mr-2 h-5 w-5" /> Finalizar Rota
+              </Button>
             </div>
           </div>
         </TabsContent>
