@@ -147,7 +147,7 @@ export default function Conference() {
         return
       }
       if (!isManager) {
-        toast.error(`Acesso Negado: ${matchedProduct.description} não está na rota. Procure um Gestor.`)
+        window.alert(`ACESSO NEGADO: O produto ${matchedProduct.description} não está na rota. Procure um Gestor.`)
         return
       }
       const ok = window.confirm(`${matchedProduct.description} não está na rota. Deseja adicionar?`)
@@ -171,7 +171,7 @@ export default function Conference() {
     
     if (cur >= item.quantity_expected) { 
       if (!isManager) {
-        toast.error(`Limite atingido para ${item.description}. Procure um Gestor.`)
+        window.alert(`LIMITE ATINGIDO: A quantidade de ${item.description} já foi alcançada. Procure um Gestor.`)
         return
       }
       const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
