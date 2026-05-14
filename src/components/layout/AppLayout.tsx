@@ -15,20 +15,23 @@ import {
   Sun,
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
+import { useAuth } from '@/contexts/AuthContext'
+import { LogOut, User as UserIcon } from 'lucide-react'
 
 const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { label: 'Cargas', icon: Truck, path: '/cargas' },
-  { label: 'Nova Carga', icon: ClipboardList, path: '/nova-carga' },
-  { label: 'Produtos', icon: Package, path: '/produtos' },
-  { label: 'Inventário', icon: ScanLine, path: '/inventario' },
-  { label: 'Acesso', icon: ShieldCheck, path: '/acesso' },
-]
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/', permission: 'can_view_dashboard' },
+  { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
+  { label: 'Nova Carga', icon: ClipboardList, path: '/nova-carga', permission: 'can_manage_loads' },
+  { label: 'Produtos', icon: Package, path: '/produtos', permission: 'can_manage_products' },
+  { label: 'Inventário', icon: ScanLine, path: '/inventario', permission: 'can_manage_products' },
+  { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
+] as const
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const { theme, setTheme } = useTheme()
+  const { user, logout, hasPermission } = useAuth()
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -83,6 +86,7 @@ export default function AppLayout() {
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-auto mt-14 md:mt-0">
           {navItems.map((item) => {
+            if (!hasPermission(item.permission as any)) return null;
             const isActive = location.pathname === item.path
             return (
               <Link
@@ -104,8 +108,27 @@ export default function AppLayout() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center justify-between glass-card p-3 mb-3">
+        <div className="p-4 border-t border-border flex flex-col gap-3">
+          {/* User Profile */}
+          <div className="glass-card p-3 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <UserIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold truncate text-foreground">{user?.name || 'Usuário'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role || 'operator'}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-colors"
+              title="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="flex items-center justify-between glass-card p-3">
             <span className="text-sm font-medium text-muted-foreground">Aparência</span>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -113,10 +136,6 @@ export default function AppLayout() {
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-          </div>
-          <div className="glass-card p-3">
-            <p className="text-xs text-muted-foreground">Modo Demo</p>
-            <p className="text-xs text-primary/80 mt-0.5">Supabase não conectado</p>
           </div>
         </div>
       </aside>

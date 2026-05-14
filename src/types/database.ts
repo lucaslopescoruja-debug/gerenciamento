@@ -5,14 +5,24 @@
 export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT'
 export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
-export type UserRole = 'admin' | 'operator' | 'driver'
+export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista'
+
+export interface UserPermissions {
+  can_view_dashboard: boolean
+  can_manage_loads: boolean
+  can_do_conference: boolean
+  can_manage_products: boolean
+  can_manage_users: boolean
+}
 
 export interface User {
   id: string
   name: string
-  email: string
+  username: string
+  password_hash: string
   role: UserRole
   active: boolean
+  permissions: UserPermissions
   created_at: string
 }
 
