@@ -146,6 +146,10 @@ export default function Conference() {
         toast.error(`Produto não cadastrado no sistema: ${code}`)
         return
       }
+      if (!isManager) {
+        toast.error(`Acesso Negado: ${matchedProduct.description} não está na rota. Procure um Gestor.`)
+        return
+      }
       const ok = window.confirm(`${matchedProduct.description} não está na rota. Deseja adicionar?`)
       if (!ok) return
       
@@ -166,6 +170,10 @@ export default function Conference() {
     let nextExpected = item.quantity_expected
     
     if (cur >= item.quantity_expected) { 
+      if (!isManager) {
+        toast.error(`Limite atingido para ${item.description}. Procure um Gestor.`)
+        return
+      }
       const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
       if (!ok) return
 
