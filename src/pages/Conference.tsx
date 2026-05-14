@@ -12,12 +12,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Conference() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const scanRef = useRef<HTMLInputElement>(null)
+  const { user } = useAuth()
+  const isManager = user?.role === 'admin' || user?.role === 'gestor'
   
   const [scanInput, setScanInput] = useState('')
   const [activeTab, setActiveTab] = useState('scan')
@@ -353,15 +356,17 @@ export default function Conference() {
               <Pencil className="h-5 w-5" />
             </Button>
           )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0" 
-            onClick={handleDeleteOp} 
-            disabled={deleteOpMutation.isPending}
-          >
-            <Trash2 className="h-5 w-5" />
-          </Button>
+          {isManager && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0" 
+              onClick={handleDeleteOp} 
+              disabled={deleteOpMutation.isPending}
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          )}
         </div>
         <Card>
           <CardContent className="p-4">
@@ -419,19 +424,21 @@ export default function Conference() {
             </div>
           )}
 
-          <div className="flex gap-2 shrink-0">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                value={addSearchTerm} 
-                onChange={e => setAddSearchTerm(e.target.value)} 
-                placeholder="Adicionar produto manualmente..." 
-                className="pl-9 bg-background/50"
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleManualAdd(addSearchTerm) } }}
-              />
+          {isManager && (
+            <div className="flex gap-2 shrink-0">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  value={addSearchTerm} 
+                  onChange={e => setAddSearchTerm(e.target.value)} 
+                  placeholder="Adicionar produto manualmente..." 
+                  className="pl-9 bg-background/50"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleManualAdd(addSearchTerm) } }}
+                />
+              </div>
+              <Button onClick={() => handleManualAdd(addSearchTerm)}><Plus className="h-4 w-4" /></Button>
             </div>
-            <Button onClick={() => handleManualAdd(addSearchTerm)}><Plus className="h-4 w-4" /></Button>
-          </div>
+          )}
 
           <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-[200px]">
             {regularItems.map((item, i) => {
@@ -467,9 +474,11 @@ export default function Conference() {
                     </div>
                     {done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
                     
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    {isManager && (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               )
@@ -589,7 +598,7 @@ export default function Conference() {
                       </div>
                       {done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
                       
-                      {op.status !== 'dispatched' && op.status !== 'completed' && (
+                      {op.status !== 'dispatched' && op.status !== 'completed' && isManager && (
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
