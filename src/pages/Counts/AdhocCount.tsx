@@ -59,7 +59,11 @@ export default function AdhocCountPage() {
       toast.success('Contagem iniciada')
     },
     onError: (error: any) => {
-      toast.error(`Erro ao criar: ${error.message}`)
+      if (error.message?.includes('relation "adhoc_counts" does not exist')) {
+        toast.error('O banco de dados não possui as tabelas necessárias. Execute o script SQL no Supabase!')
+      } else {
+        toast.error(`Erro ao criar: ${error.message}`)
+      }
     }
   })
 
