@@ -123,6 +123,24 @@ export default function Conference() {
   const [editingItem, setEditingItem] = useState<OperationItem | null>(null)
   const [editQty, setEditQty] = useState(0)
   const [addSearchTerm, setAddSearchTerm] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
+
+  useEffect(() => {
+    if (addSearchTerm.trim().length > 0) {
+      const term = normalizeCode(addSearchTerm.trim());
+      const filtered = allProducts.filter(p => 
+        normalizeCode(p.code).includes(term) || 
+        (p.external_code && normalizeCode(p.external_code).includes(term)) || 
+        normalizeCode(p.description).includes(term)
+      ).slice(0, 10);
+      setFilteredProducts(filtered);
+      setShowDropdown(true);
+    } else {
+      setFilteredProducts([]);
+      setShowDropdown(false);
+    }
+  }, [addSearchTerm, allProducts]);
 
   useEffect(() => { if (activeTab === 'scan' || activeTab === 'return') scanRef.current?.focus() }, [activeTab])
 
@@ -319,16 +337,20 @@ export default function Conference() {
     }
   }
 
-  const handleManualAdd = (productCodeOrName: string) => {
+  const handleExactManualAdd = (productCodeOrName: string) => {
     const raw = productCodeOrName.trim()
+    if (!raw) return
     const term = normalizeCode(raw)
     const product = allProducts.find(p =>
       normalizeCode(p.code) === term ||
-      (p.external_code && normalizeCode(p.external_code) === term) ||
-      normalizeCode(p.description).includes(term)
+      (p.external_code && normalizeCode(p.external_code) === term)
     )
-    if (!product) { toast.error('Produto não encontrado'); return }
+    if (!product) { toast.error('Produto não encontrado com esse código exato'); return }
     
+    addSelectedProduct(product);
+  }
+
+  const addSelectedProduct = (product: any) => {
     const exists = items.find(i => i.product_id === product.id)
     if (exists) {
       updateExpectedMutation.mutate({ itemId: exists.id, qty: exists.quantity_expected + 1 })
@@ -342,9 +364,10 @@ export default function Conference() {
         quantity_scanned: 0,
         status: 'pending'
       })
-      toast.success('Produto adicionado à rota')
+      toast.success('Novo item adicionado à rota')
     }
     setAddSearchTerm('')
+    setShowDropdown(false)
   }
 
   return (
@@ -435,18 +458,49 @@ export default function Conference() {
           )}
 
           {isManager && (
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 relative">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
                   value={addSearchTerm} 
                   onChange={e => setAddSearchTerm(e.target.value)} 
-                  placeholder="Adicionar produto manualmente..." 
+                  placeholder="Código exato ou busque por descrição..." 
                   className="pl-9 bg-background/50"
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleManualAdd(addSearchTerm) } }}
+                  onKeyDown={e => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      if (filteredProducts.length === 1 && normalizeCode(filteredProducts[0].code) === normalizeCode(addSearchTerm.trim())) {
+                         addSelectedProduct(filteredProducts[0]);
+                      } else {
+                         handleExactManualAdd(addSearchTerm);
+                      }
+                    } 
+                  }}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  onFocus={() => { if (addSearchTerm.trim().length > 0) setShowDropdown(true) }}
                 />
+                
+                {showDropdown && filteredProducts.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredProducts.map(p => (
+                      <div 
+                        key={p.id} 
+                        className="px-3 py-2 hover:bg-muted cursor-pointer flex flex-col"
+                        onClick={() => addSelectedProduct(p)}
+                      >
+                        <span className="text-sm font-medium">{p.description}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{p.code}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showDropdown && addSearchTerm.trim().length > 0 && filteredProducts.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground text-center">
+                    Nenhum produto encontrado
+                  </div>
+                )}
               </div>
-              <Button onClick={() => handleManualAdd(addSearchTerm)}><Plus className="h-4 w-4" /></Button>
+              <Button onClick={() => handleExactManualAdd(addSearchTerm)}><Plus className="h-4 w-4" /></Button>
             </div>
           )}
 

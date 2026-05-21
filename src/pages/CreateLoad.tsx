@@ -33,6 +33,9 @@ export default function CreateLoad() {
   const [helperName, setHelperName] = useState('')
   const [notes, setNotes] = useState('')
   const [items, setItems] = useState<NewItem[]>([])
+  const [codeSearch, setCodeSearch] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   
   // Lists for autocomplete
   const [savedDrivers, setSavedDrivers] = useState<string[]>([])
@@ -49,7 +52,6 @@ export default function CreateLoad() {
       if (Array.isArray(h)) setSavedHelpers(h)
     } catch(e) {}
   }, [])
-  const [codeSearch, setCodeSearch] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: products = [] } = useQuery({
@@ -125,16 +127,38 @@ export default function CreateLoad() {
   // Helper to strip non-alphanumeric characters and uppercase for comparison
   const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
-  const addItem = () => {
-    const raw = codeSearch.trim();
+  useEffect(() => {
+    if (codeSearch.trim().length > 0) {
+      const term = normalizeCode(codeSearch.trim());
+      const filtered = products.filter(p => 
+        normalizeCode(p.code).includes(term) || 
+        (p.external_code && normalizeCode(p.external_code).includes(term)) || 
+        normalizeCode(p.description).includes(term)
+      ).slice(0, 10);
+      setFilteredProducts(filtered);
+      setShowDropdown(true);
+    } else {
+      setFilteredProducts([]);
+      setShowDropdown(false);
+    }
+  }, [codeSearch, products]);
+
+  const addExactMatch = (rawCode: string) => {
+    const raw = rawCode.trim();
+    if (!raw) return;
     const term = normalizeCode(raw);
     const product = products.find(p =>
       normalizeCode(p.code) === term ||
-      (p.external_code && normalizeCode(p.external_code) === term) ||
-      normalizeCode(p.description).includes(term)
+      (p.external_code && normalizeCode(p.external_code) === term)
     )
-    if (!product) { toast.error('Produto não encontrado'); return }
-    
+    if (!product) { 
+      toast.error('Produto não encontrado com esse código exato'); 
+      return; 
+    }
+    addSelectedProduct(product);
+  }
+
+  const addSelectedProduct = (product: any) => {
     const exists = items.find(i => i.product_code === product.code)
     const currentQty = exists ? exists.quantity_expected : 0
     
@@ -151,6 +175,7 @@ export default function CreateLoad() {
       toast.success(`${product.description} adicionado`)
     }
     setCodeSearch('')
+    setShowDropdown(false)
   }
 
   const updateQty = (tempId: string, qty: number) => {
@@ -187,7 +212,6 @@ export default function CreateLoad() {
         const workbook = XLSX.read(bstr, { type: 'binary' })
         const wsname = workbook.SheetNames[0]
         const ws = workbook.Sheets[wsname]
-        // Use raw:false to get formatted strings (preserving leading zeros)
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false }) as any[][]
 
         let addedCount = 0
@@ -199,23 +223,18 @@ export default function CreateLoad() {
           const row = data[i]
           if (!row || row.length === 0) continue
 
-          // Clean up row and extract non-empty cells preserving text format
           let parts = row.map(cell => {
-            // If cell is undefined, treat as empty string
             if (cell === undefined || cell === null) return ''
-            // Ensure we keep leading zeros by converting to string directly
             return String(cell).trim()
           }).filter(Boolean)
 
           if (parts.length < 2) continue
 
-          // Skip obvious header strings
           const firstPart = parts[0].toLowerCase()
           if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório') || firstPart.includes('delicius') || firstPart.includes('quantidade')) {
             continue
           }
 
-        // The code is usually in the first part, the quantity in the last
         const codePart = parts[0]
         const qtyPart = parts[parts.length - 1]
 
@@ -224,10 +243,13 @@ export default function CreateLoad() {
           rawCode = rawCode.split(' - ')[0].trim()
         }
         let code = rawCode;
-
+        if (!code) continue;
+      
       const normalizedImportCode = normalizeCode(code);
+      // STRICT MATCH ONLY FOR IMPORTS
       const product = products.find(p => normalizeCode(p.code) === normalizedImportCode || (p.external_code && normalizeCode(p.external_code) === normalizedImportCode));
-        
+
+      if (product) {
         // Safely parse formats like "1,00" or "1.00" to integer 1
         const qty = Math.round(parseFloat(qtyPart.replace(',', '.')))
 
@@ -400,9 +422,46 @@ export default function CreateLoad() {
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input value={codeSearch} onChange={e => setCodeSearch(e.target.value)} placeholder="Código do produto..." className="pl-10" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem() }}} />
+                <Input 
+                  value={codeSearch} 
+                  onChange={e => setCodeSearch(e.target.value)} 
+                  placeholder="Código exato ou busque por descrição..." 
+                  className="pl-10" 
+                  onKeyDown={e => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      if (filteredProducts.length === 1 && normalizeCode(filteredProducts[0].code) === normalizeCode(codeSearch.trim())) {
+                         addSelectedProduct(filteredProducts[0]);
+                      } else {
+                         addExactMatch(codeSearch); 
+                      }
+                    } 
+                  }} 
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  onFocus={() => { if (codeSearch.trim().length > 0) setShowDropdown(true) }}
+                />
+                
+                {showDropdown && filteredProducts.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {filteredProducts.map(p => (
+                      <div 
+                        key={p.id} 
+                        className="px-3 py-2 hover:bg-muted cursor-pointer flex flex-col"
+                        onClick={() => addSelectedProduct(p)}
+                      >
+                        <span className="text-sm font-medium">{p.description}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{p.code}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showDropdown && codeSearch.trim().length > 0 && filteredProducts.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg p-3 text-sm text-muted-foreground text-center">
+                    Nenhum produto encontrado
+                  </div>
+                )}
               </div>
-              <Button type="button" onClick={addItem}><Plus className="h-4 w-4" /></Button>
+              <Button type="button" onClick={() => addExactMatch(codeSearch)}><Plus className="h-4 w-4" /></Button>
             </div>
 
             {items.length === 0 ? (
