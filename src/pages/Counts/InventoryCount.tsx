@@ -233,7 +233,7 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
 
   // Mutations
   const updateStatusMutation = useMutation({
-    mutationFn: async (status: 'completed' | 'adjusted') => {
+    mutationFn: async (status: 'completed' | 'adjusted' | 'in_progress') => {
       const updates: any = { status }
       if (status === 'adjusted') {
         updates.authorized_by = user.name
