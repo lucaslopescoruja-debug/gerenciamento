@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
-import { Plus, ScanLine, Search, CheckCircle2, ArrowLeft, Boxes, AlertTriangle, Check, ShieldAlert } from 'lucide-react'
+import { Plus, ScanLine, Search, CheckCircle2, ArrowLeft, Boxes, AlertTriangle, Check, ShieldAlert, Edit2, X } from 'lucide-react'
 
 export default function InventoryCountPage() {
   const { user } = useAuth()
@@ -150,6 +150,8 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
   const [searchAddInput, setSearchAddInput] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
+  const [editingItem, setEditingItem] = useState<InventoryCountItem | null>(null)
+  const [editQty, setEditQty] = useState(0)
   
   // Data Fetching
   const { data: count } = useQuery({
@@ -245,6 +247,22 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
       queryClient.invalidateQueries({ queryKey: ['inventory_count', countId] })
       if (variables === 'completed') toast.success('Inventário finalizado para conferência!')
       if (variables === 'adjusted') toast.success('Estoque ajustado com sucesso!')
+      if (variables === 'in_progress') toast.success('Inventário reaberto para contagem!')
+    }
+  })
+
+  const updateQtyMutation = useMutation({
+    mutationFn: async ({ itemId, qty }: { itemId: string, qty: number }) => {
+      const { error } = await supabase.from('inventory_count_items').update({ quantity_counted: qty, updated_at: new Date().toISOString() }).eq('id', itemId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory_count_items', countId] })
+      setEditingItem(null)
+      toast.success('Quantidade atualizada')
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao atualizar: ${error.message}`)
     }
   })
 
@@ -463,16 +481,37 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
           ) : (
             <div className="space-y-2 overflow-y-auto pb-4">
               {items.map((item, i) => (
-                <div key={item.id} className="glass-card p-3 flex items-center justify-between slide-up border-amber-500/20 bg-amber-500/5" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate text-foreground">{item.description}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
-                      <span className="text-lg font-bold font-mono text-amber-500">+{item.quantity_counted}</span>
+                <div key={item.id} className="glass-card p-3 flex flex-col gap-2 slide-up border-amber-500/20 bg-amber-500/5" style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate text-foreground">{item.description}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
                     </div>
+                    {editingItem?.id !== item.id && (
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <span className="text-lg font-bold font-mono text-amber-500">+{item.quantity_counted}</span>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => { setEditingItem(item); setEditQty(item.quantity_counted); }}>
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
+                  {editingItem?.id === item.id && (
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+                      <Input 
+                        type="number" 
+                        value={editQty === 0 ? '' : editQty} 
+                        onChange={e => setEditQty(Math.max(1, parseInt(e.target.value) || 0))} 
+                        className="w-20 text-center font-mono h-9" 
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') updateQtyMutation.mutate({ itemId: item.id, qty: editQty }) }}
+                      />
+                      <Button size="sm" onClick={() => updateQtyMutation.mutate({ itemId: item.id, qty: editQty })} disabled={updateQtyMutation.isPending} className="bg-amber-600 hover:bg-amber-700">Salvar</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingItem(null)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -574,9 +613,21 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
       )}
 
       {isCompleted && isManager && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-10 md:sticky md:bottom-0 md:bg-transparent md:border-none md:p-0 md:pt-4">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-10 md:sticky md:bottom-0 md:bg-transparent md:border-none md:p-0 md:pt-4 flex flex-col md:flex-row gap-2">
           <Button 
-            className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
+            variant="outline"
+            className="flex-1 h-12 text-lg border-amber-500/50 text-amber-500 hover:bg-amber-500/10" 
+            onClick={() => {
+              if (window.confirm('Deseja reabrir este inventário para continuar contando?')) {
+                updateStatusMutation.mutate('in_progress')
+              }
+            }}
+            disabled={updateStatusMutation.isPending}
+          >
+            Reabrir p/ Contagem
+          </Button>
+          <Button 
+            className="flex-1 h-12 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]" 
             onClick={() => {
               if (window.confirm('CUIDADO: Isso irá substituir o saldo no banco de dados com base na sua contagem. Tem certeza que deseja AUTORIZAR o ajuste de estoque?')) {
                 adjustStockMutation.mutate()
@@ -590,11 +641,23 @@ function ActiveInventoryView({ countId, allProducts, onBack, user, isManager }: 
       )}
       
       {isCompleted && !isManager && (
-         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-10 md:sticky md:bottom-0 md:bg-transparent md:border-none md:p-0 md:pt-4">
+         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-10 md:sticky md:bottom-0 md:bg-transparent md:border-none md:p-0 md:pt-4 space-y-2">
             <div className="glass-card p-4 text-center border-amber-500/30 text-amber-500 text-sm font-bold flex items-center justify-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              Aguardando Gestor autorizar o ajuste de estoque.
+              Aguardando Gestor autorizar o ajuste.
             </div>
+            <Button 
+              variant="outline"
+              className="w-full h-12 text-lg border-amber-500/50 text-amber-500 hover:bg-amber-500/10" 
+              onClick={() => {
+                if (window.confirm('Deseja reabrir este inventário para continuar contando?')) {
+                  updateStatusMutation.mutate('in_progress')
+                }
+              }}
+              disabled={updateStatusMutation.isPending}
+            >
+              Reabrir p/ Contagem
+            </Button>
          </div>
       )}
     </div>
