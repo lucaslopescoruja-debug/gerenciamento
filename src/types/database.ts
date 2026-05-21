@@ -94,5 +94,46 @@ export interface WarehouseArea {
   id: string
   sector_id: string
   name: string
-  positions: number
+}
+
+export interface AdhocCount {
+  id: string
+  count_number: string
+  user_name: string
+  status: 'in_progress' | 'completed'
+  created_at: string
+}
+
+export interface AdhocCountItem {
+  id: string
+  count_id: string
+  product_code: string
+  description: string
+  group_category?: string
+  quantity: number
+  created_at: string
+  updated_at: string
+}
+
+export interface InventoryCount {
+  id: string
+  count_number: string
+  user_name: string
+  status: 'in_progress' | 'completed' | 'adjusted'
+  authorized_by?: string
+  authorized_at?: string
+  created_at: string
+}
+
+export interface InventoryCountItem {
+  id: string
+  inventory_id: string
+  product_code: string
+  description: string
+  group_category?: string
+  quantity_counted: number
+  quantity_system: number
+  status: 'ok' | 'divergent' | 'missing' | 'excess'
+  created_at: string
+  updated_at: string
 }

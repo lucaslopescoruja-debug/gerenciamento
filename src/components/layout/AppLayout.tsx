@@ -23,7 +23,7 @@ const navItems = [
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
   { label: 'Nova Carga', icon: ClipboardList, path: '/nova-carga', permission: 'can_manage_loads' },
   { label: 'Produtos', icon: Package, path: '/produtos', permission: 'can_manage_products' },
-  { label: 'Inventário', icon: ScanLine, path: '/inventario', permission: 'can_manage_products' },
+  { label: 'Contagens', icon: ScanLine, path: '/contagens', permission: 'can_manage_products' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
 ] as const
 

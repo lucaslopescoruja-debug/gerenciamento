@@ -39,17 +39,9 @@ function ProtectedRoute() {
   return <Outlet />;
 }
 
-// Placeholder for Inventory
-function Inventory() {
-  return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-      <h2 className="text-2xl font-bold gradient-text mb-2">Módulo de Inventário</h2>
-      <p className="text-muted-foreground max-w-md">
-        Este módulo gerencia contagens físicas, estoque teórico e estrutura do armazém. Em desenvolvimento.
-      </p>
-    </div>
-  )
-}
+import CountsMenu from './pages/Counts'
+import AdhocCount from './pages/Counts/AdhocCount'
+import InventoryCount from './pages/Counts/InventoryCount'
 
 function App() {
   return (
@@ -69,7 +61,9 @@ function App() {
             <Route path="/conferencia/:id" element={<Conference />} />
             <Route path="/comprovante/:id" element={<DeliveryProof />} />
             <Route path="/produtos" element={<Products />} />
-            <Route path="/inventario" element={<Inventory />} />
+            <Route path="/contagens" element={<CountsMenu />} />
+            <Route path="/contagens/avulsa" element={<AdhocCount />} />
+            <Route path="/contagens/inventario" element={<InventoryCount />} />
             <Route path="/acesso" element={<AccessControl />} />
           </Route>
         </Route>
