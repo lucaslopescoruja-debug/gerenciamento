@@ -47,10 +47,11 @@ export default function InventoryCountPage() {
         count_number: countName,
         user_name: user?.name || 'Usuário',
         status: 'in_progress'
-      }]).select().single()
+      }]).select()
       
       if (error) throw error
-      return data as InventoryCount
+      if (!data || data.length === 0) throw new Error("Inserção falhou silenciosamente (verifique RLS no Supabase)")
+      return data[0] as InventoryCount
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory_counts'] })
