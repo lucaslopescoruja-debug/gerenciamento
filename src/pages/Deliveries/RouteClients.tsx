@@ -150,14 +150,14 @@ export default function RouteClients() {
              // Column L (index 11) or K (index 10) is the Quantity
              const codeCell = row[2]
              
-             // We ensure it's a product row if it has a code AND the first column is a number (the '#' column)
-             const hasRowNumber = row[0] && /^\d+$/.test(String(row[0]).trim())
+             // The '#' column might be in Column A (index 0) or Column B (index 1)
+             const hasRowNumber = (row[0] && /^\d+$/.test(String(row[0]).trim())) || (row[1] && /^\d+$/.test(String(row[1]).trim()))
              
              if (codeCell && hasRowNumber) {
                 const strCode = String(codeCell).trim()
                 
-                // Ignore the header row
-                if (strCode.toLowerCase() !== 'código' && strCode.toLowerCase() !== 'codigo' && strCode.length > 0) {
+                // Ignore the header row and ensure the code is not insanely long (e.g. a whole paragraph)
+                if (strCode.toLowerCase() !== 'código' && strCode.toLowerCase() !== 'codigo' && strCode.length > 0 && strCode.length < 30) {
                    const normalizedCode = normalizeCode(strCode)
                    const isNumStr = /^\d+$/.test(normalizedCode)
                    
@@ -179,8 +179,8 @@ export default function RouteClients() {
                    let finalDesc = foundProduct ? foundProduct.description : (descCell ? String(descCell).trim() : 'Produto sem descrição')
                    let finalCode = foundProduct ? foundProduct.code : strCode
 
-                   // Quantity (User said exactly column L, index 11)
-                   const qtyCell = row[11]
+                   // Quantity (User said exactly column L, index 11, but merged cells might put it in K, index 10)
+                   const qtyCell = row[11] || row[10] || row[12]
                    let qty = 1
                    if (qtyCell) {
                       const strQty = String(qtyCell).trim()
