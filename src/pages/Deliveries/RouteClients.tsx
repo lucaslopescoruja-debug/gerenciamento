@@ -86,43 +86,107 @@ export default function RouteClients() {
         const ws = workbook.Sheets[wsname]
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false }) as any[][]
 
-        // Expected Columns: 0:Cliente, 1:Endereço, 2:Telefone, 3:Observação, 4:Código Produto, 5:Quantidade
         const clientsMap = new Map<string, any>()
         let notFoundCount = 0
+        let currentClientName = ''
+        let currentOrderNumber = ''
 
-        for (let i = 1; i < data.length; i++) { // skip header
+        for (let i = 0; i < data.length; i++) {
           const row = data[i]
-          if (!row || row.length === 0 || !row[0]) continue
+          if (!row || row.length === 0) continue
 
-          const clientName = String(row[0]).trim()
-          if (!clientName) continue
-
-          const address = row[1] ? String(row[1]).trim() : ''
-          const phone = row[2] ? String(row[2]).trim() : ''
-          const notes = row[3] ? String(row[3]).trim() : ''
-          const productCode = row[4] ? String(row[4]).trim() : ''
-          const qty = row[5] ? parseInt(String(row[5])) : 0
-
-          if (!clientsMap.has(clientName)) {
-            clientsMap.set(clientName, {
-              name: clientName, address, phone, notes, items: []
-            })
+          const rowStr = row.join(' ').trim()
+          
+          // Check for Order Number
+          if (rowStr.toLowerCase().includes('pedido de venda')) {
+            const match = rowStr.match(/pedido de venda (\d+)/i)
+            if (match) {
+              currentOrderNumber = match[1]
+            }
           }
 
-          if (productCode && qty > 0) {
-            const normalizedImportCode = normalizeCode(productCode)
-            const product = products.find(p => normalizeCode(p.code) === normalizedImportCode || (p.external_code && normalizeCode(p.external_code) === normalizedImportCode))
-            
-            if (product) {
-              clientsMap.get(clientName).items.push({
-                product_id: product.id,
-                product_code: product.code,
-                description: product.description,
-                quantity_expected: qty
+          // Check for Client Name
+          const firstCell = row.find(c => c)
+          if (typeof firstCell === 'string' && firstCell.trim().startsWith('À ')) {
+            currentClientName = firstCell.replace('À ', '').trim()
+            if (!clientsMap.has(currentClientName)) {
+              clientsMap.set(currentClientName, {
+                name: currentClientName,
+                address: '',
+                phone: '',
+                notes: currentOrderNumber ? `Pedido: ${currentOrderNumber}` : '',
+                items: []
               })
-            } else {
-              notFoundCount++
             }
+            
+            // Extract address (usually next line)
+            if (data[i+1]) {
+               const addrRow = data[i+1]
+               const addrCell = addrRow.find(c => c)
+               if (addrCell && typeof addrCell === 'string' && !addrCell.trim().startsWith('A/C') && !addrCell.trim().startsWith('Telefone')) {
+                 clientsMap.get(currentClientName).address = addrCell.trim()
+               }
+            }
+          }
+
+          // Check for Phone
+          if (typeof firstCell === 'string' && firstCell.trim().toLowerCase().startsWith('telefone:')) {
+            const phone = firstCell.replace(/telefone:/i, '').trim()
+            if (phone && currentClientName && clientsMap.has(currentClientName)) {
+               clientsMap.get(currentClientName).phone = phone
+            } else if (row.length > 1) { 
+               const nextCell = row[1] || row[2]
+               if (nextCell && currentClientName && clientsMap.has(currentClientName)) {
+                 clientsMap.get(currentClientName).phone = String(nextCell).trim()
+               }
+            }
+          }
+
+          // Check for Products
+          if (currentClientName && clientsMap.has(currentClientName)) {
+             let foundProduct = null
+             let qty = 0
+
+             for (const cell of row) {
+               if (!cell) continue
+               const strCell = String(cell).trim()
+               const normalizedCell = normalizeCode(strCell)
+               
+               // Look for product in DB
+               if (!foundProduct && normalizedCell.length >= 3) {
+                 const p = products.find(prod => normalizeCode(prod.code) === normalizedCell || (prod.external_code && normalizeCode(prod.external_code) === normalizedCell))
+                 if (p) foundProduct = p
+               }
+
+               // Look for quantity
+               if (strCell.toLowerCase().includes('un') || strCell.toLowerCase().includes('cx') || strCell.toLowerCase().includes('kg')) {
+                 const parsed = parseInt(strCell)
+                 if (!isNaN(parsed) && parsed > 0) qty = parsed
+               }
+             }
+             
+             if (foundProduct) {
+               // Fallback quantity search if not found
+               if (qty === 0) {
+                  for (let j = row.length - 1; j >= 0; j--) {
+                     if (row[j]) {
+                        const parsed = parseInt(String(row[j]))
+                        if (!isNaN(parsed) && parsed > 0 && String(row[j]).trim() !== foundProduct.code) {
+                           qty = parsed
+                           break
+                        }
+                     }
+                  }
+               }
+               
+               // Add item
+               clientsMap.get(currentClientName).items.push({
+                 product_id: foundProduct.id,
+                 product_code: foundProduct.code,
+                 description: foundProduct.description,
+                 quantity_expected: qty > 0 ? qty : 1
+               })
+             }
           }
         }
 
