@@ -187,22 +187,12 @@ export default function RouteClients() {
                       // If it's a date or looks like one, skip aggressive parsing
                       if (!strQty.includes('/') && !strQty.includes(':')) {
                         const digitsOnly = strQty.replace(/[^\d]/g, '') 
-                        const parsed = parseInt(digitsOnly)
-                        if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) qty = parsed
+                        const parsed = parseInt(digitsOnly, 10)
+                        if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
+                           qty = parsed
+                        }
                       }
                    } 
-                   
-                   if (qty === 1) {
-                      // Fallback: search entire row for "un", "cx", "kg"
-                      for (const cell of row) {
-                         if (!cell) continue
-                         const cstr = String(cell).toLowerCase()
-                         if (cstr.includes('un') || cstr.includes('cx') || cstr.includes('kg')) {
-                            const parsed = parseInt(cstr.replace(/[^\d]/g, ''))
-                            if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) { qty = parsed; break; }
-                         }
-                      }
-                   }
 
                    // Force add item, even if not found in DB! No item left behind.
                    clientsMap.get(currentClientName).items.push({
