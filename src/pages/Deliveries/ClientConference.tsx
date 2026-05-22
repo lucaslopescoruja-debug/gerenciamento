@@ -55,7 +55,8 @@ export default function ClientConference() {
   })
 
   const updateClientStatusMutation = useMutation({
-    mutationFn: (status: string) => deliveriesApi.updateDeliveryClient(clientId!, { status }),
+    mutationFn: (status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled') => 
+      deliveriesApi.updateDeliveryClient(clientId!, { status }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['delivery_client', clientId] })
       if (data.status.includes('delivered')) {
@@ -191,7 +192,7 @@ export default function ClientConference() {
   }, [items])
 
   const handleFinish = () => {
-    const finalStatus = hasDivergence ? 'delivered_with_divergence' : 'delivered'
+    const finalStatus: 'delivered_with_divergence' | 'delivered' = hasDivergence ? 'delivered_with_divergence' : 'delivered'
     if (hasDivergence) {
       if (!window.confirm('Existem divergências (faltas ou excessos) neste pedido. Tem certeza que deseja finalizar assim mesmo?')) {
         return
