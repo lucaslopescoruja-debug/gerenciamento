@@ -35,24 +35,37 @@ export default function SignaturePad() {
   }
 
   const handleSave = () => {
-    if (sigCanvas.current?.isEmpty()) {
-      toast.error('Por favor, colete a assinatura do recebedor.')
-      return
-    }
-    if (!receiverName.trim()) {
-      toast.error('Informe o nome de quem recebeu a entrega.')
-      return
-    }
+    try {
+      if (!sigCanvas.current) {
+        toast.error('Erro: Canvas não carregado.')
+        return
+      }
+      if (sigCanvas.current.isEmpty()) {
+        toast.error('Por favor, colete a assinatura do recebedor.')
+        return
+      }
+      if (!receiverName || !receiverName.trim()) {
+        toast.error('Informe o nome de quem recebeu a entrega.')
+        return
+      }
 
-    // Get Base64 image
-    const signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png')
-    
-    saveSignatureMutation.mutate({
-      signature_data: signatureData,
-      receiver_name: receiverName.trim(),
-      receiver_doc: receiverDoc.trim(),
-      signed_at: new Date().toISOString()
-    })
+      // Get Base64 image - use getCanvas if getTrimmedCanvas fails
+      let signatureData = ''
+      try {
+        signatureData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png')
+      } catch (e) {
+        signatureData = sigCanvas.current.getCanvas().toDataURL('image/png')
+      }
+      
+      saveSignatureMutation.mutate({
+        signature_data: signatureData,
+        receiver_name: receiverName.trim(),
+        receiver_doc: receiverDoc ? receiverDoc.trim() : '',
+        signed_at: new Date().toISOString()
+      })
+    } catch (err: any) {
+      toast.error(`Erro ao processar a assinatura: ${err.message}`)
+    }
   }
 
   return (
