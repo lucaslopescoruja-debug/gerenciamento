@@ -13,6 +13,7 @@ export interface UserPermissions {
   can_do_conference: boolean
   can_manage_products: boolean
   can_manage_users: boolean
+  can_do_delivery: boolean
 }
 
 export interface User {
@@ -136,4 +137,39 @@ export interface InventoryCountItem {
   status: 'ok' | 'divergent' | 'missing' | 'excess'
   created_at: string
   updated_at: string
+}
+
+export interface DeliveryRoute {
+  id: string
+  operation_id: string
+  driver_id: string
+  status: 'pending' | 'in_progress' | 'completed'
+  created_at: string
+}
+
+export interface DeliveryClient {
+  id: string
+  delivery_route_id: string
+  name: string
+  address?: string
+  phone?: string
+  notes?: string
+  status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled'
+  signature_data?: string
+  receiver_name?: string
+  receiver_doc?: string
+  signed_at?: string
+  created_at: string
+}
+
+export interface DeliveryItem {
+  id: string
+  delivery_client_id: string
+  product_id: string
+  product_code: string
+  description: string
+  quantity_expected: number
+  quantity_scanned: number
+  status: 'pending' | 'ok' | 'divergent'
+  created_at: string
 }

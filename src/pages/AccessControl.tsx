@@ -16,10 +16,10 @@ const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor',
 const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive' }
 
 const defaultPermissions: Record<UserRole, UserPermissions> = {
-  admin: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true },
-  gestor: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true },
-  conferente: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false },
-  motorista: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false }
+  admin: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
+  gestor: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
+  conferente: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
+  motorista: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true }
 }
 
 export default function AccessControl() {
@@ -252,6 +252,10 @@ export default function AccessControl() {
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={perms.can_manage_loads} onChange={() => togglePerm('can_manage_loads')} className="w-4 h-4 accent-primary" />
                     <span className="text-sm">Gerenciar Cargas/Rotas</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} className="w-4 h-4 accent-primary" />
+                    <span className="text-sm">Acessar Módulo Entregas</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={perms.can_do_conference} onChange={() => togglePerm('can_do_conference')} className="w-4 h-4 accent-primary" />

@@ -13,6 +13,7 @@ import {
   Boxes,
   Moon,
   Sun,
+  MapPin,
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/contexts/AuthContext'
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/', permission: 'can_view_dashboard' },
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
   { label: 'Nova Carga', icon: ClipboardList, path: '/nova-carga', permission: 'can_manage_loads' },
+  { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
   { label: 'Produtos', icon: Package, path: '/produtos', permission: 'can_manage_products' },
   { label: 'Contagens', icon: ScanLine, path: '/contagens', permission: 'can_do_conference' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },

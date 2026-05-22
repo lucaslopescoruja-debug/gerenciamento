@@ -372,42 +372,6 @@ export default function CreateLoad() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Truck className="h-4 w-4 text-primary" />Transporte</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            
-            {/* Hidden datalists for autocomplete */}
-            <datalist id="drivers-list">
-              {savedDrivers.map((d, i) => <option key={i} value={d} />)}
-            </datalist>
-            <datalist id="vehicles-list">
-              {savedVehicles.map((v, i) => <option key={i} value={v} />)}
-            </datalist>
-            <datalist id="helpers-list">
-              {savedHelpers.map((h, i) => <option key={i} value={h} />)}
-            </datalist>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Motorista</Label>
-                <Input list="drivers-list" value={driverName} onChange={e => setDriverName(e.target.value)} placeholder="Nome ou selecione" />
-              </div>
-              <div className="space-y-2">
-                <Label>Ajudante (Opcional)</Label>
-                <Input list="helpers-list" value={helperName} onChange={e => setHelperName(e.target.value)} placeholder="Nome ou selecione" />
-              </div>
-              <div className="space-y-2">
-                <Label>Veículo (Placa/Nome)</Label>
-                <Input list="vehicles-list" value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} placeholder="ABC-1D23 ou FNM" />
-              </div>
-              <div className="space-y-2">
-                <Label>Observações</Label>
-                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas adicionais" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <User className="h-4 w-4 text-primary" />Itens da Carga

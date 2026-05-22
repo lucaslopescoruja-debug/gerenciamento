@@ -43,6 +43,12 @@ import CountsMenu from './pages/Counts'
 import AdhocCount from './pages/Counts/AdhocCount'
 import InventoryCount from './pages/Counts/InventoryCount'
 
+import DeliveriesList from './pages/Deliveries/index'
+import CreateDelivery from './pages/Deliveries/CreateDelivery'
+import RouteClients from './pages/Deliveries/RouteClients'
+import ClientConference from './pages/Deliveries/ClientConference'
+import SignaturePad from './pages/Deliveries/SignaturePad'
+
 function App() {
   return (
     <AuthProvider>
@@ -64,6 +70,14 @@ function App() {
             <Route path="/contagens" element={<CountsMenu />} />
             <Route path="/contagens/avulsa" element={<AdhocCount />} />
             <Route path="/contagens/inventario" element={<InventoryCount />} />
+            
+            {/* Deliveries Routes */}
+            <Route path="/entregas" element={<DeliveriesList />} />
+            <Route path="/entregas/nova" element={<CreateDelivery />} />
+            <Route path="/entregas/:id" element={<RouteClients />} />
+            <Route path="/entregas/cliente/:clientId" element={<ClientConference />} />
+            <Route path="/entregas/cliente/:clientId/assinatura" element={<SignaturePad />} />
+
             <Route path="/acesso" element={<AccessControl />} />
           </Route>
         </Route>
