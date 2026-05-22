@@ -5,7 +5,7 @@ import { deliveriesApi } from '@/api/deliveries'
 import { productsApi } from '@/api/products'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, ScanLine, Search, CheckCircle2, AlertTriangle, Save, PenTool } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 

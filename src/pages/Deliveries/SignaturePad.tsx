@@ -5,7 +5,7 @@ import { deliveriesApi } from '@/api/deliveries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, CheckCircle2, Eraser, PenTool } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
 

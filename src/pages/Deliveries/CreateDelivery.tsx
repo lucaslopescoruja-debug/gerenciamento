@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, Truck, CheckCircle2 } from 'lucide-react'
 import { Navigate } from 'react-router-dom'
 
