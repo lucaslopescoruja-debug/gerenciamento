@@ -154,7 +154,32 @@ export default function RouteClients() {
                
                // Look for product in DB
                if (!foundProduct && normalizedCell.length >= 3) {
-                 const p = products.find(prod => normalizeCode(prod.code) === normalizedCell || (prod.external_code && normalizeCode(prod.external_code) === normalizedCell))
+                 const isNum = (s: string) => /^\d+$/.test(s)
+                 
+                 let p = products.find(prod => {
+                   const pCode = normalizeCode(prod.code)
+                   const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
+                   
+                   // Exact code match
+                   if (pCode === normalizedCell || pExt === normalizedCell) return true
+                   
+                   // Numeric code match (ignores leading zeros)
+                   if (isNum(pCode) && isNum(normalizedCell) && parseInt(pCode, 10) === parseInt(normalizedCell, 10)) return true
+                   if (pExt && isNum(pExt) && isNum(normalizedCell) && parseInt(pExt, 10) === parseInt(normalizedCell, 10)) return true
+                   
+                   return false
+                 })
+
+                 // Fallback to description match if code is missing or changed
+                 if (!p && normalizedCell.length >= 10) {
+                   p = products.find(prod => {
+                     const pDesc = normalizeCode(prod.description)
+                     if (pDesc === normalizedCell) return true
+                     if (pDesc.length > 10 && (pDesc.includes(normalizedCell) || normalizedCell.includes(pDesc))) return true
+                     return false
+                   })
+                 }
+
                  if (p) foundProduct = p
                }
 
