@@ -103,15 +103,17 @@ export default function InventoryCountPage() {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button 
-          className="flex-1 h-12 text-lg bg-amber-600 hover:bg-amber-700 text-white" 
-          onClick={() => createCountMutation.mutate()}
-          disabled={createCountMutation.isPending}
-        >
-          <Plus className="mr-2 h-5 w-5" /> Novo Inventário
-        </Button>
-      </div>
+      {isManager && (
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 h-12 text-lg bg-amber-600 hover:bg-amber-700 text-white" 
+            onClick={() => createCountMutation.mutate()}
+            disabled={createCountMutation.isPending}
+          >
+            <Plus className="mr-2 h-5 w-5" /> Novo Inventário
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-3">
         <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -146,7 +148,7 @@ export default function InventoryCountPage() {
                     }`}>
                       {count.status === 'adjusted' ? 'Ajustado' : count.status === 'completed' ? 'Aguardando Ajuste' : 'Em andamento'}
                     </span>
-                    {(isManager || count.status === 'in_progress') && (
+                    {isManager && (
                       <Button 
                         variant="ghost" 
                         size="icon" 

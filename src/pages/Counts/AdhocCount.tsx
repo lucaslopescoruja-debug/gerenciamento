@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx'
 
 export default function AdhocCountPage() {
   const { user } = useAuth()
+  const isManager = user?.role === 'admin' || user?.role === 'gestor'
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeCountId, setActiveCountId] = useState<string | null>(null)
@@ -134,15 +135,17 @@ export default function AdhocCountPage() {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button 
-          className="flex-1 h-12 text-lg" 
-          onClick={() => createCountMutation.mutate()}
-          disabled={createCountMutation.isPending}
-        >
-          <Plus className="mr-2 h-5 w-5" /> Nova Contagem
-        </Button>
-      </div>
+      {isManager && (
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 h-12 text-lg" 
+            onClick={() => createCountMutation.mutate()}
+            disabled={createCountMutation.isPending}
+          >
+            <Plus className="mr-2 h-5 w-5" /> Nova Contagem
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-3">
         <h2 className="font-semibold text-lg flex items-center gap-2">
@@ -183,21 +186,23 @@ export default function AdhocCountPage() {
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="export-btn h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        if (window.confirm('Tem certeza que deseja APAGAR esta contagem definitivamente?')) {
-                          deleteCountMutation.mutate(count.id)
-                        }
-                      }}
-                      disabled={deleteCountMutation.isPending}
-                      title="Apagar Contagem"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isManager && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="export-btn h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (window.confirm('Tem certeza que deseja APAGAR esta contagem definitivamente?')) {
+                            deleteCountMutation.mutate(count.id)
+                          }
+                        }}
+                        disabled={deleteCountMutation.isPending}
+                        title="Apagar Contagem"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
