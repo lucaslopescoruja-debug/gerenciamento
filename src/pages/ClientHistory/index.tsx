@@ -4,9 +4,24 @@ import { deliveriesApi } from '@/api/deliveries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature } from 'lucide-react'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature, Clock, X } from 'lucide-react'
+
+function formatDateTime(dateStr: string | undefined) {
+  if (!dateStr) return 'Data não registrada'
+  const date = new Date(dateStr)
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  }).format(date)
+}
+
+function formatDateOnly(dateStr: string | undefined) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  }).format(date)
+}
 
 export default function ClientHistory() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -87,7 +102,7 @@ export default function ClientHistory() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" /> 
-                      {format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      {formatDateOnly(client.created_at)}
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" /> {client.address?.split('-')[0]?.trim() || 'Endereço não cadastrado'}
@@ -178,7 +193,7 @@ export default function ClientHistory() {
                             <div className="col-span-2 pt-2 border-t border-border mt-1">
                               <p className="text-[10px] uppercase font-bold text-muted-foreground">Data/Hora da Assinatura</p>
                               <p className="font-medium text-xs text-foreground">
-                                {client.signed_at ? format(new Date(client.signed_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR }) : 'Data não registrada'}
+                                {formatDateTime(client.signed_at)}
                               </p>
                             </div>
                           </div>
