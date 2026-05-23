@@ -297,6 +297,7 @@ export default function RouteClients() {
           </div>
         )}
       </div>
+      </div>
 
       <div className="space-y-3">
         {clients.length === 0 ? (
