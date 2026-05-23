@@ -4,8 +4,20 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
 import { Check, X, Clock, Package, MapPin, Truck } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+
+// Helper for relative time
+function getRelativeTime(dateStr: string) {
+  const date = new Date(dateStr)
+  const diff = Date.now() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  
+  if (minutes < 1) return 'Agora mesmo'
+  if (minutes < 60) return `Há ${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `Há ${hours}h`
+  const days = Math.floor(hours / 24)
+  return `Há ${days} dias`
+}
 
 export default function ApprovalsPage() {
   const queryClient = useQueryClient()
@@ -49,7 +61,7 @@ export default function ApprovalsPage() {
                   <Clock className="h-3 w-3" /> Aguardando
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
+                  {getRelativeTime(item.created_at)}
                 </span>
               </div>
               
