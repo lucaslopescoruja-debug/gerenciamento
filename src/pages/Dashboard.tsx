@@ -150,8 +150,9 @@ export default function Dashboard() {
                 </div>
               </Link>
             ))
-          )}
-        </div>
+          )
+        )}
+      </div>
       </div>
     </div>
   )
