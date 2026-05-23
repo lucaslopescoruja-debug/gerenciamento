@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, User, MapPin, Upload, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
@@ -273,16 +272,15 @@ export default function RouteClients() {
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-background">
-              <SelectValue placeholder="Ordenar por..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="alphabetical">Ordem Alfabética</SelectItem>
-              <SelectItem value="city">Por Cidade</SelectItem>
-              <SelectItem value="neighborhood">Por Bairro</SelectItem>
-            </SelectContent>
-          </Select>
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="flex h-10 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="alphabetical">Ordem Alfabética</option>
+            <option value="city">Por Cidade</option>
+            <option value="neighborhood">Por Bairro</option>
+          </select>
 
           {isManager && (
             <div>
