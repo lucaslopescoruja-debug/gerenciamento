@@ -171,5 +171,7 @@ export interface DeliveryItem {
   quantity_expected: number
   quantity_scanned: number
   status: 'pending' | 'ok' | 'divergent'
+  approval_status?: 'approved' | 'pending' | 'rejected'
+  requested_qty?: number
   created_at: string
 }

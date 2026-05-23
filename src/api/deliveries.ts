@@ -167,5 +167,54 @@ export const deliveriesApi = {
       }
     }
     return true
+  },
+
+  async requestItemApproval(itemId: string, requestedQty: number) {
+    const { data, error } = await supabase
+      .from('delivery_items')
+      .update({ approval_status: 'pending', requested_qty: requestedQty })
+      .eq('id', itemId)
+      .select()
+      .single()
+    if (error) throw error
+    return data as DeliveryItem
+  },
+
+  async resolveItemApproval(itemId: string, status: 'approved' | 'rejected', finalQty?: number) {
+    const updates: any = {
+      approval_status: status,
+      requested_qty: null
+    }
+    if (status === 'approved' && finalQty !== undefined) {
+      updates.quantity_scanned = finalQty
+      updates.status = 'divergent' // approved extra items are divergent by definition
+    }
+    const { data, error } = await supabase
+      .from('delivery_items')
+      .update(updates)
+      .eq('id', itemId)
+      .select()
+      .single()
+    if (error) throw error
+    return data as DeliveryItem
+  },
+
+  async getPendingApprovals() {
+    const { data, error } = await supabase
+      .from('delivery_items')
+      .select(`
+        *,
+        client:delivery_clients (
+          name,
+          route:delivery_routes (
+            driver:users ( name ),
+            operation:operations ( load_number )
+          )
+        )
+      `)
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data
   }
 }

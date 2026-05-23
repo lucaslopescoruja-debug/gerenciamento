@@ -48,6 +48,7 @@ import CreateDelivery from './pages/Deliveries/CreateDelivery'
 import RouteClients from './pages/Deliveries/RouteClients'
 import ClientConference from './pages/Deliveries/ClientConference'
 import SignaturePad from './pages/Deliveries/SignaturePad'
+import ApprovalsPage from './pages/Approvals'
 
 function App() {
   return (
@@ -77,6 +78,9 @@ function App() {
             <Route path="/entregas/:id" element={<RouteClients />} />
             <Route path="/entregas/cliente/:clientId" element={<ClientConference />} />
             <Route path="/entregas/cliente/:clientId/assinatura" element={<SignaturePad />} />
+
+            {/* Approvals Route */}
+            <Route path="/liberacoes" element={<ApprovalsPage />} />
 
             <Route path="/acesso" element={<AccessControl />} />
           </Route>

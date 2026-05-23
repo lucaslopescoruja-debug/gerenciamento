@@ -32,6 +32,7 @@ export default function ClientConference() {
     queryKey: ['delivery_items', clientId],
     queryFn: () => deliveriesApi.getDeliveryItems(clientId!),
     enabled: !!clientId,
+    refetchInterval: 5000 // Poll every 5s to catch manager approvals automatically
   })
 
   const { data: allProducts = [] } = useQuery({
@@ -50,6 +51,15 @@ export default function ClientConference() {
   const addItemMutation = useMutation({
     mutationFn: (itemData: any) => deliveriesApi.addDeliveryItem(clientId!, itemData),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
+    }
+  })
+
+  const requestApprovalMutation = useMutation({
+    mutationFn: ({ itemId, requestedQty }: { itemId: string, requestedQty: number }) => 
+      deliveriesApi.requestItemApproval(itemId, requestedQty),
+    onSuccess: () => {
+      toast.success('Liberação solicitada ao gestor.')
       queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
     }
   })
@@ -111,38 +121,46 @@ export default function ClientConference() {
     const existingItem = items.find(i => normalizeCode(i.product_code) === normalized)
 
     if (existingItem) {
+      if (existingItem.approval_status === 'pending') {
+        playBeep('warning')
+        toast.warning('Este item já está aguardando liberação do gestor.')
+        return
+      }
+
       // Pertence ao cliente
       const newQty = existingItem.quantity_scanned + 1
       let status = 'pending'
       if (newQty === existingItem.quantity_expected) status = 'ok'
-      if (newQty > existingItem.quantity_expected) status = 'divergent' // Excedente
+      
+      if (newQty > existingItem.quantity_expected) {
+        playBeep('warning')
+        if (window.confirm(`ATENÇÃO: Este item excedeu a quantidade do pedido (${existingItem.quantity_expected}). Deseja solicitar liberação do gestor para adicionar esta quantidade extra?`)) {
+          requestApprovalMutation.mutate({ itemId: existingItem.id, requestedQty: newQty })
+        }
+        return // Do not update item scanned qty yet
+      }
       
       updateItemMutation.mutate({ itemId: existingItem.id, qty: newQty, status })
-      
-      if (status === 'divergent') {
-        playBeep('warning')
-        toast.warning('Atenção: Quantidade excedente do pedido.')
-      } else {
-        playBeep('success')
-      }
+      playBeep('success')
     } else {
       // Produto não pertence ao cliente na lista inicial
-      // Localizar o produto globalmente para adicionar como divergente
       const prod = allProducts.find(p => normalizeCode(p.code) === normalized || (p.external_code && normalizeCode(p.external_code) === normalized))
       
       if (prod) {
-        playBeep('error')
-        toast.error('Produto NÃO pertence a este cliente!')
-        
-        // Add as extra item
-        addItemMutation.mutate({
-          product_id: prod.id,
-          product_code: prod.code,
-          description: prod.description,
-          quantity_expected: 0,
-          quantity_scanned: 1,
-          status: 'divergent' // excedente
-        })
+        playBeep('warning')
+        if (window.confirm(`ATENÇÃO: Produto '${prod.description}' NÃO pertence a este pedido. Deseja solicitar liberação do gestor para adicioná-lo?`)) {
+          toast.info('Solicitando liberação...')
+          addItemMutation.mutate({
+            product_id: prod.id,
+            product_code: prod.code,
+            description: prod.description,
+            quantity_expected: 0,
+            quantity_scanned: 0,
+            status: 'divergent',
+            approval_status: 'pending',
+            requested_qty: 1
+          })
+        }
       } else {
         playBeep('error')
         toast.error('Produto não encontrado no banco de dados')
@@ -256,17 +274,16 @@ export default function ClientConference() {
                 <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto divide-y divide-border">
                   {filteredProducts.length > 0 ? (
                     filteredProducts.map(p => (
-                      <div 
-                        key={p.id} 
-                        className="p-3 hover:bg-muted cursor-pointer flex flex-col"
-                        onClick={() => selectManualProduct(p)}
-                      >
-                        <span className="text-sm font-medium">{p.description}</span>
-                        <span className="text-xs text-muted-foreground font-mono">{p.code}</span>
+                      <div key={p.id} className="p-3 hover:bg-muted cursor-pointer flex justify-between items-center" onClick={() => selectManualProduct(p)}>
+                        <div>
+                          <div className="font-bold text-foreground text-sm">{p.code}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</div>
+                        </div>
+                        <div className="text-xs font-mono text-muted-foreground opacity-50">{p.external_code || '---'}</div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-3 text-sm text-muted-foreground text-center">Nenhum produto encontrado</div>
+                    <div className="p-4 text-center text-sm text-muted-foreground">Nenhum produto encontrado</div>
                   )}
                 </div>
               )}
@@ -281,12 +298,14 @@ export default function ClientConference() {
           <div className="text-center text-muted-foreground py-8">Nenhum item na lista deste cliente.</div>
         ) : (
           items.map(item => {
+            const isPendingApproval = item.approval_status === 'pending'
             const isOk = item.quantity_scanned === item.quantity_expected && item.quantity_expected > 0
             const isMissing = item.quantity_scanned < item.quantity_expected
             const isExcess = item.quantity_scanned > item.quantity_expected || item.quantity_expected === 0
 
             return (
               <div key={item.id} className={`glass-card p-3 flex flex-col gap-2 border-l-4 transition-colors ${
+                isPendingApproval ? 'border-purple-500 bg-purple-500/5' :
                 isOk ? 'border-emerald-500 bg-emerald-500/5' : 
                 isExcess ? 'border-amber-500 bg-amber-500/5' : 
                 item.quantity_scanned > 0 ? 'border-blue-500 bg-blue-500/5' : 'border-muted/30'
@@ -297,14 +316,24 @@ export default function ClientConference() {
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.product_code}</p>
                   </div>
                   <div className="text-right shrink-0 flex flex-col items-end">
-                    <div className="flex items-baseline gap-1">
-                      <span className={`text-lg font-bold font-mono ${isOk ? 'text-emerald-500' : isExcess ? 'text-amber-500' : 'text-blue-500'}`}>
-                        {item.quantity_scanned}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-mono">/ {item.quantity_expected}</span>
-                    </div>
-                    {isExcess && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1">Excedente</span>}
-                    {isOk && <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1">OK</span>}
+                    {isPendingApproval ? (
+                      <div className="flex flex-col items-end">
+                        <span className="text-lg font-bold font-mono text-purple-500">{item.requested_qty}</span>
+                        <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-500/10 px-1.5 py-0.5 rounded mt-1">Aguardando Gestor</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-lg font-bold font-mono ${isOk ? 'text-emerald-500' : isExcess ? 'text-amber-500' : 'text-blue-500'}`}>
+                            {item.quantity_scanned}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono">/ {item.quantity_expected}</span>
+                        </div>
+                        {item.approval_status === 'rejected' && <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded mt-1">Rejeitado</span>}
+                        {isExcess && item.approval_status !== 'rejected' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1">Excedente</span>}
+                        {isOk && <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1">OK</span>}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

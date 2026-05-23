@@ -14,16 +14,20 @@ import {
   Moon,
   Sun,
   MapPin,
+  Bell
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogOut, User as UserIcon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { deliveriesApi } from '@/api/deliveries'
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/', permission: 'can_view_dashboard' },
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
   { label: 'Nova Carga', icon: ClipboardList, path: '/nova-carga', permission: 'can_manage_loads' },
   { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
+  { label: 'Liberações', icon: Bell, path: '/liberacoes', permission: 'can_manage_users' }, // Only managers/admins can see
   { label: 'Produtos', icon: Package, path: '/produtos', permission: 'can_manage_products' },
   { label: 'Contagens', icon: ScanLine, path: '/contagens', permission: 'can_do_conference' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
@@ -35,6 +39,13 @@ export default function AppLayout() {
   const { theme, setTheme } = useTheme()
   const { user, logout, hasPermission } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
+
+  const { data: pendingApprovals = [] } = useQuery({
+    queryKey: ['pending_approvals'],
+    queryFn: deliveriesApi.getPendingApprovals,
+    enabled: isManager,
+    refetchInterval: 10000
+  })
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -99,7 +110,7 @@ export default function AppLayout() {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative",
                   isActive
                     ? "bg-primary/15 text-primary border border-primary/20"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -107,6 +118,12 @@ export default function AppLayout() {
               >
                 <item.icon className={cn("h-4.5 w-4.5", isActive && "text-primary")} />
                 {item.label}
+                
+                {item.path === '/liberacoes' && pendingApprovals.length > 0 && (
+                  <span className="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    {pendingApprovals.length}
+                  </span>
+                )}
               </Link>
             )
           })}
