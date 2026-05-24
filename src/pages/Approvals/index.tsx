@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { deliveriesApi } from '@/api/deliveries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
-import { Check, X, Clock, Package, MapPin, Truck } from 'lucide-react'
+import { Check, X, Clock, Package, MapPin, Truck, ArrowLeft } from 'lucide-react'
 
 // Helper for relative time
 function getRelativeTime(dateStr: string) {
@@ -41,9 +42,16 @@ export default function ApprovalsPage() {
 
   return (
     <div className="space-y-6 slide-in">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text">Liberações Pendentes</h1>
-        <p className="text-muted-foreground mt-2">Aprove ou rejeite itens excedentes e itens fora da lista solicitados pelos motoristas.</p>
+      <div className="flex items-center gap-4">
+        <Link to="/entregas">
+          <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold gradient-text">Liberações Pendentes</h1>
+          <p className="text-muted-foreground mt-2">Aprove ou rejeite itens excedentes e itens fora da lista solicitados pelos motoristas.</p>
+        </div>
       </div>
 
       {approvals.length === 0 ? (

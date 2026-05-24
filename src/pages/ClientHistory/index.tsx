@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { deliveriesApi } from '@/api/deliveries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature, Clock, X } from 'lucide-react'
+import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature, Clock, X, ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 function formatDateTime(dateStr: string | undefined) {
   if (!dateStr) return 'Data não registrada'
@@ -43,13 +45,20 @@ export default function ClientHistory() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto slide-in pb-20">
-      <div>
-        <h1 className="text-3xl font-bold gradient-text flex items-center gap-3">
-          <FileSignature className="h-8 w-8 text-primary" /> Histórico e Comprovantes
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Pesquise pelo nome do cliente, número da rota ou número do pedido para ver os comprovantes de entrega assinados.
-        </p>
+      <div className="flex items-center gap-4">
+        <Link to="/entregas">
+          <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold gradient-text flex items-center gap-3">
+            <FileSignature className="h-8 w-8 text-primary" /> Histórico e Comprovantes
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Pesquise pelo nome do cliente, número da rota ou número do pedido para ver os comprovantes de entrega assinados.
+          </p>
+        </div>
       </div>
 
       <div className="relative">
