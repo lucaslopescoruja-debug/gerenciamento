@@ -1,7 +1,51 @@
 import { supabase } from '@/lib/supabase'
-import type { SystemNote, CompanyPayment } from '@/types/database'
+import type { SystemNote, CompanyPayment, User } from '@/types/database'
 
 export const saasApi = {
+  // --- System Users (Staff) ---
+  async getSystemUsers() {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('is_super_admin', true)
+      .order('name')
+      
+    if (error) throw error
+    return data as User[]
+  },
+
+  async createSystemUser(user: Omit<User, 'id' | 'created_at' | 'company_id'>) {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ ...user, company_id: null, is_super_admin: true }])
+      .select()
+      .single()
+      
+    if (error) throw error
+    return data as User
+  },
+
+  async updateSystemUser(id: string, updates: Partial<User>) {
+    const { data, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+      
+    if (error) throw error
+    return data as User
+  },
+
+  async deleteSystemUser(id: string) {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+      
+    if (error) throw error
+  },
+
   // --- Notes ---
   async getNotes() {
     const { data, error } = await supabase
