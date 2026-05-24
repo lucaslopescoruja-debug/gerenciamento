@@ -1,104 +1,129 @@
-# Estoque Fácil - Sistema de Logística Inteligente 📦
+# Coletor IA - Sistema de Logística Inteligente & SaaS 📦
 
-O **Estoque Fácil** é um sistema completo tipo ERP / WMS focado na operação em Centros de Distribuição (CD). O sistema provê tanto um Dashboard avançado para Gestores em telas grandes (Desktop) quanto uma interface de bipagem de mercadorias ultrarrápida voltada para dispositivos móveis (Coletores de Dados e Celulares Android/iOS).
+O **Coletor IA** (ou Estoque Fácil) é um sistema completo tipo ERP / WMS focado na operação em Centros de Distribuição (CD), e que agora atua como uma plataforma **SaaS (Software as a Service) Multitenant**. 
 
-O sistema inteiro opera em nuvem com tempo real via integração com **Supabase** e possui hospedagem na **Vercel**.
+O sistema provê:
+1. **Painel Master (SaaS):** Gestão de clientes (empresas), finanças (mensalidades), equipe interna e avisos globais.
+2. **Dashboard de Gestão (Desktop):** Controle em tempo real das rotas, estoque, usuários e aprovações para gestores das empresas clientes.
+3. **App do Operador (Mobile-first):** Interface ultrarrápida de bipagem voltada para coletores de dados e smartphones (Android/iOS) na operação física.
 
 ---
 
 ## 🏗️ Arquitetura e Tecnologias
+
 - **Frontend Core**: React 18 + TypeScript + Vite.
-- **Roteamento**: React Router DOM (Rotas protegidas).
-- **Gerência de Estado/Cache**: React Query (`@tanstack/react-query`). Otimizado para evitar requests desnecessárias e manter a rede sincronizada.
-- **Banco de Dados (BaaS)**: Supabase (PostgreSQL).
+- **Roteamento**: React Router DOM (Rotas protegidas com contexto de Auth).
+- **Gerência de Estado/Cache**: React Query (`@tanstack/react-query`).
+- **Banco de Dados**: Supabase (PostgreSQL).
 - **Estilização**: Tailwind CSS.
-- **Ícones e Assets**: Lucide React.
-- **Manipulação de Planilhas**: `xlsx` (Suporte nativo para gerar Excel e ler dados exportados de sistemas legados, como Sankhya e TOTVS).
+- **Ícones**: Lucide React.
+- **Exportação/Importação**: `xlsx` (Geração e leitura nativa de planilhas).
+- **Segurança**: As senhas são tratadas com `crypto.subtle` (SHA-256) no cliente antes da gravação e validação no backend.
 
 ---
 
-## ⚙️ Funcionalidades Principais (Módulos)
+## 🏢 Arquitetura Multitenant e Painel Master (SaaS)
+
+A plataforma utiliza um modelo "Multitenant", onde uma única base de dados hospeda diversas empresas (clientes). O isolamento de dados é garantido na camada de aplicação através da vinculação obrigatória de `company_id`.
+
+### Permissões do Master (`is_super_admin: true`)
+Existe um nível global e supremo acima dos administradores das empresas. A equipe "Master" não pertence a nenhuma empresa cliente.
+
+#### Funcionalidades Exclusivas do Painel Master (`/master`):
+- **Gestão de Empresas:** Cadastro de clientes, definição de slug (identificador), limite máximo de usuários (`max_users`) e botão de Sair/Acessar o painel daquela empresa diretamente (Impersonate).
+- **Financeiro:** Controle das mensalidades dos clientes. Lançamento de cobranças. Se um pagamento atrasar por mais de 5 dias corridos do vencimento (`due_date`), **o sistema bloqueia automaticamente** o acesso da empresa inativando-a.
+- **Acessos (Equipe SaaS):** Gestão da equipe interna do SaaS com controle granular:
+  - `can_manage_saas_clients` (Criar/Editar empresas)
+  - `can_manage_saas_finance` (Ver/Editar mensalidades)
+  - `can_manage_saas_staff` (Criar/Excluir outros Master admins)
+- **Anotações:** Mural de recados / bloco de notas global compartilhado entre a equipe Master.
+
+---
+
+## ⚙️ Funcionalidades Logísticas (Tenant / Empresa Cliente)
 
 ### 1. 🏭 Recebimentos (Inbound de Fábrica)
-Módulo focado na chegada de caminhões de fornecedores ou transferências de fábrica.
-- O gestor pode cadastrar a expectativa de recebimento manualmente ou importando uma planilha (Excel).
-- Os conferentes na doca logam pelo celular, abrem a operação e realizam a "Bipagem".
-- **Bipagem às Cegas:** No fluxo de Recebimento, o sistema possui autorização especial para ignorar bloqueios. Se um produto não estava previsto, ou a quantidade exceder, o sistema acata o produto na mesma hora para não travar o fluxo físico da doca.
-- Ao finalizar, o sistema **injetará automaticamente as quantidades recebidas no estoque mestre**, e permitirá o download imediato de um Excel contendo relatórios de divergência.
+Foco na chegada de mercadorias.
+- O gestor cadastra a expectativa de recebimento manualmente ou importando uma planilha.
+- **Bipagem às Cegas:** No fluxo de recebimento, o conferente tem autorização para ignorar bloqueios. Se um produto não estava previsto, ou a quantidade exceder, o sistema acata o produto na mesma hora para não travar o fluxo da doca.
 
 ### 2. 🚛 Cargas e Entregas (Outbound)
-Módulo de expedição focado na montagem do caminhão e logística de last-mile (entrega no cliente).
-- **Geração de Romaneio:** Importação do romaneio criando uma Operação do tipo "LOAD" (Carga) associada aos clientes da rota.
-- **Conferência de Expedição:** Diferente do Inbound, aqui existem **Travas Duras**. O conferente não consegue colocar um item na carga se não estiver no pedido, nem carregar unidades a mais do que a capacidade aprovada, salvo sob liberação remota.
-- **Painel do Motorista:** Após a carga ser despachada, o status altera e a Rota cai no celular do Motorista (`/entregas`). O Motorista tem a lista de clientes ordenada.
-- **Prova de Entrega (POD):** No ato do descarregamento no cliente, o Motorista colhe uma Assinatura Digital na tela do celular e anota quem recebeu e o documento. 
+Foco na montagem de romaneios e logística Last-Mile.
+- **Conferência de Expedição:** Existem **Travas Duras**. O conferente não consegue carregar itens não listados ou em quantidade superior ao pedido sem autorização.
+- **Painel do Motorista:** O motorista visualiza a lista de entregas ordenada no celular.
+- **Prova de Entrega (POD):** Coleta de assinatura digital na tela e nome do recebedor físico.
 
 ### 3. 🚨 Liberações Remotas (Alçadas de Gestão)
-- Ocasionalmente, há erros ou itens extras a serem enviados em uma entrega ou carga.
-- Quando o Motorista tenta lançar um item não listado, o aplicativo retém a operação e dispara um pedido de autorização.
-- O Gestor, pelo Dashboard em sua sala, visualizará um alerta em vermelho (`/liberacoes`). Ao clicar em "Aprovar", a tela do Motorista no caminhão destrava instantaneamente liberando a entrega.
+- Se o operador tenta despachar divergências, o app emite um pedido de liberação.
+- O Gestor visualizará um alerta na sala administrativa e pode "Aprovar" ou "Rejeitar" à distância, destravando o aplicativo do operador em tempo real.
 
-### 4. 🔍 Histórico e Pesquisa
-- Central de buscas de Comprovantes de Entregas.
-- O Gestor pode buscar pela Razão Social do cliente, pelo Número da Carga (ex: VZ 02123) ou até mesmo diretamente pelo **Número do Pedido**.
-- A busca retorna cartões compactos mostrando os itens físicos que foram deixados no local e a assinatura original desenhada.
+### 4. 👥 Controle de Acessos da Empresa (RBAC)
+Cada funcionário do cliente possui um "Perfil" (Role) e "Permissões Granulares":
+- **Perfis Base:** Administrador (Admin), Gestor, Conferente, Motorista.
+- **Flags Granulares:**
+  - `can_view_dashboard` (Ver métricas e painéis)
+  - `can_manage_loads` (Gerenciar rotas e cargas)
+  - `can_do_conference` (Bipar na doca)
+  - `can_manage_products` (Estoque mestre)
+  - `can_manage_users` (Equipe da empresa)
+  - `can_do_delivery` (Acesso mobile do motorista)
 
-### 5. 📦 Controle de Estoque (Estoque Mestre)
-- Listagem global de tudo que há dentro do armazém.
-- Botão "Limpar Banco" protegido e oculto exclusivamente para a role (papel) de Administrador do sistema, prevenindo que Gestores ou Motoristas apaguem o banco acidentalmente.
+> **Nota de Segurança:** O botão de "Limpar Estoque Total" é estritamente reservado aos usuários `Master`. Administradores das empresas não podem executar limpezas destrutivas em lote. Todos os novos cadastros ganham a senha padrão "123456" que deve ser alterada no primeiro acesso.
 
 ---
 
 ## 🎨 Engine de Temas e UI Dupla
-O Estoque Fácil possui uma tecnologia de renderização dupla pensada em Performance vs Estética. O botão no cabeçalho (ícone de paleta de cores) permite cruzar os seguintes universos:
+
+O sistema possui uma renderização dupla focada em Performance vs Estética. O botão de tema ("paleta" no menu) cruza os seguintes universos:
 
 **Modo Moderno (Padrão):**
-- Utiliza Blur, Transparências, Glassmorphism.
-- Sombras Neon emitidas pelos botões.
-- Arredondamento alto (Border Radius).
-- Efeitos Pulse e gradientes textuais.
+- Blur, Transparências, Glassmorphism, Sombras Neon.
+- Botões com gradient e efeitos interativos intensos.
 
 **Modo Tradicional (Windows 2000):**
-- Para usuários acostumados com sistemas legados (Ou para rodar de forma leve em celulares antigos da Doca).
-- Cores sólidas no clássico Cinza da Microsoft (`#d4d0c8`).
-- Bordas retas (Radius: 0).
-- Textos em preto e fonte Tahoma clássica.
-- Botões com efeito visual de "Bevel" chanfrado que afundam fisicamente ao clicar, eliminando todo o processamento de GPU de Blurs e Animações de Sombras.
-
-Ambos os modos acima suportam nativamente variação para Claro/Escuro (Light / Dark mode) controlado pelo botão Sol/Lua.
+- Foco em rodar leve em coletores e celulares antigos.
+- Cores sólidas (Cinza `#d4d0c8`), bordas retas (Radius: 0) e fonte Tahoma.
+- Botões com efeito visual "Bevel" (chanfrado), desativando todo o processamento de animações e GPU pesada no navegador.
 
 ---
 
 ## 🗄️ Estrutura do Banco de Dados (Supabase)
 
-O sistema trabalha com tabelas principais estruturadas via Constraints do PostgreSQL para manter a integridade logística.
+### Camada Global (SaaS)
+- **`companies`**: `id`, `name`, `slug`, `cnpj`, `max_users`, `active`.
+- **`company_payments`**: `company_id`, `amount`, `status` (pendente, pago, atrasado), `due_date`, `paid_at`.
+- **`system_notes`**: Recados dos Super Admins.
 
-- **`products`**: Tabela mestra de mercadorias (Código, Nome, Estoque atual).
-- **`operations`**: O coração do sistema. Pode assumir os tipos (Type): `LOAD` (Carga/Envio), `RECEIPT` (Recebimento Inbound), `INVENTORY` (Inventário cego) e `BLIND_RECEIPT`.
-- **`operation_items`**: O que há dentro de cada operação (Produto, Quantidade Esperada, Quantidade Bipada e Status do Item).
-- **`delivery_clients`**: Lista de clientes de uma Rota Específica, com o status de entrega atrelado a eles (ex: `pending`, `delivered`) e o Número do Pedido de Venda (`order_number`).
-- **`delivery_items`**: Mercadorias que descem efetivamente em cada cliente. Possui a coluna `approval_status` (gerenciando a Trava Remota) e `requested_qty`.
-- **`users`**: RBAC de Operadores (`admin`, `gestor`, `motorista`, `conferente`). Controla quem pode ver o Dashboard ou quem só vê a tela do Caminhão.
-
-> Importante: As restrições (CHECK constraints) da tabela operations (`operations_type_check`) estão atualizadas para permitir livre criação de entradas da fábrica via tipo `RECEIPT`.
+### Camada Local (Tenant)
+Tabelas abaixo contém `company_id` referenciando `companies(id)` para isolamento.
+- **`users`**: RBAC dos operadores + flag `is_super_admin` e `permissions` em JSONB.
+- **`products`**: Tabela mestra de mercadorias.
+- **`operations`**: `LOAD` (Carga), `RECEIPT` (Recebimento Inbound), `INVENTORY`.
+- **`operation_items`**: Itens atrelados à operação (Qtd Esperada vs Bipada).
+- **`delivery_clients`**: Lista de paradas de uma rota.
+- **`delivery_items`**: O que desce na parada. Contém `approval_status` controlando a Trava Remota.
 
 ---
 
-## 🚀 Como Iniciar o Projeto (Desenvolvimento)
+## 🚀 Scripts e Inicialização
 
-1. **Instalação das dependências:**
+O repositório já contém configuração completa.
+
+1. **Instalar Dependências:**
 ```bash
 npm install
 ```
 
-2. **Rodar localmente:**
+2. **Rodar Ambiente Local:**
 ```bash
 npm run dev
 ```
 
-3. **Geração do Build de Produção:**
+3. **Gerar Build de Produção:**
 ```bash
 npm run build
 ```
 
-O ambiente já está conectado diretamente à API Key e Supabase URL expostos no ambiente. Os deploys de produção ocorrem de maneira automatizada e assíncrona ("Push to Deploy") via repositório Github amarrado à Vercel.
+O ambiente já está conectado diretamente à API Key (`VITE_SUPABASE_ANON_KEY`) e URL (`VITE_SUPABASE_URL`) no Supabase. Todos os `push` na branch `main` ativam o deploy automatizado via Vercel. 
+
+> *Nota técnica sobre o Supabase:* Devido à arquitetura customizada de autenticação baseada em JWT mantida pela própria aplicação no `localStorage`, o *Row Level Security (RLS)* nativo das tabelas SaaS encontra-se desativado (`fix_rls.sql`) para o `anon_key`, sendo a segurança gerida totalmente nas validações lógicas e mutations do React.
