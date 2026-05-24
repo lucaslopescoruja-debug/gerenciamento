@@ -8,14 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Plus, Users, Power, LogIn, Edit2 } from 'lucide-react';
+import { Building2, Plus, Users, Power, LogIn, Edit2, LogOut } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '@/types/database';
 
 export default function MasterPanel() {
-  const { isMaster, switchCompany, company: currentCompany } = useAuth();
+  const { isMaster, switchCompany, exitCompany, company: currentCompany } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,6 +139,12 @@ export default function MasterPanel() {
     }
   };
 
+  const handleExitCompany = () => {
+    exitCompany();
+    toast.success('Você saiu da empresa e voltou ao acesso Global.');
+    queryClient.clear();
+  };
+
   const resetForm = () => {
     setName(''); setSlug(''); setCnpj(''); setMaxUsers(5);
     setAdminName(''); setAdminUsername(''); setAdminPassword('');
@@ -220,6 +226,16 @@ export default function MasterPanel() {
                       className="gap-2"
                     >
                       <LogIn className="h-4 w-4" /> Acessar
+                    </Button>
+                  )}
+                  {comp.id === currentCompany?.id && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleExitCompany}
+                      className="gap-2"
+                    >
+                      <LogOut className="h-4 w-4" /> Sair
                     </Button>
                   )}
                 </div>

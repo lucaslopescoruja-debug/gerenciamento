@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (username: string, password_hash: string) => Promise<boolean>;
   logout: () => void;
   switchCompany: (companyId: string) => Promise<boolean>;
+  exitCompany: () => void;
   isLoading: boolean;
   hasPermission: (permission: keyof UserPermissions) => boolean;
 }
@@ -122,6 +123,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const exitCompany = () => {
+    if (!user?.is_super_admin) return;
+    currentCompanyId = null;
+    localStorage.removeItem('auth_company_id');
+    setCompany(null);
+  };
+
   const hasPermission = (permission: keyof UserPermissions) => {
     // Admin has all permissions implicitly
     if (user?.role === 'admin') return true;
@@ -132,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isMaster = user?.is_super_admin === true;
 
   return (
-    <AuthContext.Provider value={{ user, company, isMaster, login, logout, switchCompany, isLoading, hasPermission }}>
+    <AuthContext.Provider value={{ user, company, isMaster, login, logout, switchCompany, exitCompany, isLoading, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
