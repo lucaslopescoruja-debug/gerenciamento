@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Plus, Users, Power, LogIn, Edit2, LogOut } from 'lucide-react';
+import { Building2, Plus, Users, Power, LogIn, Edit2, LogOut, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
@@ -48,14 +48,23 @@ export default function MasterPanel() {
   });
 
   const updateCompanyMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: string, updates: Partial<Company> }) => companiesApi.updateCompany(id, updates),
+    mutationFn: (args: {id: string, updates: Partial<Company>}) => companiesApi.updateCompany(args.id, args.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast.success('Empresa atualizada com sucesso');
+      toast.success('Empresa atualizada com sucesso!');
       setIsEditModalOpen(false);
-      setEditingCompany(null);
     },
-    onError: () => toast.error('Erro ao atualizar empresa')
+    onError: () => toast.error('Erro ao atualizar empresa.')
+  });
+
+  const deleteCompanyMutation = useMutation({
+    mutationFn: companiesApi.deleteCompany,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Empresa excluída com sucesso!');
+      setIsEditModalOpen(false);
+    },
+    onError: () => toast.error('Erro ao excluir empresa.')
   });
 
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -342,11 +351,26 @@ export default function MasterPanel() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
-                <Button type="submit" disabled={updateCompanyMutation.isPending}>
-                  {updateCompanyMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+              <div className="flex justify-between items-center pt-4 border-t mt-4">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => {
+                    if (confirm('Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita e todos os dados serão perdidos.')) {
+                      deleteCompanyMutation.mutate(editingCompany.id);
+                    }
+                  }} 
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-2"
+                  title="Excluir Empresa"
+                >
+                  <Trash2 className="h-4 w-4" /> Excluir
                 </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={updateCompanyMutation.isPending}>
+                    {updateCompanyMutation.isPending ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
               </div>
             </form>
           )}
