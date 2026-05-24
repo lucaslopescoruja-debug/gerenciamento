@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem('auth_user_id', found.id);
             return true;
           } else {
-            toast.error('Empresa inativa. Verifique possíveis pendências financeiras.');
+            toast.error('Empresa inativa. Verifique possíveis pendências. Favor contactar o suporte');
             return false;
           }
         } else if (found.is_super_admin) {
@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCompany(comp);
         return true;
       }
-      toast.error('Esta empresa está inativa e não pode ser acessada.');
+      toast.error('Empresa inativa. Verifique possíveis pendências. Favor contactar o suporte');
       return false;
     } catch (e) {
       console.error('Error switching company', e);

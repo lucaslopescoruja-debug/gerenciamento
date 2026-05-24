@@ -45,13 +45,19 @@ export default function SaaSFinance() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string, status: CompanyPayment['status'] }) => 
-      saasApi.updatePayment(id, { 
+    mutationFn: async ({ id, company_id, status }: { id: string, company_id: string, status: CompanyPayment['status'] }) => {
+      const updated = await saasApi.updatePayment(id, { 
         status, 
         paid_at: status === 'pago' ? new Date().toISOString() : undefined 
-      }),
+      });
+      if (status === 'pago') {
+        await companiesApi.updateCompany(company_id, { active: true });
+      }
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success('Status atualizado');
     }
   });
@@ -135,17 +141,17 @@ export default function SaaSFinance() {
 
                   {payment.status === 'pendente' && (
                     <div className="pt-3 border-t flex justify-end gap-2 mt-2">
-                      <Button variant="outline" size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, status: 'atrasado' })} className="text-red-500 hover:text-red-600">
+                      <Button variant="outline" size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, company_id: payment.company_id, status: 'atrasado' })} className="text-red-500 hover:text-red-600">
                         Marcar Atrasado
                       </Button>
-                      <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, status: 'pago' })} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                      <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, company_id: payment.company_id, status: 'pago' })} className="bg-emerald-500 hover:bg-emerald-600 text-white">
                         Marcar Pago
                       </Button>
                     </div>
                   )}
                   {payment.status === 'atrasado' && (
                     <div className="pt-3 border-t flex justify-end gap-2 mt-2">
-                      <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, status: 'pago' })} className="bg-emerald-500 hover:bg-emerald-600 text-white w-full">
+                      <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: payment.id, company_id: payment.company_id, status: 'pago' })} className="bg-emerald-500 hover:bg-emerald-600 text-white w-full">
                         Baixar como Pago
                       </Button>
                     </div>
