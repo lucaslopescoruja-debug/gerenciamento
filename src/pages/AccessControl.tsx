@@ -32,7 +32,6 @@ export default function AccessControl() {
   // Form State
   const [name, setName] = useState('')
   const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>('conferente')
   const [perms, setPerms] = useState<UserPermissions>(defaultPermissions.conferente)
 
@@ -73,19 +72,17 @@ export default function AccessControl() {
     setEditing(null)
     setName('')
     setUsername('')
-    setPassword('')
     setRole('conferente')
     setPerms(defaultPermissions.conferente)
     setIsOpen(true)
   }
 
-  const openEdit = (u: User) => {
-    setEditing(u)
-    setName(u.name)
-    setUsername(u.username)
-    setPassword('') // Don't show existing hash
-    setRole(u.role)
-    setPerms(u.permissions || defaultPermissions[u.role])
+  const openEdit = (user: User) => {
+    setEditing(user)
+    setName(user.name)
+    setUsername(user.username)
+    setRole(user.role)
+    setPerms(user.permissions || defaultPermissions[user.role])
     setIsOpen(true)
   }
 
@@ -107,11 +104,6 @@ export default function AccessControl() {
       return
     }
 
-    if (!editing && !password) {
-      toast.error('A senha é obrigatória para novos usuários')
-      return
-    }
-
     const baseData: Partial<User> = {
       name,
       username,
@@ -119,14 +111,10 @@ export default function AccessControl() {
       permissions: perms
     }
 
-    if (password) {
-      baseData.password_hash = await hashPassword(password)
-    }
-
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: baseData })
     } else {
-      createMutation.mutate({ ...baseData, active: true } as Omit<User, 'id' | 'created_at'>)
+      createMutation.mutate({ ...baseData, password_hash: DEFAULT_PASSWORD_HASH, active: true } as Omit<User, 'id' | 'created_at'>)
     }
   }
 
@@ -231,25 +219,19 @@ export default function AccessControl() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Senha {editing && '(opcional para manter)'}</Label>
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••" />
-              </div>
-              <div className="space-y-2">
-                <Label>Perfil de Acesso</Label>
-                <select 
-                  value={role} 
-                  onChange={e => handleRoleChange(e.target.value as UserRole)} 
-                  className="flex h-10 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground"
-                >
+            <div className="space-y-2">
+              <Label>Perfil de Acesso</Label>
+              <select 
+                value={role} 
+                onChange={e => handleRoleChange(e.target.value as UserRole)} 
+                className="flex h-10 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground"
+              >
                   <option value="admin">Administrador Geral</option>
                   <option value="gestor">Gestor</option>
                   <option value="conferente">Conferente</option>
                   <option value="motorista">Motorista</option>
                 </select>
               </div>
-            </div>
 
             {role !== 'admin' && (
               <div className="pt-4 border-t border-border mt-4">

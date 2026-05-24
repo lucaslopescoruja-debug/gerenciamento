@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { companiesApi } from '@/api/companies';
 import { usersApi } from '@/api/users';
 import { useAuth } from '@/contexts/AuthContext';
-import { hashPassword } from '@/utils/crypto';
+import { DEFAULT_PASSWORD_HASH } from '@/utils/crypto';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,6 @@ export default function MasterPanel() {
   const [maxUsers, setMaxUsers] = useState(5);
   const [adminName, setAdminName] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
 
   // Edit Company State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -61,7 +60,7 @@ export default function MasterPanel() {
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !slug || !adminName || !adminUsername || !adminPassword) {
+    if (!name || !slug || !adminName || !adminUsername) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -78,11 +77,10 @@ export default function MasterPanel() {
       });
 
       // 2. Criar usuário admin para a empresa
-      const hashed = await hashPassword(adminPassword);
       await usersApi.createUser({
         name: adminName,
         username: adminUsername,
-        password_hash: hashed,
+        password_hash: DEFAULT_PASSWORD_HASH,
         role: 'admin',
         active: true,
         permissions: {
@@ -147,7 +145,7 @@ export default function MasterPanel() {
 
   const resetForm = () => {
     setName(''); setSlug(''); setCnpj(''); setMaxUsers(5);
-    setAdminName(''); setAdminUsername(''); setAdminPassword('');
+    setAdminName(''); setAdminUsername('');
   };
 
   if (!isMaster) {
@@ -283,15 +281,9 @@ export default function MasterPanel() {
                 <Label>Nome Completo *</Label>
                 <Input value={adminName} onChange={e => setAdminName(e.target.value)} required />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Usuário de Login *</Label>
-                  <Input value={adminUsername} onChange={e => setAdminUsername(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Senha Temporária *</Label>
-                  <Input type="text" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} required />
-                </div>
+              <div className="space-y-2">
+                <Label>Usuário de Login *</Label>
+                <Input value={adminUsername} onChange={e => setAdminUsername(e.target.value)} required />
               </div>
             </div>
 

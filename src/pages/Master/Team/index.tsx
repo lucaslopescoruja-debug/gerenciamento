@@ -21,7 +21,6 @@ export default function SaaSTeam() {
   
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   
   // Permissões
   const [perms, setPerms] = useState({
@@ -70,7 +69,6 @@ export default function SaaSTeam() {
     setEditing(null);
     setName('');
     setUsername('');
-    setPassword('');
     setPerms({
       can_manage_saas_finance: true,
       can_manage_saas_clients: true,
@@ -83,7 +81,6 @@ export default function SaaSTeam() {
     setEditing(u);
     setName(u.name);
     setUsername(u.username);
-    setPassword('');
     setPerms({
       can_manage_saas_finance: u.permissions?.can_manage_saas_finance ?? false,
       can_manage_saas_clients: u.permissions?.can_manage_saas_clients ?? false,
@@ -94,7 +91,7 @@ export default function SaaSTeam() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !username || (!editing && !password)) {
+    if (!name || !username) {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
@@ -114,14 +111,10 @@ export default function SaaSTeam() {
       }
     };
 
-    if (password) {
-      baseData.password_hash = await hashPassword(password);
-    }
-
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: baseData });
     } else {
-      createMutation.mutate({ ...baseData, active: true } as any);
+      createMutation.mutate({ ...baseData, password_hash: '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', active: true } as any);
     }
   };
 
@@ -202,15 +195,9 @@ export default function SaaSTeam() {
               <Input value={name} onChange={e => setName(e.target.value)} required />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Usuário de Login *</Label>
-                <Input value={username} onChange={e => setUsername(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Senha {editing && '(opcional)'}</Label>
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••" />
-              </div>
+            <div className="space-y-2">
+              <Label>Usuário de Login *</Label>
+              <Input value={username} onChange={e => setUsername(e.target.value)} required />
             </div>
 
             <div className="space-y-3 pt-4 border-t">
