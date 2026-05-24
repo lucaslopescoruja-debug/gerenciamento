@@ -128,7 +128,7 @@ export default function Dashboard() {
               </div>
             ) : (
               operations.slice(0, 5).map((op, index) => (
-              <Link key={op.id} to={op.type === 'LOAD' ? `/conferencia/${op.id}` : `/inventario`} className="block group">
+              <Link key={op.id} to={['LOAD', 'RECEIPT', 'BLIND_RECEIPT'].includes(op.type) ? `/conferencia/${op.id}` : `/inventario`} className="block group">
                 <div className="glass-card glass-card-hover p-4 flex items-center justify-between transition-all duration-200" style={{ animationDelay: `${index * 80}ms` }}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
