@@ -23,7 +23,7 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
-  const { user } = useAuth()
+  const { user, isMaster } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
 
   const { data: products = [], isLoading } = useQuery({
@@ -278,7 +278,7 @@ export default function Products() {
                   <Package className="h-4 w-4 mr-1.5" /> Recebimento (Fábrica) <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
               </Link>
-              {user?.role === 'admin' && (
+              {isMaster && (
                 <Button variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10" onClick={() => {
                   if (window.confirm('CUIDADO: Isso irá apagar TODOS os produtos cadastrados. Tem certeza que deseja continuar?')) {
                     deleteAllMutation.mutate()
