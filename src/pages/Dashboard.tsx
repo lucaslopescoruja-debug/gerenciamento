@@ -69,11 +69,6 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold gradient-text">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Visão geral das operações logísticas</p>
         </div>
-        <Link to="/nova-carga">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Nova Carga
-          </Button>
-        </Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
