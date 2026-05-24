@@ -2,7 +2,7 @@
 // Database Types - Estoque Fácil
 // ============================================
 
-export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT'
+export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT' | 'RECEIPT'
 export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
 export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista'

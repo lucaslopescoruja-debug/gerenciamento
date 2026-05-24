@@ -43,6 +43,9 @@ import CountsMenu from './pages/Counts'
 import AdhocCount from './pages/Counts/AdhocCount'
 import InventoryCount from './pages/Counts/InventoryCount'
 
+import ReceiptsList from './pages/Receipts/index'
+import CreateReceipt from './pages/Receipts/CreateReceipt'
+
 import DeliveriesList from './pages/Deliveries/index'
 import CreateDelivery from './pages/Deliveries/CreateDelivery'
 import RouteClients from './pages/Deliveries/RouteClients'
@@ -72,6 +75,11 @@ function App() {
             <Route path="/contagens" element={<CountsMenu />} />
             <Route path="/contagens/avulsa" element={<AdhocCount />} />
             <Route path="/contagens/inventario" element={<InventoryCount />} />
+            
+            {/* Receipts Routes */}
+            <Route path="/recebimentos" element={<ReceiptsList />} />
+            <Route path="/recebimentos/novo" element={<CreateReceipt />} />
+            <Route path="/recebimentos/editar/:id" element={<CreateReceipt />} />
             
             {/* Deliveries Routes */}
             <Route path="/entregas" element={<DeliveriesList />} />

@@ -11,8 +11,9 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil } from 'lucide-react'
+import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil, Download, PackageCheck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import * as XLSX from 'xlsx'
 
 export default function Conference() {
   const { id } = useParams()
@@ -107,6 +108,18 @@ export default function Conference() {
     onError: (e: any) => {
       toast.error(`Erro ao despachar rota: ${e.message}`)
     }
+  })
+
+  const finalizeReceiptMutation = useMutation({
+    mutationFn: () => operationsApi.finalizeReceiptAndUpdateStock(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['operation', id] })
+      queryClient.invalidateQueries({ queryKey: ['operations'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast.success('Recebimento finalizado e estoque atualizado!')
+      navigate('/recebimentos')
+    },
+    onError: (e: any) => toast.error(`Erro ao finalizar recebimento: ${e.message}`)
   })
 
   const deleteOpMutation = useMutation({
@@ -249,6 +262,21 @@ export default function Conference() {
     dispatchMutation.mutate()
   }
 
+  const handleExportExcel = () => {
+    const data = items.map(i => ({
+      'Código': i.product_code,
+      'Descrição': i.description,
+      'Qtd Esperada': i.quantity_expected,
+      'Qtd Recebida': i.quantity_scanned,
+      'Status': i.status === 'ok' ? 'OK' : (i.status === 'divergent' ? 'Divergente' : 'Pendente'),
+      'Diferença': i.quantity_scanned - i.quantity_expected
+    }))
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatório')
+    XLSX.writeFile(wb, `Relatorio_Recebimento_${op?.load_number || id}.xlsx`)
+  }
+
   const handleReturnScan = (e: React.FormEvent) => {
     e.preventDefault()
     if (!returnScanInput.trim()) return
@@ -373,21 +401,21 @@ export default function Conference() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-120px)]">
       <div className="mb-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4" />
+        <div className="flex items-center gap-4 mb-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(op.type === 'RECEIPT' ? '/recebimentos' : '/cargas')} className="shrink-0 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-foreground truncate">{op.load_number}</h1>
-            <span className="text-xs text-muted-foreground">{op.status === 'dispatched' ? 'Em Rota' : op.status === 'completed' ? 'Finalizada' : 'Em Separação'}</span>
+            <span className="text-xs text-muted-foreground">{op.status === 'dispatched' ? 'Em Rota' : op.status === 'completed' ? 'Finalizada' : (op.type === 'RECEIPT' ? 'Em Conferência' : 'Em Separação')}</span>
           </div>
           {op.status === 'pending' && (
             <Button 
               variant="ghost" 
               size="icon" 
               className="text-primary hover:text-primary/80 hover:bg-primary/10 shrink-0" 
-              onClick={() => navigate(`/editar-carga/${id}`)}
-              title="Editar Rota"
+              onClick={() => navigate(op.type === 'RECEIPT' ? `/recebimentos/editar/${id}` : `/editar-carga/${id}`)}
+              title="Editar"
             >
               <Pencil className="h-5 w-5" />
             </Button>
@@ -549,10 +577,28 @@ export default function Conference() {
             })}
           </div>
 
-          <div className="mt-auto pt-2 shrink-0 pb-4">
-            <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleDispatch} disabled={dispatchMutation.isPending}>
-              {dispatchMutation.isPending ? 'Despachando...' : <><Truck className="mr-2 h-5 w-5" /> Despachar Rota</>}
-            </Button>
+          </div>
+
+          <div className="mt-auto pt-2 shrink-0 pb-4 space-y-2">
+            {op.type === 'RECEIPT' && (
+               <Button variant="outline" className="w-full text-emerald-600 hover:text-emerald-700" onClick={handleExportExcel}>
+                 <Download className="mr-2 h-4 w-4" /> Baixar Relatório (Excel)
+               </Button>
+            )}
+            
+            {op.type === 'RECEIPT' ? (
+              <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={() => {
+                if (window.confirm('Atenção: Isso vai injetar as quantidades lidas diretamente no estoque. Deseja finalizar?')) {
+                  finalizeReceiptMutation.mutate()
+                }
+              }} disabled={finalizeReceiptMutation.isPending}>
+                {finalizeReceiptMutation.isPending ? 'Finalizando...' : <><PackageCheck className="mr-2 h-5 w-5" /> Finalizar e Atualizar Estoque</>}
+              </Button>
+            ) : (
+              <Button className="w-full h-12 text-lg bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 glow-success" onClick={handleDispatch} disabled={dispatchMutation.isPending}>
+                {dispatchMutation.isPending ? 'Despachando...' : <><Truck className="mr-2 h-5 w-5" /> Despachar Rota</>}
+              </Button>
+            )}
           </div>
         </TabsContent>
         )}

@@ -165,5 +165,35 @@ export const operationsApi = {
     
     if (error) throw error
     return true
+  },
+
+  async finalizeReceiptAndUpdateStock(operationId: string) {
+    // 1. Mark as completed
+    const now = new Date().toISOString()
+    await this.updateOperationStatus(operationId, 'completed', now)
+
+    // 2. Get all items in the operation
+    const items = await this.getOperationItems(operationId)
+    
+    // 3. For each item with quantity_scanned > 0, update product stock
+    for (const item of items) {
+      if (item.quantity_scanned > 0 && item.product_id) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('id', item.product_id)
+          .single()
+          
+        if (product) {
+          const newStock = (product.stock || 0) + item.quantity_scanned
+          await supabase
+            .from('products')
+            .update({ stock: newStock })
+            .eq('id', item.product_id)
+        }
+      }
+    }
+    
+    return true
   }
 }
