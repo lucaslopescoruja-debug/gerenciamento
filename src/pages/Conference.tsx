@@ -74,7 +74,7 @@ export default function Conference() {
   })
 
   const addItemMutation = useMutation({
-    mutationFn: (item: Omit<OperationItem, 'id' | 'operation_id'>) => operationsApi.addOperationItem(id!, item),
+    mutationFn: (item: Omit<OperationItem, 'id' | 'operation_id' | 'company_id'>) => operationsApi.addOperationItem(id!, item),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['operation_items', id] })
   })
 
