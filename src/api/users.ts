@@ -57,7 +57,12 @@ export const usersApi = {
       .insert([{ ...user, username: normalizedUsername, company_id: targetCompanyId }])
       .select()
       .single()
-    if (error) throw error
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`O usuário de login '${user.username}' já está em uso no sistema. Escolha outro nome de usuário.`)
+      }
+      throw error
+    }
     return data as User
   },
 
@@ -85,7 +90,12 @@ export const usersApi = {
       .eq('id', id)
       .select()
       .single()
-    if (error) throw error
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error(`O usuário de login '${updates.username || 'informado'}' já está em uso no sistema. Escolha outro nome de usuário.`)
+      }
+      throw error
+    }
     return data as User
   },
 
