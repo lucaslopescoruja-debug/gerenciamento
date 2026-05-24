@@ -577,8 +577,6 @@ export default function Conference() {
             })}
           </div>
 
-          </div>
-
           <div className="mt-auto pt-2 shrink-0 pb-4 space-y-2">
             {op.type === 'RECEIPT' && (
                <Button variant="outline" className="w-full text-emerald-600 hover:text-emerald-700" onClick={handleExportExcel}>
