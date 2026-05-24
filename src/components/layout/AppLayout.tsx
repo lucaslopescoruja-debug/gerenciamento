@@ -26,11 +26,10 @@ import { deliveriesApi } from '@/api/deliveries'
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/', permission: 'can_view_dashboard' },
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
-  { label: 'Recebimentos', icon: Package, path: '/recebimentos', permission: 'can_manage_loads' },
   { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
   { label: 'Liberações', icon: Bell, path: '/liberacoes', permission: 'can_manage_users' }, // Only managers/admins can see
   { label: 'Comprovantes', icon: FileSignature, path: '/historico', permission: 'can_manage_users' },
-  { label: 'Produtos', icon: Package, path: '/produtos', permission: 'can_manage_products' },
+  { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
   { label: 'Contagens', icon: ScanLine, path: '/contagens', permission: 'can_do_conference' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
 ] as const

@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from '@/components/ui/toaster'
-import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
+import { Link } from 'react-router-dom'
 
 export default function Products() {
   const queryClient = useQueryClient()
@@ -254,9 +255,9 @@ export default function Products() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
-            <Package className="h-7 w-7 text-primary" /> Produtos
+            <Package className="h-7 w-7 text-primary" /> Estoque
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{products.length} produtos cadastrados</p>
+          <p className="text-sm text-muted-foreground mt-1">{products.length} produtos no estoque</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={exportToCSV}>
@@ -265,6 +266,11 @@ export default function Products() {
 
           {isManager && (
             <>
+              <Link to="/recebimentos">
+                <Button size="sm" className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-[0_0_15px_rgba(5,150,105,0.3)] border-0">
+                  <Package className="h-4 w-4 mr-1.5" /> Recebimento (Fábrica) <ArrowRight className="h-4 w-4 ml-1.5" />
+                </Button>
+              </Link>
               <Button variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10" onClick={() => {
                 if (window.confirm('CUIDADO: Isso irá apagar TODOS os produtos cadastrados. Tem certeza que deseja continuar?')) {
                   deleteAllMutation.mutate()
