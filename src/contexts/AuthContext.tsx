@@ -31,12 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       usersApi.getUsers().then(async users => {
         const found = users.find(u => u.id === storedUserId && u.active);
         if (found) {
-          const comp = await companiesApi.getCompany(found.company_id);
-          if (comp && comp.active) {
-            currentCompanyId = comp.id;
-            localStorage.setItem('auth_company_id', comp.id);
+          if (found.company_id) {
+            const comp = await companiesApi.getCompany(found.company_id);
+            if (comp && comp.active) {
+              currentCompanyId = comp.id;
+              localStorage.setItem('auth_company_id', comp.id);
+              setUser(found);
+              setCompany(comp);
+            } else {
+              currentCompanyId = null;
+              localStorage.removeItem('auth_user_id');
+              localStorage.removeItem('auth_company_id');
+            }
+          } else if (found.is_super_admin) {
+            currentCompanyId = null;
+            localStorage.removeItem('auth_company_id');
             setUser(found);
-            setCompany(comp);
+            setCompany(null);
           } else {
             currentCompanyId = null;
             localStorage.removeItem('auth_user_id');
@@ -60,12 +71,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const found = await usersApi.login(username, password_hash);
 
       if (found) {
-        const comp = await companiesApi.getCompany(found.company_id);
-        if (comp && comp.active) {
-          currentCompanyId = comp.id;
-          localStorage.setItem('auth_company_id', comp.id);
+        if (found.company_id) {
+          const comp = await companiesApi.getCompany(found.company_id);
+          if (comp && comp.active) {
+            currentCompanyId = comp.id;
+            localStorage.setItem('auth_company_id', comp.id);
+            setUser(found);
+            setCompany(comp);
+            localStorage.setItem('auth_user_id', found.id);
+            return true;
+          }
+        } else if (found.is_super_admin) {
+          currentCompanyId = null;
+          localStorage.removeItem('auth_company_id');
           setUser(found);
-          setCompany(comp);
+          setCompany(null);
           localStorage.setItem('auth_user_id', found.id);
           return true;
         }

@@ -108,15 +108,15 @@ export default function AppLayout() {
           </div>
           <div>
             <h1 className="font-bold text-sm gradient-text">Estoque Fácil</h1>
-            <p className="text-xs text-muted-foreground">{company?.name || 'Logística Inteligente'}</p>
+            <p className="text-xs text-muted-foreground">{company?.name || (isMaster ? 'Painel Master' : 'Carregando...')}</p>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-auto mt-14 md:mt-0">
-          {navItems.map((item) => {
-            if (!hasPermission(item.permission as any)) return null;
-            
+          {/* Navigation Items - Only show if user has an active company context */}
+          {company && navItems.map((item) => {
+            if (!hasPermission(item.permission as any)) return null
             const isActive = location.pathname === item.path
             return (
               <Link

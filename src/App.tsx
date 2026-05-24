@@ -17,7 +17,7 @@ import { DEFAULT_PASSWORD_HASH } from './utils/crypto'
 
 // Protected Route Wrapper
 function ProtectedRoute() {
-  const { user, isLoading } = useAuth();
+  const { user, company, isLoading, isMaster } = useAuth();
   const location = useLocation();
   
   if (isLoading) {
@@ -26,6 +26,11 @@ function ProtectedRoute() {
   
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Se for super admin e não tiver empresa selecionada, força ir pro Painel SaaS
+  if (!company && isMaster && location.pathname !== '/saas') {
+    return <Navigate to="/saas" replace />;
   }
 
   // Se o usuário estiver com a senha padrão e não estiver na tela de troca de senha, redireciona

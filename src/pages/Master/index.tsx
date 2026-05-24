@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Plus, Users, Power, LogIn } from 'lucide-react';
+import { Building2, Plus, Users, Power, LogIn, Edit2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
+import type { Company } from '@/types/database';
 
 export default function MasterPanel() {
   const { isMaster, switchCompany, company: currentCompany } = useAuth();
@@ -29,6 +30,10 @@ export default function MasterPanel() {
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
 
+  // Edit Company State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+
   const { data: companies, isLoading } = useQuery({
     queryKey: ['companies'],
     queryFn: companiesApi.getCompanies,
@@ -41,6 +46,17 @@ export default function MasterPanel() {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast.success('Status da empresa atualizado');
     }
+  });
+
+  const updateCompanyMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string, updates: Partial<Company> }) => companiesApi.updateCompany(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Empresa atualizada com sucesso');
+      setIsEditModalOpen(false);
+      setEditingCompany(null);
+    },
+    onError: () => toast.error('Erro ao atualizar empresa')
   });
 
   const handleCreateCompany = async (e: React.FormEvent) => {
@@ -89,6 +105,26 @@ export default function MasterPanel() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditCompany = (comp: Company) => {
+    setEditingCompany(comp);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCompany) return;
+    
+    updateCompanyMutation.mutate({
+      id: editingCompany.id,
+      updates: {
+        name: editingCompany.name,
+        slug: editingCompany.slug,
+        cnpj: editingCompany.cnpj,
+        max_users: editingCompany.max_users
+      }
+    });
   };
 
   const handleSwitchCompany = async (id: string, name: string) => {
@@ -141,9 +177,14 @@ export default function MasterPanel() {
                     </CardTitle>
                     <CardDescription className="mt-1">Slug: {comp.slug}</CardDescription>
                   </div>
-                  {comp.id === currentCompany?.id && (
-                    <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">Atual</span>
-                  )}
+                  <div className="flex flex-col gap-2 items-end">
+                    {comp.id === currentCompany?.id && (
+                      <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">Atual</span>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => handleEditCompany(comp)} className="h-8 w-8">
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -245,6 +286,62 @@ export default function MasterPanel() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Empresa</DialogTitle>
+          </DialogHeader>
+          
+          {editingCompany && (
+            <form onSubmit={handleSaveEdit} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>Nome Fantasia/Razão Social *</Label>
+                <Input 
+                  value={editingCompany.name} 
+                  onChange={e => setEditingCompany({...editingCompany, name: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Slug (Login) *</Label>
+                  <Input 
+                    value={editingCompany.slug} 
+                    onChange={e => setEditingCompany({...editingCompany, slug: e.target.value})} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Limite de Usuários</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    value={editingCompany.max_users} 
+                    onChange={e => setEditingCompany({...editingCompany, max_users: Number(e.target.value)})} 
+                    required 
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>CNPJ</Label>
+                <Input 
+                  value={editingCompany.cnpj || ''} 
+                  onChange={e => setEditingCompany({...editingCompany, cnpj: e.target.value})} 
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={updateCompanyMutation.isPending}>
+                  {updateCompanyMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
