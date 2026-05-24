@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usersApi } from '@/api/users';
 import { companiesApi } from '@/api/companies';
+import { toast } from '@/components/ui/toaster';
 import type { User, UserPermissions, Company } from '@/types/database';
 
 interface AuthContextType {
