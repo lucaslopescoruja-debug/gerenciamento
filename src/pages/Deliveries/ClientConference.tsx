@@ -80,6 +80,20 @@ export default function ClientConference() {
     }
   })
 
+  const returnClientMutation = useMutation({
+    mutationFn: () => deliveriesApi.returnDeliveryClient(clientId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_client', clientId] })
+      toast.success('Pedido retornado e estoque atualizado!')
+      navigate(`/entregas/${client?.delivery_route_id || ''}`)
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao retornar pedido: ${error.message}`)
+    }
+  })
+
+  const isFinished = client ? (client.status === 'delivered' || client.status === 'delivered_with_divergence' || client.status === 'canceled' || client.status === 'returned') : false
+
   // Play beep sound
   const playBeep = (type: 'success' | 'error' | 'warning' = 'success') => {
     try {
@@ -99,11 +113,11 @@ export default function ClientConference() {
 
   // Focus lock
   useEffect(() => {
-    if (client && client.status !== 'delivered' && client.status !== 'delivered_with_divergence' && client.status !== 'canceled') {
+    if (client && !isFinished) {
       const interval = setInterval(() => { if (document.activeElement !== inputRef.current && !showDropdown) inputRef.current?.focus() }, 1000)
       return () => clearInterval(interval)
     }
-  }, [showDropdown, client])
+  }, [showDropdown, client, isFinished])
 
   const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
@@ -223,10 +237,14 @@ export default function ClientConference() {
     updateClientStatusMutation.mutate(finalStatus)
   }
 
+  const handleReturnOrder = () => {
+    if (window.confirm("Deseja marcar este pedido como retornado e devolver todos os itens ao estoque?")) {
+      returnClientMutation.mutate()
+    }
+  }
+
   if (isClientLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando pedido...</div>
   if (!client) return <div className="p-8 text-center text-red-500">Cliente não encontrado</div>
-
-  const isFinished = client.status === 'delivered' || client.status === 'delivered_with_divergence' || client.status === 'canceled'
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-120px)] slide-in max-w-2xl mx-auto">
@@ -350,7 +368,7 @@ export default function ClientConference() {
 
       {/* Action Buttons */}
       {!isFinished && (
-        <div className="p-4 mt-6 border-t border-border pb-8">
+        <div className="p-4 mt-6 border-t border-border pb-8 space-y-3">
           <div className="flex gap-2 max-w-2xl mx-auto">
             <Button 
               variant="outline" 
@@ -358,16 +376,26 @@ export default function ClientConference() {
               onClick={() => {
                 updateClientStatusMutation.mutate('waiting')
               }}
-              disabled={updateClientStatusMutation.isPending}
+              disabled={updateClientStatusMutation.isPending || returnClientMutation.isPending}
             >
               <Save className="h-4 w-4 mr-2" /> Salvar Pausa
             </Button>
             <Button 
               className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(var(--primary),0.3)]"
               onClick={handleFinish}
-              disabled={updateClientStatusMutation.isPending}
+              disabled={updateClientStatusMutation.isPending || returnClientMutation.isPending}
             >
               <PenTool className="h-4 w-4 mr-2" /> Finalizar Entrega
+            </Button>
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <Button 
+              variant="destructive" 
+              className="w-full h-12 bg-red-600 hover:bg-red-700 text-white shadow-[0_0_20px_rgba(220,38,38,0.2)]"
+              onClick={handleReturnOrder}
+              disabled={updateClientStatusMutation.isPending || returnClientMutation.isPending}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" /> Pedido Retornado
             </Button>
           </div>
         </div>
@@ -376,7 +404,12 @@ export default function ClientConference() {
       {isFinished && (
         <div className="p-4 mt-6 border-t border-border pb-8">
           <div className="max-w-2xl mx-auto">
-            {client.signature_data ? (
+            {client.status === 'returned' ? (
+              <div className="glass-card p-4 text-center border-red-500/30 text-red-500 font-bold flex items-center justify-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Pedido Retornado (Estoque Devolvido)
+              </div>
+            ) : client.signature_data ? (
               <div className="glass-card p-4 text-center border-emerald-500/30 text-emerald-500 font-bold flex items-center justify-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
                 Entrega Concluída e Assinada

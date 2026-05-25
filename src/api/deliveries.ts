@@ -99,7 +99,92 @@ export const deliveriesApi = {
       .select()
       .single()
     if (error) throw error
+
+    if (updates.status && data) {
+      await this.recalculateRouteStatus(data.delivery_route_id)
+    }
+
     return data as DeliveryClient
+  },
+
+  async recalculateRouteStatus(routeId: string) {
+    const { data: clients, error } = await supabase
+      .from('delivery_clients')
+      .select('status')
+      .eq('delivery_route_id', routeId)
+    if (error) throw error
+
+    if (!clients || clients.length === 0) return
+
+    const allFinished = clients.every(c => 
+      c.status === 'delivered' || 
+      c.status === 'delivered_with_divergence' || 
+      c.status === 'canceled' || 
+      c.status === 'returned'
+    )
+
+    const anyFinished = clients.some(c => 
+      c.status === 'delivered' || 
+      c.status === 'delivered_with_divergence' || 
+      c.status === 'canceled' || 
+      c.status === 'returned'
+    )
+
+    let newStatus: 'pending' | 'in_progress' | 'completed' = 'pending'
+    if (allFinished) {
+      newStatus = 'completed'
+    } else if (anyFinished) {
+      newStatus = 'in_progress'
+    }
+
+    await supabase
+      .from('delivery_routes')
+      .update({ status: newStatus })
+      .eq('id', routeId)
+  },
+
+  async returnDeliveryClient(clientId: string) {
+    const { data: client, error: err1 } = await supabase
+      .from('delivery_clients')
+      .update({ status: 'returned' })
+      .eq('id', clientId)
+      .eq('company_id', currentCompanyId)
+      .select()
+      .single()
+    if (err1) throw err1
+
+    const { data: items, error: err2 } = await supabase
+      .from('delivery_items')
+      .select('*')
+      .eq('delivery_client_id', clientId)
+      .eq('company_id', currentCompanyId)
+    if (err2) throw err2
+
+    if (items) {
+      for (const item of items) {
+        if (item.quantity_expected > 0 && item.product_id) {
+          const { data: product } = await supabase
+            .from('products')
+            .select('stock')
+            .eq('id', item.product_id)
+            .single()
+
+          if (product) {
+            const newStock = (product.stock || 0) + item.quantity_expected
+            await supabase
+              .from('products')
+              .update({ stock: newStock })
+              .eq('id', item.product_id)
+          }
+        }
+      }
+    }
+
+    if (client) {
+      await this.recalculateRouteStatus(client.delivery_route_id)
+    }
+
+    return client as DeliveryClient
   },
 
   async deleteDeliveryClient(id: string) {

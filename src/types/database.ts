@@ -199,7 +199,7 @@ export interface DeliveryClient {
   address?: string
   phone?: string
   notes?: string
-  status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled'
+  status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled' | 'returned'
   signature_data?: string
   receiver_name?: string
   receiver_doc?: string

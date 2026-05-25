@@ -17,6 +17,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
   delivered: { label: 'Entregue', variant: 'success' },
   delivered_with_divergence: { label: 'Entregue (Divergência)', variant: 'warning' },
   canceled: { label: 'Cancelada', variant: 'destructive' },
+  returned: { label: 'Retornado', variant: 'destructive' },
 }
 
 export default function RouteClients() {
@@ -91,7 +92,7 @@ export default function RouteClients() {
         }
         return getNeighborhood(a.address).localeCompare(getNeighborhood(b.address)) || a.name.localeCompare(b.name)
       } else if (sortBy === 'status') {
-        const order = { pending: 0, waiting: 1, delivered_with_divergence: 2, delivered: 3, canceled: 4 }
+        const order = { pending: 0, waiting: 1, delivered_with_divergence: 2, delivered: 3, canceled: 4, returned: 5 }
         const rankA = order[a.status as keyof typeof order] ?? 99
         const rankB = order[b.status as keyof typeof order] ?? 99
         return rankA - rankB || a.name.localeCompare(b.name)
