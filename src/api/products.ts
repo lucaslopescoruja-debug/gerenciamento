@@ -76,10 +76,11 @@ export const productsApi = {
   },
 
   async deleteAllProducts() {
+    if (!currentCompanyId) throw new Error('No company context')
     const { error } = await supabase
       .from('products')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000')
+      .eq('company_id', currentCompanyId)
     if (error) throw error
     return true
   },
