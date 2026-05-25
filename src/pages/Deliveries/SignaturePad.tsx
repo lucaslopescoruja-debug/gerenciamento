@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { deliveriesApi } from '@/api/deliveries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,12 +18,24 @@ export default function SignaturePad() {
   const [receiverDoc, setReceiverDoc] = useState('')
   const sigCanvas = useRef<any>(null)
 
+  const { data: client } = useQuery({
+    queryKey: ['delivery_client', clientId],
+    queryFn: () => deliveriesApi.getDeliveryClient(clientId!),
+    enabled: !!clientId,
+  })
+
   const saveSignatureMutation = useMutation({
     mutationFn: (data: any) => deliveriesApi.updateDeliveryClient(clientId!, data),
     onSuccess: () => {
       toast.success('Assinatura salva com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['delivery_client', clientId] })
-      navigate('/entregas')
+      queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
+      if (client?.delivery_route_id) {
+        queryClient.invalidateQueries({ queryKey: ['delivery_clients', client.delivery_route_id] })
+        navigate(`/entregas/${client.delivery_route_id}`)
+      } else {
+        navigate('/entregas')
+      }
     },
     onError: (error: any) => {
       toast.error(`Erro ao salvar: ${error.message}`)
