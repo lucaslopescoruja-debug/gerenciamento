@@ -418,8 +418,8 @@ export default function Conference() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-110px)] md:h-[calc(100vh-170px)] overflow-hidden">
-      <div className="mb-4 shrink-0">
+    <div className="flex flex-col min-h-[calc(100vh-120px)]">
+      <div className="mb-4">
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(op.type === 'RECEIPT' ? '/recebimentos' : '/cargas')} className="shrink-0 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
@@ -465,7 +465,7 @@ export default function Conference() {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <TabsList>
           {op.status !== 'dispatched' && op.status !== 'completed' ? (
              <TabsTrigger value="scan" className="flex-1"><ScanLine className="h-4 w-4 mr-1.5" />Conferência e Lista</TabsTrigger>
@@ -475,8 +475,8 @@ export default function Conference() {
         </TabsList>
 
         {op.status !== 'dispatched' && op.status !== 'completed' && (
-        <TabsContent value="scan" className="flex-1 flex flex-col gap-4 mt-4 min-h-0 overflow-hidden">
-          <Card className="border-primary/20 shrink-0">
+        <TabsContent value="scan" className="flex-1 flex flex-col gap-4 mt-4">
+          <Card className="border-primary/20 sticky top-[53px] md:top-[64px] z-20 bg-card/95 backdrop-blur-md shadow-sm">
             <CardContent className="p-4">
               <form onSubmit={handleScan} className="flex gap-2">
                 <div className="relative flex-1">
@@ -552,7 +552,7 @@ export default function Conference() {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-[200px]">
             {regularItems.map((item, i) => {
               const done = item.quantity_scanned >= item.quantity_expected
               const isEditing = editingItem?.id === item.id
@@ -622,8 +622,8 @@ export default function Conference() {
         )}
 
         {(op.status === 'dispatched' || activeTab === 'return') && (
-        <TabsContent value="return" className="flex-1 flex flex-col gap-4 mt-4 min-h-0 overflow-hidden">
-          <Card className="border-amber-500/20 shrink-0">
+        <TabsContent value="return" className="flex-1 flex flex-col gap-4 mt-4">
+          <Card className="border-amber-500/20 sticky top-[53px] md:top-[64px] z-20 bg-card/95 backdrop-blur-md shadow-sm">
             <CardContent className="p-4">
               <form onSubmit={handleReturnScan} className="flex gap-2">
                 <div className="relative flex-1">
@@ -652,9 +652,9 @@ export default function Conference() {
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
+
             {Object.keys(returnedItems).length > 0 ? (
-            <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-2 pb-4 min-h-[200px]">
               <div className="pt-2 pb-1">
                 <h3 className="text-sm font-bold text-amber-500">Itens Bipados Agora ({Object.values(returnedItems).reduce((a,b)=>a+b,0)} un)</h3>
               </div>
@@ -753,9 +753,9 @@ export default function Conference() {
                 </>
               )}
             </div>
-          </div>
 
-            <div className="mt-auto pt-4 shrink-0">
+
+            <div className="mt-auto pt-4">
               <Button className="w-full h-12 text-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 glow-warning text-white" onClick={handleFinishReturn} disabled={updateOpMutation.isPending}>
                 <CheckCircle2 className="mr-2 h-5 w-5" /> Finalizar Rota
               </Button>
