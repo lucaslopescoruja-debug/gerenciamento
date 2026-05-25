@@ -105,7 +105,7 @@ export default function Conference() {
       queryClient.invalidateQueries({ queryKey: ['operations'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
       toast.success('Rota despachada e estoque deduzido!')
-      setActiveTab('return')
+      navigate('/entregas/nova')
     },
     onError: (e: any) => {
       toast.error(`Erro ao despachar rota: ${e.message}`)
