@@ -94,6 +94,11 @@ export default function Products() {
       batch: formData.get('batch') as string,
     }
 
+    if (data.stock < 0) {
+      toast.error('A quantidade em estoque não pode ser negativa. O menor número permitido é 0.')
+      return
+    }
+
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, data })
     } else {
@@ -143,6 +148,11 @@ export default function Products() {
             const batch = parts[5]?.trim() || ''
 
             if (code && desc) {
+              if (qty < 0) {
+                errors++
+                lastError = `Estoque do produto '${code}' não pode ser negativo (${qty})`
+                continue
+              }
               try {
                 await productsApi.createProduct({
                   code,
@@ -178,8 +188,14 @@ export default function Products() {
             if (codeOrExt && !isNaN(qtyToAdd)) {
               const prod = products.find(p => p.code === codeOrExt || p.external_code === codeOrExt)
               if (prod) {
+                const newStock = (prod.stock || 0) + qtyToAdd
+                if (newStock < 0) {
+                  errors++
+                  lastError = `Estoque resultante do produto ${prod.code} não pode ser negativo (${newStock})`
+                  continue
+                }
                 try {
-                  await productsApi.updateProduct(prod.id, { stock: (prod.stock || 0) + qtyToAdd })
+                  await productsApi.updateProduct(prod.id, { stock: newStock })
                   count++
                 } catch (err) {
                   console.error(err)
@@ -388,7 +404,7 @@ export default function Products() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="stock">Estoque Atual</Label>
-              <Input type="number" id="stock" name="stock" defaultValue={editingProduct?.stock || 0} />
+              <Input type="number" id="stock" name="stock" min={0} defaultValue={editingProduct?.stock || 0} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
