@@ -26,15 +26,15 @@ export default function AppLayout() {
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
 
   const isDark = theme.includes('dark');
-  const isEmerald = theme.startsWith('emerald-');
+  const isClassic = theme.startsWith('classic-');
 
   const toggleDarkLight = () => {
-    const newTheme = (isEmerald ? 'emerald-' : '') + (isDark ? 'light' : 'dark')
+    const newTheme = (isClassic ? 'classic-' : '') + (isDark ? 'light' : 'dark')
     setTheme(newTheme as any)
   }
 
   const toggleStyle = () => {
-    const newTheme = (isEmerald ? '' : 'emerald-') + (isDark ? 'dark' : 'light')
+    const newTheme = (isClassic ? '' : 'classic-') + (isDark ? 'dark' : 'light')
     setTheme(newTheme as any)
   }
 
@@ -56,7 +56,7 @@ export default function AppLayout() {
           <button
             onClick={toggleStyle}
             className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
-            title="Alternar tema (Padrão / Emerald)"
+            title="Alternar tema (Padrão / Clássico)"
           >
             <Palette className="h-5 w-5" />
           </button>
@@ -223,7 +223,7 @@ export default function AppLayout() {
              
              <div className="h-6 w-px bg-border mx-1"></div>
              
-             <button onClick={toggleStyle} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors cursor-pointer" title="Alternar tema (Padrão / Emerald)">
+             <button onClick={toggleStyle} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors cursor-pointer" title="Alternar tema (Padrão / Clássico)">
                 <Palette className="h-5 w-5" />
              </button>
              <button onClick={toggleDarkLight} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors cursor-pointer" title="Alternar tema">
