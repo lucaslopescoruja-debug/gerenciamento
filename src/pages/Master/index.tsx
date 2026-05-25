@@ -26,6 +26,8 @@ export default function MasterPanel() {
   const [slug, setSlug] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [maxUsers, setMaxUsers] = useState(5);
+  const [billingDay, setBillingDay] = useState(10);
+  const [monthlyFee, setMonthlyFee] = useState(0);
   const [adminName, setAdminName] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
 
@@ -82,7 +84,9 @@ export default function MasterPanel() {
         slug: slug.toLowerCase().replace(/\s+/g, '-'),
         cnpj,
         max_users: maxUsers,
-        active: true
+        active: true,
+        billing_day: billingDay,
+        monthly_fee: monthlyFee
       });
 
       // 2. Criar usuário admin para a empresa
@@ -129,7 +133,9 @@ export default function MasterPanel() {
         name: editingCompany.name,
         slug: editingCompany.slug,
         cnpj: editingCompany.cnpj,
-        max_users: editingCompany.max_users
+        max_users: editingCompany.max_users,
+        billing_day: editingCompany.billing_day,
+        monthly_fee: editingCompany.monthly_fee
       }
     });
   };
@@ -154,6 +160,7 @@ export default function MasterPanel() {
 
   const resetForm = () => {
     setName(''); setSlug(''); setCnpj(''); setMaxUsers(5);
+    setBillingDay(10); setMonthlyFee(0);
     setAdminName(''); setAdminUsername('');
   };
 
@@ -210,6 +217,16 @@ export default function MasterPanel() {
                     <span className="text-muted-foreground block text-xs">Max Usuários</span>
                     <span className="font-medium flex items-center gap-1">
                       <Users className="h-3 w-3" /> {comp.max_users}
+                    </span>
+                  </div>
+                  <div className="bg-muted/50 p-2 rounded-lg">
+                    <span className="text-muted-foreground block text-xs">Vencimento</span>
+                    <span className="font-medium">Dia {comp.billing_day || 10}</span>
+                  </div>
+                  <div className="bg-muted/50 p-2 rounded-lg">
+                    <span className="text-muted-foreground block text-xs">Mensalidade</span>
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                      R$ {(comp.monthly_fee || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 </div>
@@ -282,6 +299,16 @@ export default function MasterPanel() {
                 <Label>CNPJ</Label>
                 <Input value={cnpj} onChange={e => setCnpj(e.target.value)} placeholder="Opcional" />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Melhor Dia de Vencimento *</Label>
+                  <Input type="number" min={1} max={28} value={billingDay} onChange={e => setBillingDay(Number(e.target.value))} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Valor da Mensalidade (R$) *</Label>
+                  <Input type="number" step="0.01" min={0} value={monthlyFee} onChange={e => setMonthlyFee(Number(e.target.value))} required />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3 pt-2">
@@ -349,6 +376,30 @@ export default function MasterPanel() {
                   value={editingCompany.cnpj || ''} 
                   onChange={e => setEditingCompany({...editingCompany, cnpj: e.target.value})} 
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Melhor Dia de Vencimento *</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    max={28} 
+                    value={editingCompany.billing_day || 10} 
+                    onChange={e => setEditingCompany({...editingCompany, billing_day: Number(e.target.value)})} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Valor da Mensalidade (R$) *</Label>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    min={0} 
+                    value={editingCompany.monthly_fee || 0} 
+                    onChange={e => setEditingCompany({...editingCompany, monthly_fee: Number(e.target.value)})} 
+                    required 
+                  />
+                </div>
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t mt-4">

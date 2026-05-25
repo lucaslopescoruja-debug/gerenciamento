@@ -28,6 +28,8 @@ export interface Company {
   cnpj?: string
   max_users: number
   active: boolean
+  billing_day?: number
+  monthly_fee?: number
   created_at: string
 }
 

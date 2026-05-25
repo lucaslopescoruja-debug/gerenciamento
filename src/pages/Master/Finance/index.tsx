@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { saasApi } from '@/api/saas';
 import { companiesApi } from '@/api/companies';
@@ -33,6 +33,78 @@ export default function SaaSFinance() {
     queryFn: saasApi.getPayments,
     enabled: isMaster
   });
+
+  useEffect(() => {
+    if (isMaster && companies.length > 0 && payments.length >= 0) {
+      const runAutoGeneration = async () => {
+        try {
+          let count = 0;
+          const today = new Date();
+          today.setHours(12, 0, 0, 0); // Normalizar hora para evitar desvios de fuso horário
+
+          for (const comp of companies) {
+            // Ignora se não estiver ativa, se não tiver valor ou dia de vencimento cadastrados
+            if (!comp.active || !comp.monthly_fee || comp.monthly_fee <= 0 || !comp.billing_day) {
+              continue;
+            }
+
+            const createdDate = new Date(comp.created_at);
+            createdDate.setHours(12, 0, 0, 0);
+
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+
+            // Mapeia os 3 meses candidatos (anterior, atual e próximo)
+            const candidateMonths = [
+              { y: currentMonth === 0 ? currentYear - 1 : currentYear, m: currentMonth === 0 ? 11 : currentMonth - 1 },
+              { y: currentYear, m: currentMonth },
+              { y: currentMonth === 11 ? currentYear + 1 : currentYear, m: currentMonth === 11 ? 0 : currentMonth + 1 }
+            ];
+
+            for (const monthInfo of candidateMonths) {
+              const lastDay = new Date(monthInfo.y, monthInfo.m + 1, 0).getDate();
+              const day = Math.min(comp.billing_day, lastDay);
+              const dueDate = new Date(monthInfo.y, monthInfo.m, day, 12, 0, 0, 0);
+
+              // Não gera cobrança para datas anteriores ao cadastro da empresa
+              if (dueDate < createdDate) continue;
+
+              const timeDiff = dueDate.getTime() - today.getTime();
+              const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+              // Se a data de vencimento for daqui a 7 dias ou menos (ou já tiver passado)
+              if (daysRemaining <= 7) {
+                const dateStr = dueDate.toISOString().split('T')[0];
+                const alreadyExists = payments.some(
+                  p => p.company_id === comp.id && p.due_date === dateStr
+                );
+
+                if (!alreadyExists) {
+                  await saasApi.createPayment({
+                    company_id: comp.id,
+                    amount: comp.monthly_fee,
+                    due_date: dateStr,
+                    status: 'pendente',
+                    notes: 'Gerado automaticamente pelo sistema (Mensalidade)'
+                  });
+                  count++;
+                }
+              }
+            }
+          }
+
+          if (count > 0) {
+            queryClient.invalidateQueries({ queryKey: ['company_payments'] });
+            toast.success(`${count} mensalidade(s) gerada(s) automaticamente!`);
+          }
+        } catch (err) {
+          console.error('Erro ao gerar mensalidades automáticas:', err);
+        }
+      };
+
+      runAutoGeneration();
+    }
+  }, [isMaster, companies, payments, queryClient]);
 
   const createPaymentMutation = useMutation({
     mutationFn: saasApi.createPayment,
