@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productsApi } from '@/api/products'
 import type { Product } from '@/types/database'
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from '@/components/ui/toaster'
-import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight, ScanLine } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight, ScanLine, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { Link } from 'react-router-dom'
@@ -106,6 +106,48 @@ export default function Products() {
     p.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.external_code?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const [sortField, setSortField] = useState<'code' | 'description' | 'group_name' | 'stock' | null>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: 'code' | 'description' | 'group_name' | 'stock') => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filtered]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      const valA = a[sortField] ?? ''
+      const valB = b[sortField] ?? ''
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      // Fallback/Numeric comparison for stock
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [filtered, sortField, sortAsc])
+
+  const renderSortIcon = (field: 'code' | 'description' | 'group_name' | 'stock') => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -365,17 +407,37 @@ export default function Products() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Grupo</TableHead>
-              <TableHead>Estoque</TableHead>
+              <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('code')}>
+                <div className="flex items-center gap-1">
+                  Código
+                  {renderSortIcon('code')}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('description')}>
+                <div className="flex items-center gap-1">
+                  Descrição
+                  {renderSortIcon('description')}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('group_name')}>
+                <div className="flex items-center gap-1">
+                  Grupo
+                  {renderSortIcon('group_name')}
+                </div>
+              </TableHead>
+              <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('stock')}>
+                <div className="flex items-center gap-1">
+                  Estoque
+                  {renderSortIcon('stock')}
+                </div>
+              </TableHead>
               {isManager && <TableHead className="text-right">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={isManager ? 5 : 4} className="text-center py-12 text-muted-foreground">Carregando...</TableCell></TableRow>
-            ) : filtered.length === 0 ? (
+            ) : sortedProducts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isManager ? 5 : 4} className="text-center py-12 text-muted-foreground">
                   <FileDown className="h-8 w-8 mx-auto mb-2 opacity-30" />
@@ -383,7 +445,7 @@ export default function Products() {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((product) => (
+              sortedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-mono text-sm">
                     <div className="text-foreground">{product.code}</div>
