@@ -24,7 +24,7 @@ export default function Products() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const { user, isMaster } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || isMaster
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -333,19 +333,21 @@ export default function Products() {
                   <Trash2 className="h-4 w-4 mr-1.5" /> Limpar
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10" 
-                onClick={() => {
-                  if (window.confirm('Deseja realmente ajustar o estoque de TODOS os produtos para 100 itens?')) {
-                    setAllStockTo100Mutation.mutate()
-                  }
-                }}
-                disabled={setAllStockTo100Mutation.isPending}
-              >
-                <Package className="h-4 w-4 mr-1.5" /> Ajustar para 100
-              </Button>
+              {isMaster && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10" 
+                  onClick={() => {
+                    if (window.confirm('Deseja realmente ajustar o estoque de TODOS os produtos para 100 itens?')) {
+                      setAllStockTo100Mutation.mutate()
+                    }
+                  }}
+                  disabled={setAllStockTo100Mutation.isPending}
+                >
+                  <Package className="h-4 w-4 mr-1.5" /> Ajustar para 100
+                </Button>
+              )}
               <Button size="sm" onClick={() => { setEditingProduct(null); setIsDialogOpen(true); }}>
                 <Plus className="h-4 w-4 mr-1.5" /> Novo Produto
               </Button>
