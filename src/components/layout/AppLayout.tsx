@@ -70,10 +70,10 @@ export default function AppLayout() {
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity">
           <Boxes className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg gradient-text">Estoque Fácil</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-1">
           <button
             onClick={logout}
@@ -131,7 +131,7 @@ export default function AppLayout() {
         )}
       >
         {/* Logo */}
-        <div className="h-16 px-5 border-b border-border hidden md:flex items-center gap-3 shrink-0">
+        <Link to="/" className="h-16 px-5 border-b border-border hidden md:flex items-center gap-3 shrink-0 cursor-pointer hover:bg-muted/30 transition-colors">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Boxes className="h-5 w-5 text-white" />
           </div>
@@ -139,7 +139,7 @@ export default function AppLayout() {
             <h1 className="font-bold text-sm gradient-text">Estoque Fácil</h1>
             <p className="text-xs text-muted-foreground">{company?.name || (isMaster ? 'Painel Master' : 'Carregando...')}</p>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-auto mt-14 md:mt-0">
