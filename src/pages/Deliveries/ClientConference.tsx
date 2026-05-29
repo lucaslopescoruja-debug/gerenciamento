@@ -6,7 +6,7 @@ import { productsApi } from '@/api/products'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, ScanLine, Search, CheckCircle2, AlertTriangle, Save, PenTool, Camera } from 'lucide-react'
+import { ArrowLeft, ScanLine, Search, CheckCircle2, AlertTriangle, Save, PenTool, Camera, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
 
@@ -15,6 +15,7 @@ export default function ClientConference() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const isManager = user?.role === 'admin' || user?.role === 'gestor'
   
   const [searchInput, setSearchInput] = useState('')
   const [scannedCode, setScannedCode] = useState('')
@@ -65,6 +66,23 @@ export default function ClientConference() {
       queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
     }
   })
+
+  const deleteItemMutation = useMutation({
+    mutationFn: (itemId: string) => deliveriesApi.deleteDeliveryItem(itemId),
+    onSuccess: () => {
+      toast.success('Item removido com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
+    },
+    onError: (e: any) => {
+      toast.error(`Erro ao remover item: ${e.message}`)
+    }
+  })
+
+  const handleDeleteItem = (itemId: string, description: string) => {
+    if (window.confirm(`Deseja realmente remover o item "${description}" do pedido do cliente?`)) {
+      deleteItemMutation.mutate(itemId)
+    }
+  }
 
   const updateClientStatusMutation = useMutation({
     mutationFn: (status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled') => 
@@ -337,7 +355,19 @@ export default function ClientConference() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground text-sm leading-tight">{item.description}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.product_code}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
+                      {isManager && !isFinished && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteItem(item.id, item.description)}
+                          className="text-red-500 hover:text-red-700 p-0.5 rounded hover:bg-red-500/10 transition-colors"
+                          title="Remover item"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right shrink-0 flex flex-col items-end">
                     {isPendingApproval ? (
