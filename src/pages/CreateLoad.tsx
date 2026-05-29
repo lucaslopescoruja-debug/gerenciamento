@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { operationsApi } from '@/api/operations'
 import { productsApi } from '@/api/products'
+import { usersApi } from '@/api/users'
+import { deliveriesApi } from '@/api/deliveries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -34,6 +36,8 @@ export default function CreateLoad() {
   const [notes, setNotes] = useState('')
   const [items, setItems] = useState<NewItem[]>([])
   const [codeSearch, setCodeSearch] = useState('')
+  const [selectedDriverId, setSelectedDriverId] = useState('')
+  const [importedClients, setImportedClients] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   
@@ -58,6 +62,13 @@ export default function CreateLoad() {
     queryKey: ['products'],
     queryFn: productsApi.getProducts,
   })
+
+  const { data: usersList = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: usersApi.getUsers,
+  })
+  
+  const drivers = usersList.filter(u => u.role === 'motorista' && u.active)
 
   const { data: existingOp } = useQuery({
     queryKey: ['operation', id],
@@ -85,8 +96,15 @@ export default function CreateLoad() {
       }
       setHelperName(h)
       setNotes(n)
+
+      if (existingOp.driver_name && drivers.length > 0) {
+        const matched = drivers.find(d => d.name === existingOp.driver_name)
+        if (matched) {
+          setSelectedDriverId(matched.id)
+        }
+      }
     }
-  }, [existingOp])
+  }, [existingOp, drivers])
 
   useEffect(() => {
     if (existingItems.length > 0 && items.length === 0) {
@@ -101,13 +119,24 @@ export default function CreateLoad() {
   }, [existingItems])
 
   const createMutation = useMutation({
-    mutationFn: (data: { op: any, items: any }) => operationsApi.createOperation(data.op, data.items),
-    onSuccess: () => {
-      toast.success('Carga criada com sucesso!')
+    mutationFn: async (data: { op: any, items: any, driverId?: string, clients?: any[] }) => {
+      const op = await operationsApi.createOperation(data.op, data.items)
+      if (data.clients && data.clients.length > 0 && data.driverId) {
+        const route = await deliveriesApi.createDeliveryRoute(op.id, data.driverId)
+        await deliveriesApi.importDeliveryClients(route.id, data.clients)
+      }
+      return op
+    },
+    onSuccess: (op, variables) => {
+      if (variables.clients && variables.clients.length > 0) {
+        toast.success('Carga e rota de entregas criadas com sucesso!')
+      } else {
+        toast.success('Carga criada com sucesso!')
+      }
       navigate('/cargas')
     },
     onError: (error: any) => {
-      toast.error(`Erro ao criar carga: ${error.message}`)
+      toast.error(`Erro ao criar: ${error.message}`)
     }
   })
 
@@ -222,82 +251,244 @@ export default function CreateLoad() {
         const ws = workbook.Sheets[wsname]
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false }) as any[][]
 
-        let addedCount = 0
-        let notFoundCount = 0
+        // 1. Check if the spreadsheet contains client data (rows starting with 'À ')
+        const hasClientData = data.some(row => {
+          if (!row) return false
+          const firstCell = row.find(c => c)
+          return typeof firstCell === 'string' && firstCell.trim().startsWith('À ')
+        })
 
-        const newItems: NewItem[] = []
+        if (hasClientData) {
+          // Client-product parser (exactly like RouteClients.tsx)
+          const clientsMap = new Map<string, any>()
+          let notFoundCount = 0
+          let currentClientName = ''
+          let currentOrderNumber = ''
 
-        for (let i = 0; i < data.length; i++) {
-          const row = data[i]
-          if (!row || row.length === 0) continue
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i]
+            if (!row || row.length === 0) continue
 
-          let parts = row.map(cell => {
-            if (cell === undefined || cell === null) return ''
-            return String(cell).trim()
-          }).filter(Boolean)
-
-          if (parts.length < 2) continue
-
-          const firstPart = parts[0].toLowerCase()
-          if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório') || firstPart.includes('delicius') || firstPart.includes('quantidade')) {
-            continue
-          }
-
-        const codePart = parts[0]
-        const qtyPart = parts[parts.length - 1]
-
-        let rawCode = codePart
-        if (rawCode.includes(' - ')) {
-          rawCode = rawCode.split(' - ')[0].trim()
-        }
-        let code = rawCode;
-        if (!code) continue;
-      
-      const normalizedImportCode = normalizeCode(code);
-      // STRICT MATCH ONLY FOR IMPORTS
-      const product = products.find(p => normalizeCode(p.code) === normalizedImportCode || (p.external_code && normalizeCode(p.external_code) === normalizedImportCode));
-
-      if (product) {
-        // Safely parse formats like "1,00" or "1.00" to integer 1
-        const qty = Math.round(parseFloat(qtyPart.replace(',', '.')))
-
-        if (code && !isNaN(qty)) {
-          if (product) {
-            let finalQty = qty
-            if (finalQty > product.stock) {
-              if (product.stock <= 0) {
-                toast.warning(`Falta de estoque (estoque zerado): ${product.description}. Pedido: ${qty}. Confirmar no físico durante a conferência.`)
-              } else {
-                toast.warning(`Estoque no sistema menor que o previsto para ${product.description}. Pedido: ${qty}, Disponível: ${product.stock}. Confirmar no físico durante a conferência.`)
+            const rowStr = row.join(' ').trim()
+            
+            // Check for Order Number
+            if (rowStr.toLowerCase().includes('pedido de venda')) {
+              const match = rowStr.match(/pedido de venda (\d+)/i)
+              if (match) {
+                currentOrderNumber = match[1]
               }
             }
 
-            // Check if already in items list (existing)
-            const exists = items.some(it => it.product_code === product.code) || newItems.some(it => it.product_code === product.code)
-            if (!exists && finalQty > 0) {
-              newItems.push({
-                tempId: `t${Date.now()}_${addedCount}`,
-                product_id: product.id,
-                product_code: product.code,
-                description: product.description, // User description discarded, fetched from DB
-                quantity_expected: Math.max(1, finalQty)
-              })
-              addedCount++
+            // Check for Client Name
+            const firstCell = row.find(c => c)
+            if (typeof firstCell === 'string' && firstCell.trim().startsWith('À ')) {
+              currentClientName = firstCell.replace('À ', '').trim()
+              if (!clientsMap.has(currentClientName)) {
+                clientsMap.set(currentClientName, {
+                  name: currentClientName,
+                  address: '',
+                  phone: '',
+                  notes: currentOrderNumber ? `Pedido: ${currentOrderNumber}` : '',
+                  order_number: currentOrderNumber || null,
+                  items: []
+                })
+              }
+              
+              // Extract address (usually next line)
+              if (data[i+1]) {
+                 const addrRow = data[i+1]
+                 const addrCell = addrRow.find(c => c)
+                 if (addrCell && typeof addrCell === 'string' && !addrCell.trim().startsWith('A/C') && !addrCell.trim().startsWith('Telefone')) {
+                   clientsMap.get(currentClientName).address = addrCell.trim()
+                 }
+              }
             }
-          } else {
-            notFoundCount++
-          }
-        }
-      }
-      }
 
-        if (newItems.length > 0) {
-          setItems(prev => [...prev, ...newItems])
-          toast.success(`${addedCount} itens importados com sucesso.`)
-        }
+            // Check for Phone
+            if (typeof firstCell === 'string' && firstCell.trim().toLowerCase().startsWith('telefone:')) {
+              const phone = firstCell.replace(/telefone:/i, '').trim()
+              if (phone && currentClientName && clientsMap.has(currentClientName)) {
+                 clientsMap.get(currentClientName).phone = phone
+              } else if (row.length > 1) { 
+                 const nextCell = row[1] || row[2]
+                 if (nextCell && currentClientName && clientsMap.has(currentClientName)) {
+                   clientsMap.get(currentClientName).phone = String(nextCell).trim()
+                 }
+              }
+            }
+
+            // Check for Products explicitly via columns
+            if (currentClientName && clientsMap.has(currentClientName)) {
+               const codeCell = row[2]
+               const hasRowNumber = (row[0] && /^\d+$/.test(String(row[0]).trim())) || (row[1] && /^\d+$/.test(String(row[1]).trim()))
+               
+               if (codeCell && hasRowNumber) {
+                  const strCode = String(codeCell).trim()
+                  
+                  if (strCode.toLowerCase() !== 'código' && strCode.toLowerCase() !== 'codigo' && strCode.length > 0 && strCode.length < 30) {
+                     const normalizedCode = normalizeCode(strCode)
+                     const isNumStr = /^\d+$/.test(normalizedCode)
+                     
+                     let foundProduct = null
+                     if (normalizedCode.length >= 2) {
+                       foundProduct = products.find(prod => {
+                         const pCode = normalizeCode(prod.code)
+                         const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
+                         if (pCode === normalizedCode || pExt === normalizedCode) return true
+                         if (isNumStr && /^\d+$/.test(pCode) && parseInt(pCode, 10) === parseInt(normalizedCode, 10)) return true
+                         if (pExt && isNumStr && /^\d+$/.test(pExt) && parseInt(pExt, 10) === parseInt(normalizedCode, 10)) return true
+                         return false
+                       })
+                     }
+
+                     const descCell = row[4] || row[5] || row[3]
+                     let finalDesc = foundProduct ? foundProduct.description : (descCell ? String(descCell).trim() : 'Produto sem descrição')
+                     let finalCode = foundProduct ? foundProduct.code : strCode
+
+                     const qtyCell = row[11] || row[10] || row[12]
+                     let qty = 1
+                     if (qtyCell) {
+                        const strQty = String(qtyCell).trim()
+                        if (!strQty.includes('/') && !strQty.includes(':')) {
+                          const digitsOnly = strQty.replace(/[^\d]/g, '') 
+                          const parsed = parseInt(digitsOnly, 10)
+                          if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
+                             qty = parsed
+                          }
+                        }
+                     } 
+
+                     clientsMap.get(currentClientName).items.push({
+                       product_id: foundProduct ? foundProduct.id : null,
+                       product_code: finalCode,
+                       description: finalDesc,
+                       quantity_expected: qty
+                     })
+                     
+                     if (!foundProduct) {
+                       notFoundCount++
+                     }
+                  }
+               }
+            }
+          }
+
+          const clientsData = Array.from(clientsMap.values())
+          if (clientsData.length === 0) {
+            toast.error('Nenhum dado válido de cliente encontrado na planilha.')
+            return
+          }
+
+          // Compile product list for the load items (sum of quantity of each product across all clients)
+          const productSumMap = new Map<string, { product_id: string | null, product_code: string, description: string, quantity_expected: number }>()
+
+          for (const client of clientsData) {
+            for (const item of client.items) {
+              const existing = productSumMap.get(item.product_code)
+              if (existing) {
+                existing.quantity_expected += item.quantity_expected
+              } else {
+                productSumMap.set(item.product_code, {
+                  product_id: item.product_id,
+                  product_code: item.product_code,
+                  description: item.description,
+                  quantity_expected: item.quantity_expected
+                })
+              }
+            }
+          }
+
+          const loadItems: NewItem[] = Array.from(productSumMap.values()).map((p, idx) => ({
+            tempId: `t${Date.now()}_${idx}`,
+            product_id: p.product_id || '',
+            product_code: p.product_code,
+            description: p.description,
+            quantity_expected: p.quantity_expected
+          }))
+
+          setItems(loadItems)
+          setImportedClients(clientsData)
+
+          toast.success(`Planilha de clientes importada! ${clientsData.length} clientes e ${loadItems.length} produtos consolidados.`)
+          if (notFoundCount > 0) {
+            toast.warning(`${notFoundCount} produtos não foram encontrados no banco de dados.`)
+          }
+        } else {
+          // Standard product-only parser (original parser)
+          let addedCount = 0
+          let notFoundCount = 0
+          const newItems: NewItem[] = []
+
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i]
+            if (!row || row.length === 0) continue
+
+            let parts = row.map(cell => {
+              if (cell === undefined || cell === null) return ''
+              return String(cell).trim()
+            }).filter(Boolean)
+
+            if (parts.length < 2) continue
+
+            const firstPart = parts[0].toLowerCase()
+            if (firstPart.includes('cod') || firstPart.includes('código') || firstPart.includes('itens') || firstPart.includes('relatório') || firstPart.includes('delicius') || firstPart.includes('quantidade')) {
+              continue
+            }
+
+            const codePart = parts[0]
+            const qtyPart = parts[parts.length - 1]
+
+            let rawCode = codePart
+            if (rawCode.includes(' - ')) {
+              rawCode = rawCode.split(' - ')[0].trim()
+            }
+            let code = rawCode;
+            if (!code) continue;
         
-        if (notFoundCount > 0) {
-          toast.info(`${notFoundCount} linhas ignoradas (cabeçalhos de grupo ou não encontrados).`)
+            const normalizedImportCode = normalizeCode(code);
+            const product = products.find(p => normalizeCode(p.code) === normalizedImportCode || (p.external_code && normalizeCode(p.external_code) === normalizedImportCode));
+
+            if (product) {
+              const qty = Math.round(parseFloat(qtyPart.replace(',', '.')))
+
+              if (code && !isNaN(qty)) {
+                let finalQty = qty
+                if (finalQty > product.stock) {
+                  if (product.stock <= 0) {
+                    toast.warning(`Falta de estoque (estoque zerado): ${product.description}. Pedido: ${qty}. Confirmar no físico durante a conferência.`)
+                  } else {
+                    toast.warning(`Estoque no sistema menor que o previsto para ${product.description}. Pedido: ${qty}, Disponível: ${product.stock}. Confirmar no físico durante a conferência.`)
+                  }
+                }
+
+                const exists = items.some(it => it.product_code === product.code) || newItems.some(it => it.product_code === product.code)
+                if (!exists && finalQty > 0) {
+                  newItems.push({
+                    tempId: `t${Date.now()}_${addedCount}`,
+                    product_id: product.id,
+                    product_code: product.code,
+                    description: product.description,
+                    quantity_expected: Math.max(1, finalQty)
+                  })
+                  addedCount++
+                }
+              }
+            } else {
+              notFoundCount++
+            }
+          }
+
+          if (newItems.length > 0) {
+            setItems(prev => [...prev, ...newItems])
+            toast.success(`${addedCount} itens de carga importados com sucesso.`)
+          }
+          
+          if (notFoundCount > 0) {
+            toast.info(`${notFoundCount} linhas ignoradas ou produtos não encontrados.`)
+          }
+
+          // Clear client-specific states
+          setImportedClients([])
         }
       } catch (error) {
         toast.error('Erro ao processar arquivo. Verifique o formato.')
@@ -336,12 +527,15 @@ export default function CreateLoad() {
 
     const finalNotes = helperName.trim() ? `Ajudante: ${helperName.trim()}\n${notes}` : notes
 
+    const selectedDriver = drivers.find(d => d.id === selectedDriverId)
+    const finalDriverName = selectedDriver ? selectedDriver.name : driverName
+
     const opData = {
       type: 'LOAD' as const,
       status: 'pending' as const,
       load_number: loadNumber,
       client_name: 'Diversos', // Temporary default since we removed client
-      driver_name: driverName,
+      driver_name: finalDriverName,
       vehicle_plate: vehiclePlate,
       notes: finalNotes,
     }
@@ -366,7 +560,12 @@ export default function CreateLoad() {
     if (id) {
       updateMutation.mutate({ op: opData, items: itemsData })
     } else {
-      createMutation.mutate({ op: opData, items: itemsData })
+      createMutation.mutate({ 
+        op: opData, 
+        items: itemsData,
+        driverId: selectedDriverId || undefined,
+        clients: importedClients.length > 0 ? importedClients : undefined
+      })
     }
   }
 
@@ -384,9 +583,38 @@ export default function CreateLoad() {
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4 text-primary" />Dados da Rota</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2"><Label>Nome da Rota *</Label><Input value={loadNumber} onChange={e => setLoadNumber(e.target.value)} placeholder="Ex: Rota Centro 01" required /></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome da Rota *</Label>
+                <Input value={loadNumber} onChange={e => setLoadNumber(e.target.value)} placeholder="Ex: Rota Centro 01" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Motorista Responsável {importedClients.length > 0 && '*'}</Label>
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedDriverId}
+                  onChange={e => setSelectedDriverId(e.target.value)}
+                  required={importedClients.length > 0}
+                >
+                  <option value="">Selecione o motorista...</option>
+                  {drivers.map(driver => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.name} ({driver.username})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {importedClients.length > 0 && (
+              <div className="flex items-start gap-2 text-xs text-amber-500 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 slide-up mt-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  <strong>✨ Planilha com {importedClients.length} clientes vinculada!</strong> Ao salvar esta carga, o sistema criará automaticamente a carga e a rota de entrega correspondente vinculada ao motorista selecionado.
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
