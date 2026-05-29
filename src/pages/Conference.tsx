@@ -348,7 +348,15 @@ export default function Conference() {
     </div>
   )
 
-  const regularItems = items.filter(i => !i.description.startsWith('🔄'));
+  const regularItems = items
+    .filter(i => !i.description.startsWith('🔄'))
+    .sort((a, b) => {
+      const prodA = allProducts.find(p => p.id === a.product_id || normalizeCode(p.code) === normalizeCode(a.product_code))
+      const prodB = allProducts.find(p => p.id === b.product_id || normalizeCode(p.code) === normalizeCode(b.product_code))
+      const groupA = prodA?.group_name || ''
+      const groupB = prodB?.group_name || ''
+      return groupA.localeCompare(groupB) || a.description.localeCompare(b.description)
+    });
   const returnItemsList = items.filter(i => i.description.startsWith('🔄'));
 
   const progress = () => {
@@ -692,11 +700,21 @@ export default function Conference() {
               }
 
               const hasAlert = hasStockAlert(item)
+              const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
+              const groupName = matchedProduct?.group_name
+
               return (
                 <div key={item.id} className={`glass-card p-3 flex flex-col gap-2 slide-up transition-all ${done ? 'border-emerald-500/20' : hasAlert ? 'border-amber-500/30 bg-amber-500/5' : ''}`} style={{ animationDelay: `${i * 10}ms` }}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className={`font-medium truncate ${done ? 'text-emerald-300' : 'text-foreground'}`}>{item.description}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`font-medium truncate ${done ? 'text-emerald-300' : 'text-foreground'}`}>{item.description}</p>
+                        {groupName && (
+                          <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase">
+                            {groupName}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
