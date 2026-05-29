@@ -88,8 +88,8 @@ export default function Conference() {
   })
 
   const updateOpMutation = useMutation({
-    mutationFn: ({ status }: { status: OperationItem['status'] | 'dispatched' | 'completed' }) => 
-      operationsApi.updateOperationStatus(id!, status as any),
+    mutationFn: ({ status }: { status: 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled' }) => 
+      operationsApi.updateOperationStatus(id!, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['operation', id] })
       queryClient.invalidateQueries({ queryKey: ['operations'] })
@@ -255,6 +255,9 @@ export default function Conference() {
       }
       addItemMutation.mutate(newItem)
       toast.success(`${matchedProduct.description} adicionado à rota!`)
+      if (op && op.status === 'pending') {
+        updateOpMutation.mutate({ status: 'in_progress' })
+      }
       return 
     }
     
@@ -315,6 +318,9 @@ export default function Conference() {
       status: ns,
       extraUpdates: isStockAlert ? extraUpdates : undefined
     })
+    if (op && op.status === 'pending') {
+      updateOpMutation.mutate({ status: 'in_progress' })
+    }
   }
 
   const handleScan = (e: React.FormEvent) => {
@@ -377,6 +383,9 @@ export default function Conference() {
       status: ns,
       extraUpdates: isStockAlert ? extraUpdates : undefined
     })
+    if (op && op.status === 'pending') {
+      updateOpMutation.mutate({ status: 'in_progress' })
+    }
   }
 
   if (isOpLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando conferência...</div>
