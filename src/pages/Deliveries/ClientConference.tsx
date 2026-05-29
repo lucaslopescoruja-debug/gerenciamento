@@ -84,6 +84,29 @@ export default function ClientConference() {
     }
   }
 
+  const handleToggleCheckItem = (item: any) => {
+    const done = item.quantity_scanned >= item.quantity_expected
+    const actionText = done ? 'desmarcar' : 'marcar como entregue/conferido'
+    if (!window.confirm(`Deseja realmente ${actionText} o item "${item.description}"?`)) {
+      return
+    }
+
+    const newQty = done ? 0 : item.quantity_expected
+    const status = newQty >= item.quantity_expected ? 'ok' : 'pending'
+
+    // Optimistic cache update
+    const updated = {
+      ...item,
+      quantity_scanned: newQty,
+      status
+    }
+    queryClient.setQueryData(['delivery_items', clientId], (old: any[] = []) =>
+      old.map(i => i.id === item.id ? updated : i)
+    )
+
+    updateItemMutation.mutate({ itemId: item.id, qty: newQty, status })
+  }
+
   const updateClientStatusMutation = useMutation({
     mutationFn: (status: 'pending' | 'waiting' | 'delivered' | 'delivered_with_divergence' | 'canceled') => 
       deliveriesApi.updateDeliveryClient(clientId!, { status }),
@@ -369,24 +392,41 @@ export default function ClientConference() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0 flex flex-col items-end">
-                    {isPendingApproval ? (
-                      <div className="flex flex-col items-end">
-                        <span className="text-lg font-bold font-mono text-purple-500">{item.requested_qty}</span>
-                        <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-500/10 px-1.5 py-0.5 rounded mt-1">Aguardando Gestor</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-baseline gap-1">
-                          <span className={`text-lg font-bold font-mono ${isOk ? 'text-emerald-500' : isExcess ? 'text-amber-500' : 'text-blue-500'}`}>
-                            {item.quantity_scanned}
-                          </span>
-                          <span className="text-xs text-muted-foreground font-mono">/ {item.quantity_expected}</span>
+                  <div className="text-right shrink-0 flex items-center gap-3">
+                    <div className="flex flex-col items-end">
+                      {isPendingApproval ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-lg font-bold font-mono text-purple-500">{item.requested_qty}</span>
+                          <span className="text-[10px] uppercase font-bold text-purple-500 bg-purple-500/10 px-1.5 py-0.5 rounded mt-1">Aguardando Gestor</span>
                         </div>
-                        {item.approval_status === 'rejected' && <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded mt-1">Rejeitado</span>}
-                        {isExcess && item.approval_status !== 'rejected' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1">Excedente</span>}
-                        {isOk && <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1">OK</span>}
-                      </>
+                      ) : (
+                        <>
+                          <div className="flex items-baseline gap-1">
+                            <span className={`text-lg font-bold font-mono ${isOk ? 'text-emerald-500' : isExcess ? 'text-amber-500' : 'text-blue-500'}`}>
+                              {item.quantity_scanned}
+                            </span>
+                            <span className="text-xs text-muted-foreground font-mono">/ {item.quantity_expected}</span>
+                          </div>
+                          {item.approval_status === 'rejected' && <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded mt-1">Rejeitado</span>}
+                          {isExcess && item.approval_status !== 'rejected' && <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1">Excedente</span>}
+                          {isOk && <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1">OK</span>}
+                        </>
+                      )}
+                    </div>
+                    
+                    {!isFinished && !isPendingApproval && (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCheckItem(item)}
+                        className="hover:scale-105 active:scale-95 transition-transform"
+                        title={isOk ? "Desmarcar item" : "Marcar como conferido"}
+                      >
+                        {isOk ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 hover:border-emerald-500/50" />
+                        )}
+                      </button>
                     )}
                   </div>
                 </div>
