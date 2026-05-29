@@ -338,6 +338,42 @@ export default function Conference() {
     return stock <= 0 || stock < item.quantity_expected
   }
 
+  const handleToggleCheckItem = (item: OperationItem) => {
+    const done = item.quantity_scanned >= item.quantity_expected
+    const newQty = done ? 0 : item.quantity_expected
+    const ns = newQty >= item.quantity_expected ? 'ok' : 'pending'
+    
+    const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
+    const systemStock = item.system_stock_at_load !== undefined && item.system_stock_at_load !== null 
+      ? item.system_stock_at_load 
+      : (matchedProduct ? matchedProduct.stock : 0)
+    const isStockAlert = op?.type === 'LOAD' && (systemStock <= 0 || systemStock < item.quantity_expected)
+    const isDivergent = isStockAlert && ((systemStock <= 0 && newQty > 0) || (systemStock > 0 && newQty > systemStock))
+    
+    const extraUpdates = isStockAlert ? {
+      physical_verification: (newQty > 0 ? 'found' : 'pending') as 'pending' | 'found' | 'really_zero',
+      physical_divergence_found: isDivergent
+    } : {}
+
+    const updated = { 
+      ...item, 
+      quantity_scanned: newQty, 
+      status: ns,
+      ...extraUpdates
+    } as OperationItem
+    
+    queryClient.setQueryData(['operation_items', id], (old: OperationItem[]) => 
+      old.map(i => i.id === item.id ? updated : i)
+    )
+
+    updateItemMutation.mutate({ 
+      itemId: item.id, 
+      qty: newQty, 
+      status: ns,
+      extraUpdates: isStockAlert ? extraUpdates : undefined
+    })
+  }
+
   if (isOpLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando conferência...</div>
 
   if (!op) return (
@@ -722,7 +758,26 @@ export default function Conference() {
                         <span className={`text-lg font-bold font-mono ${done ? 'text-emerald-400' : 'text-foreground'}`}>{item.quantity_scanned || 0}</span>
                         <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
                       </div>
-                      {done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
+                      {op.status !== 'dispatched' && op.status !== 'completed' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCheckItem(item)}
+                          className="hover:scale-105 active:scale-95 transition-transform"
+                          title={done ? "Desmarcar item" : "Marcar como conferido"}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 hover:border-emerald-500/50" />
+                          )}
+                        </button>
+                      ) : (
+                        done ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
+                        )
+                      )}
                       
                       {isManager && (
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
@@ -919,7 +974,26 @@ export default function Conference() {
                         <span className={`text-lg font-bold font-mono ${done ? 'text-emerald-400' : 'text-foreground'}`}>{item.quantity_scanned || 0}</span>
                         <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
                       </div>
-                      {done ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />}
+                      {op.status !== 'dispatched' && op.status !== 'completed' ? (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCheckItem(item)}
+                          className="hover:scale-105 active:scale-95 transition-transform"
+                          title={done ? "Desmarcar item" : "Marcar como conferido"}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 hover:border-emerald-500/50" />
+                          )}
+                        </button>
+                      ) : (
+                        done ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
+                        )
+                      )}
                       
                       {op.status !== 'dispatched' && op.status !== 'completed' && isManager && (
                         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
