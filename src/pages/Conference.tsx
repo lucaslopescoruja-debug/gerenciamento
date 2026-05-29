@@ -340,6 +340,11 @@ export default function Conference() {
 
   const handleToggleCheckItem = (item: OperationItem) => {
     const done = item.quantity_scanned >= item.quantity_expected
+    const actionText = done ? 'desmarcar' : 'marcar como conferido'
+    if (!window.confirm(`Deseja realmente ${actionText} o item "${item.description}"?`)) {
+      return
+    }
+
     const newQty = done ? 0 : item.quantity_expected
     const ns = newQty >= item.quantity_expected ? 'ok' : 'pending'
     
