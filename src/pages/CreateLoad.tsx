@@ -544,7 +544,7 @@ export default function CreateLoad() {
       const product = products.find(p => p.code === i.product_code)
       const systemStock = product ? product.stock : 0
       return {
-        product_id: i.product_id,
+        product_id: i.product_id || null,
         product_code: i.product_code,
         description: i.description,
         quantity_expected: i.quantity_expected,
