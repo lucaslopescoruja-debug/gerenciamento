@@ -5,8 +5,10 @@ import { deliveriesApi } from '@/api/deliveries'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature, Clock, X, ArrowLeft } from 'lucide-react'
+import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, FileSignature, Clock, X, ArrowLeft, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/toaster'
+import { generateDeliveryProofPDF } from '@/utils/pdf'
 
 function formatDateTime(dateStr: string | undefined) {
   if (!dateStr) return 'Data não registrada'
@@ -28,6 +30,20 @@ function formatDateOnly(dateStr: string | undefined) {
 export default function ClientHistory() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState<string | null>(null)
+
+  const handleExportPDF = async (client: any) => {
+    try {
+      setIsExporting(client.id)
+      toast.info('Gerando comprovante em PDF...')
+      await generateDeliveryProofPDF(client)
+      toast.success('Comprovante exportado com sucesso!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao exportar PDF')
+    } finally {
+      setIsExporting(null)
+    }
+  }
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['delivery_proofs', searchTerm],
@@ -165,9 +181,23 @@ export default function ClientHistory() {
 
                     {/* Comprovante / Assinatura */}
                     <div className="bg-muted/10 p-4 rounded-lg border border-border/50">
-                      <h4 className="font-bold text-sm uppercase text-muted-foreground mb-4 flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Comprovante de Entrega
-                      </h4>
+                      <div className="flex justify-between items-center mb-4 gap-2">
+                        <h4 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Comprovante de Entrega
+                        </h4>
+                        {client.status !== 'pending' && client.status !== 'waiting' && client.status !== 'canceled' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleExportPDF(client)}
+                            disabled={isExporting !== null}
+                            className="h-8 border-primary/30 text-primary hover:bg-primary/5 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                          >
+                            <FileDown className="h-3.5 w-3.5" />
+                            {isExporting === client.id ? 'Gerando...' : 'Exportar PDF'}
+                          </Button>
+                        )}
+                      </div>
                       
                       {client.status === 'pending' || client.status === 'waiting' ? (
                         <div className="text-center p-6 bg-background rounded-lg border border-dashed border-border">
