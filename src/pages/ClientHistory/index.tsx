@@ -9,6 +9,7 @@ import { Search, MapPin, Truck, Calendar, CheckCircle2, ChevronDown, ChevronUp, 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
 import { generateDeliveryProofPDF } from '@/utils/pdf'
+import { useAuth } from '@/contexts/AuthContext'
 
 function formatDateTime(dateStr: string | undefined) {
   if (!dateStr) return 'Data não registrada'
@@ -28,6 +29,7 @@ function formatDateOnly(dateStr: string | undefined) {
 }
 
 export default function ClientHistory() {
+  const { company } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState<string | null>(null)
@@ -36,7 +38,7 @@ export default function ClientHistory() {
     try {
       setIsExporting(client.id)
       toast.info('Gerando comprovante em PDF...')
-      await generateDeliveryProofPDF(client)
+      await generateDeliveryProofPDF(client, company)
       toast.success('Comprovante exportado com sucesso!')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao exportar PDF')

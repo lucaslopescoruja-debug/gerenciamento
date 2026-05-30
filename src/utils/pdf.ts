@@ -21,7 +21,7 @@ function formatDateOnly(dateStr: string | undefined) {
   }).format(date)
 }
 
-export async function generateDeliveryProofPDF(client: any): Promise<void> {
+export async function generateDeliveryProofPDF(client: any, company: any): Promise<void> {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -48,46 +48,81 @@ export async function generateDeliveryProofPDF(client: any): Promise<void> {
 
   y += 10
 
-  // Two columns for Client and Order info
-  // Column 1: Client details
+  // 1. EMPRESA EMITENTE
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139) // Slate-500
+  doc.text('EMPRESA EMITENTE', 15, y)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(15, 23, 42)
+  const compNameText = company?.name || 'Empresa Emissora'
+  const compNameLines = doc.splitTextToSize(compNameText, 180)
+  doc.text(compNameLines, 15, y + 6)
+
+  y += 6 + (compNameLines.length * 5)
+  if (company?.cnpj) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9.5)
+    doc.setTextColor(71, 85, 105) // Slate-600
+    doc.text(`CNPJ: ${company.cnpj}`, 15, y)
+    y += 5
+  }
+  doc.setLineWidth(0.2)
+  doc.line(15, y, 195, y)
+  y += 8
+
+  // 2. DADOS DO CLIENTE
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
+  doc.setTextColor(100, 116, 139)
   doc.text('DADOS DO CLIENTE', 15, y)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(15, 23, 42)
-  doc.text(client.name || 'Cliente Sem Nome', 15, y + 6)
+  const clientNameText = client.name || 'Cliente Sem Nome'
+  const nameLines = doc.splitTextToSize(clientNameText, 180)
+  doc.text(nameLines, 15, y + 6)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
   doc.setTextColor(71, 85, 105) // Slate-600
   const addrText = client.address || 'Endereço não informado'
-  const addrLines = doc.splitTextToSize(addrText, 90)
-  doc.text(addrLines, 15, y + 12)
+  const addrLines = doc.splitTextToSize(addrText, 180)
+  
+  const addrStartY = y + 6 + (nameLines.length * 5)
+  doc.text(addrLines, 15, addrStartY)
 
-  // Column 2: Order & Route info
+  y = addrStartY + (addrLines.length * 5) + 2
+  doc.setLineWidth(0.2)
+  doc.line(15, y, 195, y)
+  y += 8
+
+  // 3. DADOS DO PEDIDO / ENTREGA (BELOW CLIENT DETAILS)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
-  doc.text('DADOS DO PEDIDO / ENTREGA', 115, y)
+  doc.text('DADOS DO PEDIDO / ENTREGA', 15, y)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(15, 23, 42)
-  doc.text(`Pedido: ${client.order_number || 'Sem número'}`, 115, y + 6)
+  doc.text(`Pedido: ${client.order_number || 'Sem número'}`, 15, y + 6)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
   doc.setTextColor(71, 85, 105)
-  doc.text(`Carga/Rota: ${client.route?.operation?.load_number || 'Sem rota'}`, 115, y + 12)
-  doc.text(`Data de Emissão: ${formatDateOnly(client.created_at)}`, 115, y + 17)
+  doc.text(`Carga/Rota: ${client.route?.operation?.load_number || 'Sem rota'}`, 15, y + 12)
+  doc.text(`Data de Emissão: ${formatDateOnly(client.created_at)}`, 15, y + 17)
   if (client.route?.driver?.name) {
-    doc.text(`Motorista: ${client.route.driver.name}`, 115, y + 22)
+    doc.text(`Motorista: ${client.route.driver.name}`, 15, y + 22)
+    y += 27
+  } else {
+    y += 22
   }
 
-  y += 30
   doc.line(15, y, 195, y)
   y += 10
 
