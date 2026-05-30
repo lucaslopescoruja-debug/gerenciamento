@@ -30,54 +30,40 @@ export async function generateDeliveryProofPDF(client: any, company: any): Promi
 
   let y = 15
 
-  // Header - Title & Brand
+  // Header - Title & Brand (Company name & CNPJ)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(20)
+  doc.setFontSize(14) // large font for company name
   doc.setTextColor(79, 70, 229) // Brand color (indigo-600)
-  doc.text('Estoque Fácil', 15, y)
+  const compNameText = company?.name || 'Empresa Emissora'
+  const compNameLines = doc.splitTextToSize(compNameText, 120)
+  doc.text(compNameLines, 15, y)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(12)
   doc.setTextColor(15, 23, 42) // Slate-900
   doc.text('COMPROVANTE DE ENTREGA', 195, y, { align: 'right' })
 
-  y += 6
+  let cnpjY = y + (compNameLines.length * 5)
+  if (company?.cnpj) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(71, 85, 105) // Slate-600
+    doc.text(`CNPJ: ${company.cnpj}`, 15, cnpjY)
+    cnpjY += 5
+  }
+
+  y = Math.max(cnpjY, y + 8)
   doc.setDrawColor(226, 232, 240) // border-slate-200
   doc.setLineWidth(0.5)
   doc.line(15, y, 195, y)
 
-  y += 10
-
-  // 1. EMPRESA EMITENTE
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(100, 116, 139) // Slate-500
-  doc.text('EMPRESA EMITENTE', 15, y)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(15, 23, 42)
-  const compNameText = company?.name || 'Empresa Emissora'
-  const compNameLines = doc.splitTextToSize(compNameText, 180)
-  doc.text(compNameLines, 15, y + 6)
-
-  y += 6 + (compNameLines.length * 5)
-  if (company?.cnpj) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9.5)
-    doc.setTextColor(71, 85, 105) // Slate-600
-    doc.text(`CNPJ: ${company.cnpj}`, 15, y)
-    y += 5
-  }
-  doc.setLineWidth(0.2)
-  doc.line(15, y, 195, y)
   y += 8
 
-  // 2. DADOS DO CLIENTE
+  // 1. DADOS DO CLIENTE
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
-  doc.text('DADOS DO CLIENTE', 15, y)
+  doc.text('1. DADOS DO CLIENTE', 15, y)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
@@ -100,11 +86,11 @@ export async function generateDeliveryProofPDF(client: any, company: any): Promi
   doc.line(15, y, 195, y)
   y += 8
 
-  // 3. DADOS DO PEDIDO / ENTREGA (BELOW CLIENT DETAILS)
+  // 2. DADOS DO PEDIDO / ENTREGA (BELOW CLIENT DETAILS)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(100, 116, 139)
-  doc.text('DADOS DO PEDIDO / ENTREGA', 15, y)
+  doc.text('2. DADOS DO PEDIDO / ENTREGA', 15, y)
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
