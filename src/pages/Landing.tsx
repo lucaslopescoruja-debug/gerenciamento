@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-  Boxes, Truck, Package, CheckCircle2, ArrowRight, ShieldCheck, 
-  BarChart3, Phone, Mail, MapPin, Menu, X, ExternalLink, ArrowUpRight 
+import {
+  Boxes, Truck, Package, CheckCircle2, ArrowRight, ShieldCheck,
+  BarChart3, Phone, Mail, MapPin, Menu, X, ExternalLink, ArrowUpRight
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { saasApi } from '@/api/saas'
@@ -59,11 +59,14 @@ export default function Landing() {
         phone: leadPhone,
         message: leadMessage
       })
-      toast.success('Solicitação enviada com sucesso! Entraremos em contato em breve.')
+      toast.success('Solicitação enviada com sucesso!')
       setLeadName('')
       setLeadEmail('')
       setLeadPhone('')
       setLeadMessage('')
+      
+      // Redireciona para a página de Leads do painel SaaS
+      navigate('/saas/leads')
     } catch (err: any) {
       toast.error('Erro ao registrar solicitação: ' + err.message)
     } finally {
@@ -78,11 +81,10 @@ export default function Landing() {
       <div className="absolute top-[800px] right-1/4 w-[600px] h-[600px] bg-purple-200/30 rounded-full blur-[150px] pointer-events-none" />
 
       {/* Header / Navbar */}
-      <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm py-4' 
+      <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
+          ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm py-4'
           : 'bg-transparent py-6'
-      }`}>
+        }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -95,7 +97,7 @@ export default function Landing() {
                   Estoque Fácil
                 </span>
                 <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider -mt-1">
-                  Coletor Logístico
+                  Estoque Inteligente
                 </span>
               </div>
             </div>
@@ -110,7 +112,7 @@ export default function Landing() {
 
             {/* Client Area Button */}
             <div className="hidden md:flex items-center gap-4">
-              <Button 
+              <Button
                 onClick={handleClientAreaClick}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-100 flex items-center gap-2 transition-all hover:-translate-y-0.5 cursor-pointer"
               >
@@ -121,7 +123,7 @@ export default function Landing() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button 
+              <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
               >
@@ -134,36 +136,36 @@ export default function Landing() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 py-4 px-6 space-y-4 shadow-lg slide-in">
-            <a 
-              href="#inicio" 
+            <a
+              href="#inicio"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
             >
               Início
             </a>
-            <a 
-              href="#funcionalidades" 
+            <a
+              href="#funcionalidades"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
             >
               Funcionalidades
             </a>
-            <a 
-              href="#beneficios" 
+            <a
+              href="#beneficios"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
             >
               Vantagens
             </a>
-            <a 
-              href="#contato" 
+            <a
+              href="#contato"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
             >
               Contato
             </a>
             <div className="pt-4 border-t border-slate-100">
-              <Button 
+              <Button
                 onClick={() => { setMobileMenuOpen(false); handleClientAreaClick(); }}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
               >
@@ -192,7 +194,7 @@ export default function Landing() {
                 </span>
               </h1>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0">
-                O **Estoque Fácil** é uma plataforma WMS e de conferência móvel projetada para eliminar erros de expedição, otimizar rotas de entrega e garantir 100% de acurácia no inventário. Tudo na palma da sua mão.
+                O Estoque Fácil é uma plataforma WMS e de conferência móvel projetada para eliminar erros de expedição, otimizar rotas de entrega e garantir 100% de acurácia no inventário. Tudo na palma da sua mão.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
                 <a href="#contato">
@@ -207,7 +209,7 @@ export default function Landing() {
                   </Button>
                 </a>
               </div>
-              
+
               {/* Trust Indicators */}
               <div className="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200 max-w-lg mx-auto lg:mx-0">
                 <div>
@@ -403,7 +405,7 @@ export default function Landing() {
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="bg-indigo-900 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl" />
-                
+
                 <h4 className="font-extrabold text-2xl">Resultados Reais</h4>
                 <p className="text-slate-200 text-sm leading-relaxed">
                   Distribuidoras e parceiros logísticos que implantaram o Estoque Fácil reduziram custos operacionais e aumentaram a velocidade das entregas.
@@ -492,10 +494,10 @@ export default function Landing() {
       <section id="contato" className="py-20 bg-white border-t border-slate-200 relative overflow-hidden">
         {/* Decorative grids */}
         <div className="absolute inset-y-0 right-0 w-1/2 bg-slate-50/50 border-l border-slate-100 hidden lg:block" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            
+
             {/* Contact Info */}
             <div className="lg:col-span-5 space-y-6">
               <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600">Contato Comercial</h2>
@@ -514,8 +516,8 @@ export default function Landing() {
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone / WhatsApp</p>
                     <p className="text-sm font-semibold text-slate-800 hover:text-indigo-600 transition-colors">
-                      <a href="https://wa.me/5500000000000" target="_blank" rel="noreferrer">
-                        (00) 99999-9999
+                      <a href="https://wa.me/5531986230171" target="_blank" rel="noreferrer">
+                        (31) 98623-0171
                       </a>
                     </p>
                   </div>
@@ -527,7 +529,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">E-mail</p>
-                    <p className="text-sm font-semibold text-slate-800">contato@estoquefacil.com</p>
+                    <p className="text-sm font-semibold text-slate-800">rhprojetoia@gmail.com</p>
                   </div>
                 </div>
 
@@ -550,10 +552,10 @@ export default function Landing() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Nome Completo *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       required
-                      placeholder="Ex: João Silva" 
+                      placeholder="Ex: João Silva"
                       value={leadName}
                       onChange={e => setLeadName(e.target.value)}
                       className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
@@ -561,10 +563,10 @@ export default function Landing() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Telefone *</label>
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       required
-                      placeholder="Ex: (31) 98623-0171" 
+                      placeholder="Ex: (31) 98623-0171"
                       value={leadPhone}
                       onChange={e => setLeadPhone(e.target.value)}
                       className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
@@ -573,10 +575,10 @@ export default function Landing() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">E-mail Corporativo *</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     required
-                    placeholder="Ex: joao@suaempresa.com" 
+                    placeholder="Ex: joao@suaempresa.com"
                     value={leadEmail}
                     onChange={e => setLeadEmail(e.target.value)}
                     className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
@@ -584,16 +586,16 @@ export default function Landing() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Mensagem / Observação</label>
-                  <textarea 
+                  <textarea
                     rows={4}
-                    placeholder="Conte-nos um pouco sobre a sua operação logística..." 
+                    placeholder="Conte-nos um pouco sobre a sua operação logística..."
                     value={leadMessage}
                     onChange={e => setLeadMessage(e.target.value)}
                     className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm resize-none"
                   />
                 </div>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSubmittingLead}
                   className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-100 cursor-pointer"
                 >
