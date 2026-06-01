@@ -30,6 +30,18 @@ export default function SaaSLeads() {
     }
   });
 
+  React.useEffect(() => {
+    if (isMaster) {
+      // Marcar como lido após 1.5 segundos para o usuário ver o estado unread piscando brevemente na tela
+      const timer = setTimeout(() => {
+        saasApi.markAllLeadsAsViewed().then(() => {
+          queryClient.invalidateQueries({ queryKey: ['system_leads'] });
+        });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isMaster, queryClient]);
+
   if (!isMaster) {
     return <div className="p-6 text-center text-red-500">Acesso negado.</div>;
   }
@@ -144,6 +156,11 @@ export default function SaaSLeads() {
                       <CardTitle className="text-base font-bold flex items-center gap-2">
                         <User className="h-4.5 w-4.5 text-primary shrink-0" />
                         {lead.name}
+                        {!lead.viewed && (
+                          <span className="text-[10px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 animate-pulse">
+                            Novo
+                          </span>
+                        )}
                       </CardTitle>
                       <CardDescription className="text-xs font-mono mt-1 flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />

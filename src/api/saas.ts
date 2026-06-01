@@ -237,6 +237,7 @@ export const saasApi = {
     const newLead = {
       id: Math.random().toString(36).substring(2, 9),
       created_at: new Date().toISOString(),
+      viewed: false,
       ...lead
     }
 
@@ -296,6 +297,36 @@ export const saasApi = {
       }
     } catch (e) {
       console.error('Error deleting lead from local storage:', e)
+    }
+  },
+
+  async markAllLeadsAsViewed() {
+    // 1. Update in Supabase
+    try {
+      const { error } = await supabase
+        .from('system_leads')
+        .update({ viewed: true })
+        .eq('viewed', false)
+      
+      if (error) {
+        console.warn('Supabase system_leads update error:', error)
+      }
+    } catch (e) {
+      console.warn('Supabase system_leads update failed:', e)
+    }
+
+    // 2. Update in localStorage
+    try {
+      const stored = localStorage.getItem('estoque_facil_leads')
+      if (stored) {
+        const list = JSON.parse(stored)
+        if (Array.isArray(list)) {
+          const updated = list.map((item: any) => ({ ...item, viewed: true }))
+          localStorage.setItem('estoque_facil_leads', JSON.stringify(updated))
+        }
+      }
+    } catch (e) {
+      console.error('Error updating local leads to viewed:', e)
     }
   }
 }

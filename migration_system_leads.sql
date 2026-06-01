@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.system_leads (
     email TEXT NOT NULL,
     phone TEXT NOT NULL,
     message TEXT,
+    viewed BOOLEAN DEFAULT false NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

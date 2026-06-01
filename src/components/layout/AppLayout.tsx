@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { deliveriesApi } from '@/api/deliveries'
 import { operationsApi } from '@/api/operations'
+import { saasApi } from '@/api/saas'
 
 
 const navItems = [
@@ -38,6 +39,15 @@ export default function AppLayout() {
     refetchInterval: 10000,
     enabled: !!user
   })
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['system_leads'],
+    queryFn: saasApi.getLeads,
+    refetchInterval: 15000,
+    enabled: isMaster
+  })
+
+  const unreadLeadsCount = leads.filter((lead: any) => !lead.viewed).length
 
   const { data: pendingStockAdjustments = [] } = useQuery({
     queryKey: ['pending_stock_adjustments'],
@@ -93,6 +103,20 @@ export default function AppLayout() {
               </span>
             )}
           </Link>
+          {isMaster && (
+            <Link
+              to="/saas/leads"
+              className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground relative"
+              title="Leads e Contatos"
+            >
+              <Users className="h-5 w-5" />
+              {unreadLeadsCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
+                  {unreadLeadsCount}
+                </span>
+              )}
+            </Link>
+          )}
           <button
             onClick={toggleStyle}
             className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
@@ -289,6 +313,21 @@ export default function AppLayout() {
                    </span>
                 )}
              </Link>
+             
+             {isMaster && (
+                <Link
+                   to="/saas/leads"
+                   className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors cursor-pointer relative"
+                   title="Leads e Contatos"
+                >
+                   <Users className="h-5 w-5" />
+                   {unreadLeadsCount > 0 && (
+                      <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white ring-2 ring-background animate-pulse">
+                         {unreadLeadsCount}
+                      </span>
+                   )}
+                </Link>
+             )}
              
              <button onClick={toggleStyle} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors cursor-pointer" title="Alternar tema (Padrão / Clássico)">
                 <Palette className="h-5 w-5" />
