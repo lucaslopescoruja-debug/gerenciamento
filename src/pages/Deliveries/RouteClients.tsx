@@ -336,7 +336,18 @@ export default function RouteClients() {
                       {(client.address || client.phone || client.order_number) && (
                         <div className="flex gap-3 text-sm text-muted-foreground flex-wrap mb-2">
                           {client.order_number && <span className="font-mono bg-muted/50 px-2 py-0.5 rounded text-primary font-bold">Pedido: {client.order_number}</span>}
-                          {client.address && <span className="flex items-center gap-1 truncate max-w-[200px]"><MapPin className="h-3 w-3 shrink-0" /> {client.address}</span>}
+                          {client.address && (
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 truncate max-w-[200px] hover:text-primary transition-colors hover:underline"
+                              title="Ver no Google Maps"
+                            >
+                              <MapPin className="h-3 w-3 shrink-0 text-primary" /> {client.address}
+                            </a>
+                          )}
                           {client.phone && <span>📞 {client.phone}</span>}
                         </div>
                       )}

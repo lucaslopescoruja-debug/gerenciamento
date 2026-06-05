@@ -137,7 +137,20 @@ export default function ClientHistory() {
                       {formatDateOnly(client.created_at)}
                     </span>
                     <span className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" /> {client.address?.split('-')[0]?.trim() || 'Endereço não cadastrado'}
+                      <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                      {client.address ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-primary transition-colors hover:underline"
+                          title="Ver no Google Maps"
+                        >
+                          {client.address.split('-')[0]?.trim()}
+                        </a>
+                      ) : (
+                        'Endereço não cadastrado'
+                      )}
                     </span>
                   </div>
                 </div>

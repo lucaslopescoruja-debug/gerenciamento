@@ -6,7 +6,7 @@ import { productsApi } from '@/api/products'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, ScanLine, Search, CheckCircle2, AlertTriangle, Save, PenTool, Camera, Trash2 } from 'lucide-react'
+import { ArrowLeft, ScanLine, Search, CheckCircle2, AlertTriangle, Save, PenTool, Camera, Trash2, MapPin } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
 
@@ -296,7 +296,17 @@ export default function ClientConference() {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2"><ArrowLeft className="h-5 w-5" /></Button>
             <div>
               <h1 className="text-xl font-bold gradient-text leading-tight line-clamp-1">{client.name}</h1>
-              {client.address && <p className="text-xs text-muted-foreground line-clamp-1">{client.address}</p>}
+              {client.address && (
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-xs text-muted-foreground line-clamp-1 hover:text-primary transition-colors hover:underline flex items-center gap-1 mt-0.5"
+                  title="Ver no Google Maps"
+                >
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" /> {client.address}
+                </a>
+              )}
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5 bg-muted/30 w-max px-2 py-0.5 rounded-md border border-border/50">
                 <span className="font-medium text-foreground">{totalItems} <span className="opacity-70 font-normal">itens</span></span>
                 <span className="opacity-50">•</span>
