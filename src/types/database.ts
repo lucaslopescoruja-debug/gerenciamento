@@ -226,6 +226,7 @@ export interface DeliveryClient {
   signature_data?: string
   receiver_name?: string
   receiver_doc?: string
+  return_reason?: string
   signed_at?: string
   created_at: string
 }
@@ -243,5 +244,6 @@ export interface DeliveryItem {
   approval_status?: 'approved' | 'pending' | 'rejected'
   returned_to_stock?: boolean
   requested_qty?: number
+  return_reason?: string
   created_at: string
 }

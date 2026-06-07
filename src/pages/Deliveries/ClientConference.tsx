@@ -45,8 +45,8 @@ export default function ClientConference() {
   })
 
   const updateItemMutation = useMutation({
-    mutationFn: ({ itemId, qty, status }: { itemId: string, qty: number, status: string }) => 
-      deliveriesApi.updateDeliveryItemQuantity(itemId, qty, status),
+    mutationFn: ({ itemId, qty, status, return_reason }: { itemId: string, qty: number, status: string, return_reason?: string }) => 
+      deliveriesApi.updateDeliveryItemQuantity(itemId, qty, status, return_reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
     }
@@ -123,7 +123,7 @@ export default function ClientConference() {
   })
 
   const returnClientMutation = useMutation({
-    mutationFn: () => deliveriesApi.returnDeliveryClient(clientId!),
+    mutationFn: (reason: string) => deliveriesApi.returnDeliveryClient(clientId!, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_client', clientId] })
       toast.success('Pedido retornado com sucesso!')
@@ -269,11 +269,19 @@ export default function ClientConference() {
     }
   }, [items])
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const finalStatus: 'delivered_with_divergence' | 'delivered' = hasDivergence ? 'delivered_with_divergence' : 'delivered'
     if (hasDivergence) {
       if (!window.confirm('Existem divergências (faltas ou excessos) neste pedido. Tem certeza que deseja finalizar assim mesmo?')) {
         return
+      }
+      const missingItems = items.filter(i => i.quantity_scanned < i.quantity_expected)
+      for (const item of missingItems) {
+        if (!item.return_reason) {
+          const reason = window.prompt(`Qual o motivo da não entrega do item: ${item.description}?`)
+          if (reason === null) return // user cancelled
+          await updateItemMutation.mutateAsync({ itemId: item.id, qty: item.quantity_scanned, status: 'divergent', return_reason: reason })
+        }
       }
     }
     updateClientStatusMutation.mutate(finalStatus)
@@ -281,7 +289,9 @@ export default function ClientConference() {
 
   const handleReturnOrder = () => {
     if (window.confirm("Deseja marcar este pedido como retornado?")) {
-      returnClientMutation.mutate()
+      const reason = window.prompt("Qual o motivo da devolução total do pedido?")
+      if (reason === null) return
+      returnClientMutation.mutate(reason)
     }
   }
 

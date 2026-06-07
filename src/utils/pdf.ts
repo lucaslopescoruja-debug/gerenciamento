@@ -64,6 +64,16 @@ export async function generateDeliveryProofPDF(client: any, company: any): Promi
 
   y += 8
 
+  if (client.status === 'returned') {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(220, 38, 38) // red-600
+    const reasonText = client.return_reason ? `PEDIDO RETORNADO - Motivo: ${client.return_reason}` : 'PEDIDO RETORNADO'
+    const reasonLines = doc.splitTextToSize(reasonText, 180)
+    doc.text(reasonLines, 15, y)
+    y += (reasonLines.length * 5) + 3
+  }
+
   // DADOS DO CLIENTE
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
@@ -138,6 +148,10 @@ export async function generateDeliveryProofPDF(client: any, company: any): Promi
     
     // Split description if it's too long
     const descLines = doc.splitTextToSize(item.description || '', 110)
+    if (item.quantity_scanned < item.quantity_expected && item.return_reason) {
+      const reasonLines = doc.splitTextToSize(`Motivo da Falta: ${item.return_reason}`, 110)
+      descLines.push(...reasonLines)
+    }
     doc.text(descLines, 45, y)
     
     // Print quantities

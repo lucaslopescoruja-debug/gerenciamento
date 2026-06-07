@@ -253,10 +253,10 @@ export const deliveriesApi = {
     return true
   },
 
-  async returnDeliveryClient(clientId: string) {
+  async returnDeliveryClient(clientId: string, return_reason?: string) {
     const { data: client, error: err1 } = await supabase
       .from('delivery_clients')
-      .update({ status: 'returned' })
+      .update({ status: 'returned', return_reason })
       .eq('id', clientId)
       .eq('company_id', currentCompanyId)
       .select()
@@ -292,10 +292,10 @@ export const deliveriesApi = {
     return data as DeliveryItem[]
   },
 
-  async updateDeliveryItemQuantity(itemId: string, quantity_scanned: number, status: string) {
+  async updateDeliveryItemQuantity(itemId: string, quantity_scanned: number, status: string, return_reason?: string) {
     const { data, error } = await supabase
       .from('delivery_items')
-      .update({ quantity_scanned, status })
+      .update({ quantity_scanned, status, return_reason })
       .eq('id', itemId)
       .eq('company_id', currentCompanyId)
       .select()
