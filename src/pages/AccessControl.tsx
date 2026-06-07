@@ -229,7 +229,7 @@ export default function AccessControl() {
                   <option value="admin">Administrador Geral</option>
                   <option value="gestor">Gestor</option>
                   <option value="conferente">Conferente</option>
-                  {(!company?.plan || company.plan === 'enterprise') && <option value="motorista">Motorista</option>}
+                  {(!company?.plan || company.plan === 'ouro') && <option value="motorista">Motorista</option>}
                 </select>
               </div>
 
@@ -241,13 +241,13 @@ export default function AccessControl() {
                     <input type="checkbox" checked={perms.can_view_dashboard} onChange={() => togglePerm('can_view_dashboard')} className="w-4 h-4 accent-primary" />
                     <span className="text-sm">Visão Geral (Dashboard)</span>
                   </label>
-                  {(!company?.plan || company.plan !== 'basico') && (
+                  {(!company?.plan || company.plan !== 'bronze') && (
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_loads} onChange={() => togglePerm('can_manage_loads')} className="w-4 h-4 accent-primary" />
                       <span className="text-sm">Gerenciar Cargas/Rotas</span>
                     </label>
                   )}
-                  {(!company?.plan || company.plan === 'enterprise') && (
+                  {(!company?.plan || company.plan === 'ouro') && (
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} className="w-4 h-4 accent-primary" />
                       <span className="text-sm">Acessar Módulo Entregas</span>

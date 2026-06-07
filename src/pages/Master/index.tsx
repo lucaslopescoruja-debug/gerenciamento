@@ -13,6 +13,7 @@ import { Building2, Plus, Users, Power, LogIn, Edit2, LogOut, Trash2 } from 'luc
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import type { Company } from '@/types/database';
 
 export default function MasterPanel() {

@@ -78,18 +78,18 @@ export default function AppLayout() {
   }
 
   const getPlanRequirement = (path: string) => {
-    if (path === '/cargas') return 'profissional'
-    if (path === '/entregas') return 'enterprise'
-    return 'basico'
+    if (path === '/cargas') return 'prata'
+    if (path === '/entregas') return 'ouro'
+    return 'bronze'
   }
 
   const isFeatureLocked = (path: string) => {
-    const plan = company?.plan || 'enterprise' // default to enterprise if not set
+    const plan = company?.plan || 'ouro' // default to ouro if not set
     const requirement = getPlanRequirement(path)
     
-    if (requirement === 'basico') return false
-    if (requirement === 'profissional' && plan === 'basico') return true
-    if (requirement === 'enterprise' && plan !== 'enterprise') return true
+    if (requirement === 'bronze') return false
+    if (requirement === 'prata' && plan === 'bronze') return true
+    if (requirement === 'ouro' && plan !== 'ouro') return true
     return false
   }
 
