@@ -319,6 +319,23 @@ export default function Conference() {
   // Helper to strip non-alphanumeric characters and uppercase for comparison
   const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
+  // Play beep sound
+  const playBeep = (type: 'success' | 'error' | 'warning' = 'success') => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      if (type === 'success') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime); gain.gain.setValueAtTime(0.1, ctx.currentTime) } 
+      else if (type === 'warning') { osc.type = 'square'; osc.frequency.setValueAtTime(400, ctx.currentTime); gain.gain.setValueAtTime(0.1, ctx.currentTime) }
+      else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, ctx.currentTime); gain.gain.setValueAtTime(0.2, ctx.currentTime) }
+      osc.start()
+      osc.stop(ctx.currentTime + (type === 'error' ? 0.3 : 0.1))
+      if ('vibrate' in navigator) navigator.vibrate(type === 'error' ? [200, 100, 200] : type === 'warning' ? [100, 50, 100] : 100)
+    } catch(e) {}
+  }
+
   const processConfCode = (raw: string) => {
     const code = normalizeCode(raw)
     const matchedProduct = allProducts.find(p => normalizeCode(p.code) === code || (p.external_code && normalizeCode(p.external_code) === code))
@@ -329,14 +346,17 @@ export default function Conference() {
     
     if (!item) { 
       if (!matchedProduct) {
+        playBeep('error')
         toast.error(`Produto não cadastrado no sistema: ${code}`)
         return
       }
       if (op?.type !== 'RECEIPT') {
         if (!isManager) {
+          playBeep('error')
           window.alert(`ACESSO NEGADO: O produto ${matchedProduct.description} não está na rota. Procure um Gestor.`)
           return
         }
+        playBeep('warning')
         const ok = window.confirm(`${matchedProduct.description} não está na rota. Deseja adicionar?`)
         if (!ok) return
       }
@@ -350,6 +370,7 @@ export default function Conference() {
         status: 'ok' as const
       }
       addItemMutation.mutate(newItem)
+      playBeep('warning')
       toast.success(`${matchedProduct.description} adicionado à rota!`)
       if (op && op.status === 'pending') {
         updateOpMutation.mutate({ status: 'in_progress' })
@@ -363,18 +384,22 @@ export default function Conference() {
     if (cur >= item.quantity_expected) { 
       if (op?.type !== 'RECEIPT') {
         if (!isManager) {
+          playBeep('error')
           window.alert(`LIMITE ATINGIDO: A quantidade de ${item.description} já foi alcançada. Procure um Gestor.`)
           return
         }
+        playBeep('warning')
         const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
         if (!ok) return
       }
 
       nextExpected = cur + 1
+      playBeep('warning')
       toast.success(`${item.description}: Quantidade extra (+1) adicionada à rota!`)
     } else {
       const nq = cur + 1
       const ns = nq >= nextExpected ? 'ok' : 'pending'
+      playBeep('success')
       if (ns === 'ok') toast.success(`${item.description}: Conferido! ✓`)
       else toast.info(`${item.description}: +1 (${nq}/${nextExpected})`)
     }
@@ -562,12 +587,13 @@ export default function Conference() {
       i.product_id === code ||
       (matchedProduct && i.product_id === matchedProduct.id)
     )
-    if (!item) { toast.error(`Produto não fazia parte da rota: ${code}`); return }
+    if (!item) { playBeep('error'); toast.error(`Produto não fazia parte da rota: ${code}`); return }
     
     const primaryCode = item.product_code
     const cur = returnedItems[primaryCode] || 0
     
     if (cur >= item.quantity_scanned) {
+      playBeep('error')
       window.alert(`LIMITE ATINGIDO: Não é possível retornar mais de ${item.quantity_scanned} unidades de ${item.description}, pois esta foi a quantidade enviada na rota.`)
       return
     }
@@ -577,6 +603,7 @@ export default function Conference() {
       setLastReturned({ code: primaryCode, desc: item.description, qty: next })
       return { ...prev, [primaryCode]: next }
     })
+    playBeep('success')
     toast.info(`${item.description}: Retornado +1`)
   }
 
