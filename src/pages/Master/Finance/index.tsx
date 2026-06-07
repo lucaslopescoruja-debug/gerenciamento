@@ -244,61 +244,68 @@ export default function SaaSFinance() {
           <h2 className="font-semibold">Tabela de Preços Padrão</h2>
         </div>
         <div className="p-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            {isLoadingPlans ? (
-              <div className="col-span-full py-4 text-center text-muted-foreground">Carregando planos...</div>
-            ) : saasPlans.map((plan) => (
-              <Card key={plan.id} className={cn(
-                "relative overflow-hidden group border-2",
-                plan.id === 'ouro' ? "border-yellow-500/50 bg-yellow-500/5" :
-                plan.id === 'prata' ? "border-slate-400/50 bg-slate-400/5" :
-                plan.id === 'bronze' ? "border-orange-600/50 bg-orange-600/5" : "border-border"
-              )}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className={cn(
-                        "font-bold text-lg uppercase tracking-wider",
-                        plan.id === 'ouro' ? "text-yellow-600 dark:text-yellow-400" :
-                        plan.id === 'prata' ? "text-slate-600 dark:text-slate-300" :
-                        plan.id === 'bronze' ? "text-orange-600 dark:text-orange-400" : "text-foreground"
-                      )}>{plan.name}</h3>
-                      <p className="text-sm text-muted-foreground">Base Padrão</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        setEditingPlan(plan);
-                        setIsEditPlanOpen(true);
-                      }}
-                      className="opacity-50 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">Mensalidade</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Plano</th>
+                  <th className="px-4 py-3 font-semibold text-right">Mensalidade Base</th>
+                  <th className="px-4 py-3 font-semibold text-center">Usuários Inclusos</th>
+                  <th className="px-4 py-3 font-semibold text-right">Valor Usuário Adicional</th>
+                  <th className="px-4 py-3 font-semibold text-center w-16">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {isLoadingPlans ? (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Carregando planos...</td></tr>
+                ) : saasPlans.length === 0 ? (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-amber-600 bg-amber-500/10 font-medium">Nenhum plano encontrado. Verifique se o comando SQL foi executado no Supabase.</td></tr>
+                ) : (
+                  saasPlans.map((plan) => (
+                    <tr key={plan.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-3 h-3 rounded-full",
+                            plan.id === 'ouro' ? "bg-yellow-500" :
+                            plan.id === 'prata' ? "bg-slate-400" :
+                            plan.id === 'bronze' ? "bg-orange-600" : "bg-primary"
+                          )} />
+                          <span className={cn(
+                            "font-bold uppercase tracking-wider",
+                            plan.id === 'ouro' ? "text-yellow-600 dark:text-yellow-400" :
+                            plan.id === 'prata' ? "text-slate-600 dark:text-slate-300" :
+                            plan.id === 'bronze' ? "text-orange-600 dark:text-orange-400" : "text-foreground"
+                          )}>{plan.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
                         R$ {plan.base_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/> Limite de Usuários</span>
-                      <span className="font-bold">{plan.base_users}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground text-xs">Usuário Adicional</span>
-                      <span className="font-medium text-xs">
+                      </td>
+                      <td className="px-4 py-3 text-center font-medium">
+                        {plan.base_users}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium">
                         + R$ {plan.extra_user_price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => {
+                            setEditingPlan(plan);
+                            setIsEditPlanOpen(true);
+                          }}
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
           <p className="text-xs text-muted-foreground mt-4 italic flex items-center gap-1">
             <AlertCircle className="h-3 w-3" />
