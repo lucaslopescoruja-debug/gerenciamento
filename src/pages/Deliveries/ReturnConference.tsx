@@ -49,7 +49,7 @@ export default function ReturnConference() {
     clients.forEach((c: any) => {
       const isClientReturned = c.status === 'returned'
       c.delivery_items?.forEach((item: any) => {
-        if (item.approval_status === 'approved') return
+        if (item.returned_to_stock) return
         
         let returnQty = 0
         if (isClientReturned) {
