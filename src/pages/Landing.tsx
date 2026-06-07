@@ -88,8 +88,8 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200">
-                <Boxes className="h-6 w-6 text-white" />
+              <div className="h-12 w-12 flex items-center justify-center">
+                <img src="/logo.png" alt="Estoque Fácil Logo" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform" />
               </div>
               <div>
                 <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
@@ -629,8 +629,8 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-800">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <Boxes className="h-5 w-5 text-white" />
+              <div className="h-10 w-10 flex items-center justify-center">
+                <img src="/logo.png" alt="Estoque Fácil Logo" className="w-full h-full object-contain" />
               </div>
               <span className="font-bold text-lg text-white">Estoque Fácil</span>
             </div>

@@ -84,8 +84,8 @@ export default function Login() {
       
       <div className="w-full max-w-md glass-card p-8 relative z-10 slide-up">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-            <Package className="h-8 w-8 text-primary" />
+          <div className="h-24 w-24 flex items-center justify-center mb-2">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300" />
           </div>
           <h1 className="text-3xl font-bold gradient-text">Estoque Fácil</h1>
           <p className="text-muted-foreground mt-2 text-center text-sm">
