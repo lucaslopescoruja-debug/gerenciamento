@@ -85,6 +85,26 @@ export default function Conference() {
     return count
   }, [clients])
 
+  const returnedClientsItems = useMemo(() => {
+    const list: any[] = []
+    clients.forEach((c: any) => {
+      c.delivery_items?.forEach((item: any) => {
+        if (item.returned_to_stock) {
+          let returnQty = c.status === 'returned' ? item.quantity_expected : Math.max(0, item.quantity_expected - item.quantity_scanned)
+          if (returnQty > 0) {
+            const existing = list.find(i => i.product_code === item.product_code)
+            if (existing) {
+              existing.quantity_returned += returnQty
+            } else {
+              list.push({ id: `ret_${item.id}`, product_code: item.product_code, description: item.description, quantity_returned: returnQty })
+            }
+          }
+        }
+      })
+    })
+    return list
+  }, [clients])
+
   const updateItemMutation = useMutation({
     mutationFn: async ({ itemId, qty, expected, status, extraUpdates }: { 
       itemId: string, 
@@ -485,25 +505,7 @@ export default function Conference() {
     });
   const returnItemsList = items.filter(i => i.description.startsWith('🔄'));
 
-  const returnedClientsItems = useMemo(() => {
-    const list: any[] = []
-    clients.forEach((c: any) => {
-      c.delivery_items?.forEach((item: any) => {
-        if (item.returned_to_stock) {
-          let returnQty = c.status === 'returned' ? item.quantity_expected : Math.max(0, item.quantity_expected - item.quantity_scanned)
-          if (returnQty > 0) {
-            const existing = list.find(i => i.product_code === item.product_code)
-            if (existing) {
-              existing.quantity_returned += returnQty
-            } else {
-              list.push({ id: `ret_${item.id}`, product_code: item.product_code, description: item.description, quantity_returned: returnQty })
-            }
-          }
-        }
-      })
-    })
-    return list
-  }, [clients])
+
 
   const progress = () => {
     if (!regularItems.length) return 0
