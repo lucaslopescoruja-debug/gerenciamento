@@ -29,7 +29,7 @@ export default function MasterPanel() {
   const [maxUsers, setMaxUsers] = useState(5);
   const [billingDay, setBillingDay] = useState(10);
   const [monthlyFee, setMonthlyFee] = useState(0);
-  const [plan, setPlan] = useState<'basico' | 'profissional' | 'enterprise'>('enterprise');
+  const [plan, setPlan] = useState<'bronze' | 'prata' | 'ouro'>('ouro');
   const [adminName, setAdminName] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
 
@@ -53,7 +53,7 @@ export default function MasterPanel() {
     enabled: isMaster
   });
 
-  const handlePlanChange = (selectedPlan: 'basico' | 'profissional' | 'enterprise') => {
+  const handlePlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro') => {
     setPlan(selectedPlan);
     const planDefaults = saasPlans.find(p => p.id === selectedPlan);
     if (planDefaults) {
@@ -62,7 +62,7 @@ export default function MasterPanel() {
     }
   };
 
-  const handleEditPlanChange = (selectedPlan: 'basico' | 'profissional' | 'enterprise') => {
+  const handleEditPlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro') => {
     if (!editingCompany) return;
     const planDefaults = saasPlans.find(p => p.id === selectedPlan);
     
@@ -220,7 +220,7 @@ export default function MasterPanel() {
 
   const resetForm = () => {
     setName(''); setSlug(''); setCnpj(''); setMaxUsers(5);
-    setBillingDay(10); setMonthlyFee(0); setPlan('enterprise');
+    setBillingDay(10); setMonthlyFee(0); setPlan('ouro');
     setAdminName(''); setAdminUsername('');
   };
 
@@ -261,8 +261,13 @@ export default function MasterPanel() {
                     {comp.id === currentCompany?.id && (
                       <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-medium">Atual</span>
                     )}
-                    <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs px-2 py-1 rounded-full font-medium uppercase">
-                      {comp.plan || 'enterprise'}
+                    <span className={cn(
+                      "text-xs px-2 py-1 rounded-full font-medium uppercase",
+                      (!comp.plan || comp.plan === 'ouro') && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+                      comp.plan === 'prata' && "bg-slate-400/10 text-slate-600 dark:text-slate-300",
+                      comp.plan === 'bronze' && "bg-orange-600/10 text-orange-600 dark:text-orange-400"
+                    )}>
+                      {comp.plan || 'ouro'}
                     </span>
                     <Button variant="ghost" size="icon" onClick={() => handleEditCompany(comp)} className="h-8 w-8 mt-1">
                       <Edit2 className="h-4 w-4" />
@@ -360,9 +365,9 @@ export default function MasterPanel() {
                     onChange={e => handlePlanChange(e.target.value as any)} 
                     className="flex h-10 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground"
                   >
-                    <option value="basico">Básico (Apenas Estoque)</option>
-                    <option value="profissional">Profissional (+ Expedição)</option>
-                    <option value="enterprise">Enterprise (+ Entregas e Motoristas)</option>
+                    <option value="bronze">Bronze (Apenas Estoque)</option>
+                    <option value="prata">Prata (+ Expedição)</option>
+                    <option value="ouro">Ouro (+ Entregas e Motoristas)</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -437,13 +442,13 @@ export default function MasterPanel() {
                 <div className="space-y-2">
                   <Label>Plano de Assinatura *</Label>
                   <select 
-                    value={editingCompany.plan || 'enterprise'} 
+                    value={editingCompany.plan || 'ouro'} 
                     onChange={e => handleEditPlanChange(e.target.value as any)} 
                     className="flex h-10 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-foreground"
                   >
-                    <option value="basico">Básico (Apenas Estoque)</option>
-                    <option value="profissional">Profissional (+ Expedição)</option>
-                    <option value="enterprise">Enterprise (+ Entregas e Motoristas)</option>
+                    <option value="bronze">Bronze (Apenas Estoque)</option>
+                    <option value="prata">Prata (+ Expedição)</option>
+                    <option value="ouro">Ouro (+ Entregas e Motoristas)</option>
                   </select>
                 </div>
                 <div className="space-y-2">

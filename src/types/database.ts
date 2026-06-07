@@ -30,7 +30,7 @@ export interface Company {
   active: boolean
   billing_day?: number
   monthly_fee?: number
-  plan?: 'basico' | 'profissional' | 'enterprise'
+  plan?: 'bronze' | 'prata' | 'ouro'
   created_at: string
 }
 

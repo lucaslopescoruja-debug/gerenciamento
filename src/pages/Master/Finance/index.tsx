@@ -248,11 +248,21 @@ export default function SaaSFinance() {
             {isLoadingPlans ? (
               <div className="col-span-full py-4 text-center text-muted-foreground">Carregando planos...</div>
             ) : saasPlans.map((plan) => (
-              <Card key={plan.id} className="relative overflow-hidden group">
+              <Card key={plan.id} className={cn(
+                "relative overflow-hidden group border-2",
+                plan.id === 'ouro' ? "border-yellow-500/50 bg-yellow-500/5" :
+                plan.id === 'prata' ? "border-slate-400/50 bg-slate-400/5" :
+                plan.id === 'bronze' ? "border-orange-600/50 bg-orange-600/5" : "border-border"
+              )}>
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-bold text-lg uppercase tracking-wider text-foreground">{plan.name}</h3>
+                      <h3 className={cn(
+                        "font-bold text-lg uppercase tracking-wider",
+                        plan.id === 'ouro' ? "text-yellow-600 dark:text-yellow-400" :
+                        plan.id === 'prata' ? "text-slate-600 dark:text-slate-300" :
+                        plan.id === 'bronze' ? "text-orange-600 dark:text-orange-400" : "text-foreground"
+                      )}>{plan.name}</h3>
                       <p className="text-sm text-muted-foreground">Base Padrão</p>
                     </div>
                     <Button 
