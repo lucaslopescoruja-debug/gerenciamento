@@ -175,6 +175,18 @@ export default function ReturnConference() {
     }
   }
 
+  const handleToggleCheckItem = (item: any) => {
+    const code = normalizeCode(item.product_code)
+    const scanned = scannedItemsState[code] || 0
+    const expected = item.quantity_expected
+    const isOk = scanned >= expected && expected > 0
+    
+    setScannedItemsState(prev => ({
+      ...prev,
+      [code]: isOk ? 0 : expected
+    }))
+  }
+
   useEffect(() => {
     if (searchInput.trim().length > 2) {
       const term = normalizeCode(searchInput)
@@ -333,6 +345,13 @@ export default function ReturnConference() {
                       {isExcess && <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1">Excedente</span>}
                       {isOk && <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1">OK</span>}
                     </div>
+                    <button onClick={() => handleToggleCheckItem(item)} className="p-2 -mr-2 shrink-0">
+                      <div className={`h-6 w-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                        isOk ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-muted-foreground/30 hover:border-primary'
+                      }`}>
+                        {isOk && <CheckCircle2 className="h-4 w-4" />}
+                      </div>
+                    </button>
                   </div>
                 </div>
               </div>
