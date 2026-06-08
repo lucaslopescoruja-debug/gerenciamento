@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, User, MapPin, Upload, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, User, MapPin, Upload, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import * as XLSX from 'xlsx'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'warning' | 'success' | 'destructive' }> = {
@@ -31,6 +32,7 @@ export default function RouteClients() {
   
   const [isImporting, setIsImporting] = useState(false)
   const [sortBy, setSortBy] = useState<'alphabetical' | 'city' | 'neighborhood' | 'status'>('alphabetical')
+  const [searchTerm, setSearchTerm] = useState('')
 
   const { data: route, isLoading: isLoadingRoute } = useQuery({
     queryKey: ['delivery_route', id],
@@ -73,7 +75,21 @@ export default function RouteClients() {
   })
 
   const sortedClients = useMemo(() => {
-    return [...clients].sort((a: any, b: any) => {
+    let filtered = clients
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim()
+      filtered = clients.filter((c: any) => {
+        if (c.name.toLowerCase().includes(term)) return true
+        if (c.order_number && String(c.order_number).toLowerCase().includes(term)) return true
+        if (c.delivery_items?.some((item: any) => 
+          item.description?.toLowerCase().includes(term) || 
+          item.product_code?.toLowerCase().includes(term)
+        )) return true
+        return false
+      })
+    }
+
+    return [...filtered].sort((a: any, b: any) => {
       if (sortBy === 'alphabetical') {
         return a.name.localeCompare(b.name)
       } else if (sortBy === 'city') {
@@ -100,7 +116,7 @@ export default function RouteClients() {
       }
       return 0
     })
-  }, [clients, sortBy])
+  }, [clients, sortBy, searchTerm])
 
   const pendingReturnsCount = useMemo(() => {
     let count = 0
@@ -287,7 +303,7 @@ export default function RouteClients() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-20 slide-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate('/entregas')}>
             <ArrowLeft className="h-5 w-5" />
@@ -299,7 +315,16 @@ export default function RouteClients() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-[300px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar cliente, pedido ou produto..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 w-full bg-background/50"
+            />
+          </div>
           <select 
             value={sortBy} 
             onChange={(e) => setSortBy(e.target.value as any)}
