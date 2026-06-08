@@ -191,8 +191,19 @@ export default function AppLayout() {
           </div>
         </Link>
 
+        {/* Mobile User Profile */}
+        <div className="md:hidden flex items-center gap-3 px-5 py-4 border-b border-border/50 mt-14 bg-card/50">
+          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+            <UserIcon className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground leading-tight truncate">{user?.name || 'Usuário'}</p>
+            <p className="text-xs text-muted-foreground capitalize mt-0.5 truncate">{user?.role || 'operator'}</p>
+          </div>
+        </div>
+
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-auto mt-14 md:mt-0">
+        <nav className="flex-1 p-3 space-y-1 overflow-auto md:mt-0">
           {/* Navigation Items - Only show if user has an active company context */}
           {company && navItems.map((item) => {
             let requiredPerm = item.permission as any;
