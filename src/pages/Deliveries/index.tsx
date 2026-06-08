@@ -69,10 +69,10 @@ export default function DeliveriesList() {
     mutationFn: deliveriesApi.deleteDeliveryRoute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_routes'] })
-      toast({ title: 'Entrega excluída com sucesso', variant: 'default' })
+      toast.success('Entrega excluída com sucesso')
     },
     onError: (error: any) => {
-      toast({ title: `Erro ao excluir: ${error.message}`, variant: 'destructive' })
+      toast.error(`Erro ao excluir: ${error.message}`)
     }
   })
 
@@ -82,11 +82,11 @@ export default function DeliveriesList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_routes'] })
-      toast({ title: 'Rota atualizada com sucesso' })
+      toast.success('Rota atualizada com sucesso')
       setEditingRoute(null)
     },
     onError: (err: any) => {
-      toast({ title: 'Erro ao atualizar rota', description: err.message, variant: 'destructive' })
+      toast.error(`Erro ao atualizar rota: ${err.message}`)
     }
   })
 
