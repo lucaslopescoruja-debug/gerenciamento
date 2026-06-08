@@ -181,7 +181,7 @@ export default function RouteClients() {
                 name: currentClientName,
                 address: '',
                 phone: '',
-                notes: currentOrderNumber ? `Pedido: ${currentOrderNumber}` : '',
+                notes: '',
                 order_number: currentOrderNumber || null,
                 items: []
               })
@@ -208,6 +208,21 @@ export default function RouteClients() {
                  clientsMap.get(currentClientName).phone = String(nextCell).trim()
                }
             }
+          }
+
+          // Check for Observacoes
+          if (typeof firstCell === 'string' && firstCell.trim().toLowerCase() === 'observações') {
+             if (data[i+1]) {
+               const obsRow = data[i+1]
+               const obsCell = obsRow.find(c => c)
+               if (obsCell && typeof obsCell === 'string' && currentClientName && clientsMap.has(currentClientName)) {
+                 const obsText = obsCell.trim()
+                 if (obsText && !obsText.toLowerCase().startsWith('atenciosamente')) {
+                   const existingNotes = clientsMap.get(currentClientName).notes
+                   clientsMap.get(currentClientName).notes = existingNotes ? existingNotes + '\nObs: ' + obsText : 'Obs: ' + obsText
+                 }
+               }
+             }
           }
 
           // Check for Products explicitly via columns
@@ -398,6 +413,12 @@ export default function RouteClients() {
                             </a>
                           )}
                           {client.phone && <span>📞 {client.phone}</span>}
+                        </div>
+                      )}
+                      {client.notes && (
+                        <div className="text-xs text-amber-700 bg-amber-500/10 dark:text-amber-400 p-2 rounded mt-1 mb-2 border border-amber-500/20 whitespace-pre-wrap">
+                          <span className="font-bold uppercase tracking-wider text-[10px] opacity-70 block mb-0.5">Observação</span>
+                          {client.notes.replace('Obs: ', '')}
                         </div>
                       )}
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 bg-muted/20 w-max px-2 py-1 rounded-md">

@@ -341,6 +341,12 @@ export default function ClientConference() {
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" /> {client.address}
                 </a>
               )}
+              {client.notes && (
+                <div className="text-xs text-amber-700 bg-amber-500/10 dark:text-amber-400 p-2 rounded mt-2 mb-1 border border-amber-500/20 whitespace-pre-wrap max-w-sm">
+                  <span className="font-bold uppercase tracking-wider text-[10px] opacity-70 block mb-0.5">Observação</span>
+                  {client.notes.replace('Obs: ', '')}
+                </div>
+              )}
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5 bg-muted/30 w-max px-2 py-0.5 rounded-md border border-border/50">
                 <span className="font-medium text-foreground">{totalItems} <span className="opacity-70 font-normal">itens</span></span>
                 <span className="opacity-50">•</span>

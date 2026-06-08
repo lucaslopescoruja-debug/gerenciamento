@@ -290,7 +290,7 @@ export default function CreateLoad() {
                   name: currentClientName,
                   address: '',
                   phone: '',
-                  notes: currentOrderNumber ? `Pedido: ${currentOrderNumber}` : '',
+                  notes: '',
                   order_number: currentOrderNumber || null,
                   items: []
                 })
@@ -317,6 +317,21 @@ export default function CreateLoad() {
                    clientsMap.get(currentClientName).phone = String(nextCell).trim()
                  }
               }
+            }
+
+            // Check for Observacoes
+            if (typeof firstCell === 'string' && firstCell.trim().toLowerCase() === 'observações') {
+               if (data[i+1]) {
+                 const obsRow = data[i+1]
+                 const obsCell = obsRow.find(c => c)
+                 if (obsCell && typeof obsCell === 'string' && currentClientName && clientsMap.has(currentClientName)) {
+                   const obsText = obsCell.trim()
+                   if (obsText && !obsText.toLowerCase().startsWith('atenciosamente')) {
+                     const existingNotes = clientsMap.get(currentClientName).notes
+                     clientsMap.get(currentClientName).notes = existingNotes ? existingNotes + '\nObs: ' + obsText : 'Obs: ' + obsText
+                   }
+                 }
+               }
             }
 
             // Check for Products explicitly via columns
