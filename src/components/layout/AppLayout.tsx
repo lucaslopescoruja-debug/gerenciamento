@@ -111,12 +111,6 @@ export default function AppLayout() {
           <span className="font-bold text-lg gradient-text whitespace-nowrap">Estoque Fácil</span>
         </Link>
         <div className="flex items-center gap-1">
-          <button
-            onClick={logout}
-            className="p-2 rounded-lg hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-colors cursor-pointer"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
           {isManager && (
             <Link
               to="/liberacoes"
@@ -196,10 +190,13 @@ export default function AppLayout() {
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
             <UserIcon className="h-5 w-5 text-primary" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-foreground leading-tight truncate">{user?.name || 'Usuário'}</p>
             <p className="text-xs text-muted-foreground capitalize mt-0.5 truncate">{user?.role || 'operator'}</p>
           </div>
+          <button onClick={logout} className="p-2 rounded-lg hover:bg-red-500/10 text-red-500/70 hover:text-red-500 transition-colors shrink-0" title="Sair">
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation */}
