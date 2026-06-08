@@ -8,7 +8,7 @@ import { toast } from '@/components/ui/toaster'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import {
@@ -69,10 +69,10 @@ export default function DeliveriesList() {
     mutationFn: deliveriesApi.deleteDeliveryRoute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_routes'] })
-      toast.success('Entrega excluída com sucesso')
+      toast({ title: 'Entrega excluída com sucesso', variant: 'default' })
     },
     onError: (error: any) => {
-      toast.error(`Erro ao excluir: ${error.message}`)
+      toast({ title: `Erro ao excluir: ${error.message}`, variant: 'destructive' })
     }
   })
 
@@ -290,12 +290,12 @@ export default function DeliveriesList() {
               </select>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <div className="flex justify-end gap-2 sm:gap-0 mt-4">
             <Button variant="outline" onClick={() => setEditingRoute(null)}>Cancelar</Button>
-            <Button onClick={saveEdit} disabled={!editDriver || updateMutation.isPending}>
+            <Button onClick={saveEdit} disabled={!editDriver || updateMutation.isPending} className="ml-2">
               {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
