@@ -40,7 +40,7 @@ export default function DeliveriesList() {
   const { data: pendingApprovals = [] } = useQuery({
     queryKey: ['pending_approvals'],
     queryFn: deliveriesApi.getPendingApprovals,
-    refetchInterval: 10000, // refresh every 10 seconds
+    refetchInterval: 60000, // refresh every 60 seconds
     enabled: isManager,
   })
 

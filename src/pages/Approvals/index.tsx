@@ -35,19 +35,19 @@ export default function ApprovalsPage() {
   const { data: approvals = [], isLoading: isLoadingApprovals } = useQuery({
     queryKey: ['pending_approvals'],
     queryFn: deliveriesApi.getPendingApprovals,
-    refetchInterval: 10000 // poll every 10s
+    refetchInterval: 60000 // poll every 60s
   })
 
   const { data: stockAdjustments = [], isLoading: isLoadingStock } = useQuery({
     queryKey: ['pending_stock_adjustments'],
     queryFn: () => operationsApi.getPendingStockAdjustments(),
-    refetchInterval: 10000 // poll every 10s
+    refetchInterval: 60000 // poll every 60s
   })
 
   const { data: operationAlerts = [], isLoading: isLoadingAlerts } = useQuery({
     queryKey: ['pending_operation_alerts'],
     queryFn: () => operationsApi.getPendingOperationAlerts(),
-    refetchInterval: 10000 // poll every 10s
+    refetchInterval: 60000 // poll every 60s
   })
 
   const { data: allProducts = [] } = useQuery({

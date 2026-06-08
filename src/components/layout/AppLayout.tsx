@@ -37,7 +37,7 @@ export default function AppLayout() {
   const { data: pendingApprovals = [] } = useQuery({
     queryKey: ['pending_approvals'],
     queryFn: deliveriesApi.getPendingApprovals,
-    refetchInterval: 10000,
+    refetchInterval: 60000,
     enabled: !!user
   })
 
@@ -53,14 +53,14 @@ export default function AppLayout() {
   const { data: pendingStockAdjustments = [] } = useQuery({
     queryKey: ['pending_stock_adjustments'],
     queryFn: () => operationsApi.getPendingStockAdjustments(),
-    refetchInterval: 10000,
+    refetchInterval: 60000,
     enabled: !!user && isManager
   })
 
   const { data: pendingOperationAlerts = [] } = useQuery({
     queryKey: ['pending_operation_alerts'],
     queryFn: () => operationsApi.getPendingOperationAlerts(),
-    refetchInterval: 10000,
+    refetchInterval: 60000,
     enabled: !!user && isManager
   })
 
