@@ -365,32 +365,7 @@ export default function ClientConference() {
               </div>
               <Button type="button" onClick={() => setIsCameraOpen(true)} size="icon" variant="outline" className="h-12 w-12 border-primary/30 text-primary hover:bg-primary/10" title="Usar câmera"><Camera className="h-5 w-5" /></Button>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Busca manual (código ou descrição)..."
-                className="pl-10 h-10 text-sm bg-muted/50"
-              />
-              {showDropdown && searchInput.trim().length > 0 && (
-                <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto divide-y divide-border">
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map(p => (
-                      <div key={p.id} className="p-3 hover:bg-muted cursor-pointer flex justify-between items-center" onClick={() => selectManualProduct(p)}>
-                        <div>
-                          <div className="font-bold text-foreground text-sm">{p.code}</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">{p.description}</div>
-                        </div>
-                        <div className="text-xs font-mono text-muted-foreground opacity-50">{p.external_code || '---'}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">Nenhum produto encontrado</div>
-                  )}
-                </div>
-              )}
-            </div>
+
           </div>
         )}
 
