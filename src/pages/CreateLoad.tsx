@@ -37,6 +37,7 @@ export default function CreateLoad() {
   const [items, setItems] = useState<NewItem[]>([])
   const [codeSearch, setCodeSearch] = useState('')
   const [selectedDriverId, setSelectedDriverId] = useState('')
+  const [selectedHelperId, setSelectedHelperId] = useState('')
   const [importedClients, setImportedClients] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
@@ -69,6 +70,7 @@ export default function CreateLoad() {
   })
   
   const drivers = usersList.filter(u => u.role === 'motorista' && u.active)
+  const helpers = usersList.filter(u => u.role === 'ajudante' && u.active)
 
   const { data: existingOp } = useQuery({
     queryKey: ['operation', id],
@@ -119,10 +121,10 @@ export default function CreateLoad() {
   }, [existingItems])
 
   const createMutation = useMutation({
-    mutationFn: async (data: { op: any, items: any, driverId?: string, clients?: any[] }) => {
+    mutationFn: async (data: { op: any, items: any, driverId?: string, helperId?: string, clients?: any[] }) => {
       const op = await operationsApi.createOperation(data.op, data.items)
       if (data.clients && data.clients.length > 0 && data.driverId) {
-        const route = await deliveriesApi.createDeliveryRoute(op.id, data.driverId)
+        const route = await deliveriesApi.createDeliveryRoute(op.id, data.driverId, data.helperId)
         await deliveriesApi.importDeliveryClients(route.id, data.clients)
       }
       return op
@@ -564,6 +566,7 @@ export default function CreateLoad() {
         op: opData, 
         items: itemsData,
         driverId: selectedDriverId || undefined,
+        helperId: selectedHelperId || undefined,
         clients: importedClients.length > 0 ? importedClients : undefined
       })
     }
@@ -583,7 +586,7 @@ export default function CreateLoad() {
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ClipboardList className="h-4 w-4 text-primary" />Dados da Rota</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Nome da Rota *</Label>
                 <Input value={loadNumber} onChange={e => setLoadNumber(e.target.value)} placeholder="Ex: Rota Centro 01" required />
@@ -601,6 +604,22 @@ export default function CreateLoad() {
                   {drivers.map(driver => (
                     <option key={driver.id} value={driver.id}>
                       {driver.name} ({driver.username})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ajudante (Opcional)</Label>
+                <select 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedHelperId}
+                  onChange={e => setSelectedHelperId(e.target.value)}
+                >
+                  <option value="">Selecione o ajudante...</option>
+                  {helpers.map(helper => (
+                    <option key={helper.id} value={helper.id}>
+                      {helper.name} ({helper.username})
                     </option>
                   ))}
                 </select>

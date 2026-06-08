@@ -10,7 +10,8 @@ export const deliveriesApi = {
       .select(`
         *,
         operation:operations ( load_number ),
-        driver:users ( name )
+        driver:users!driver_id ( name ),
+        helper:users!helper_id ( name )
       `)
       .eq('company_id', currentCompanyId)
       .order('created_at', { ascending: false })
@@ -25,7 +26,8 @@ export const deliveriesApi = {
       .select(`
         *,
         operation:operations ( load_number ),
-        driver:users ( name )
+        driver:users!driver_id ( name ),
+        helper:users!helper_id ( name )
       `)
       .eq('id', id)
       .eq('company_id', currentCompanyId)
@@ -38,7 +40,7 @@ export const deliveriesApi = {
     if (!currentCompanyId) return null
     const { data, error } = await supabase
       .from('delivery_routes')
-      .select('*, driver:users ( name )')
+      .select('*, driver:users!driver_id ( name ), helper:users!helper_id ( name )')
       .eq('operation_id', operationId)
       .eq('company_id', currentCompanyId)
       .maybeSingle()
@@ -46,11 +48,14 @@ export const deliveriesApi = {
     return data
   },
 
-  async createDeliveryRoute(operationId: string, driverId: string) {
+  async createDeliveryRoute(operationId: string, driverId: string, helperId?: string) {
     if (!currentCompanyId) throw new Error('No company context')
+    const payload: any = { operation_id: operationId, driver_id: driverId, company_id: currentCompanyId }
+    if (helperId) payload.helper_id = helperId
+
     const { data, error } = await supabase
       .from('delivery_routes')
-      .insert([{ operation_id: operationId, driver_id: driverId, company_id: currentCompanyId }])
+      .insert([payload])
       .select()
       .single()
     if (error) throw error

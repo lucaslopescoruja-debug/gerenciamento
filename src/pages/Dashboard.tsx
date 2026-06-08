@@ -23,14 +23,14 @@ import { deliveriesApi } from '@/api/deliveries'
 export default function Dashboard() {
   const { user } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
-  const isDriver = user?.role === 'motorista'
+  const isDriverOrHelper = user?.role === 'motorista' || user?.role === 'ajudante'
   const isConferente = user?.role === 'conferente'
 
   const [isLoadsRecentExpanded, setIsLoadsRecentExpanded] = useState(true)
   const [isDeliveriesRecentExpanded, setIsDeliveriesRecentExpanded] = useState(true)
 
   const showLoads = isManager || isConferente
-  const showDeliveries = isManager || isDriver
+  const showDeliveries = isManager || isDriverOrHelper
 
   const { data: operations = [], isLoading: isLoadingOp } = useQuery({
     queryKey: ['operations'],
@@ -64,8 +64,8 @@ export default function Dashboard() {
   }, [operations])
 
   const deliveryStats = useMemo(() => {
-    const relevantDeliveries = isDriver 
-      ? deliveries.filter((r: any) => r.driver_id === user?.id) 
+    const relevantDeliveries = isDriverOrHelper 
+      ? deliveries.filter((r: any) => r.driver_id === user?.id || r.helper_id === user?.id) 
       : deliveries
 
     return {
@@ -74,7 +74,7 @@ export default function Dashboard() {
       dispatched: relevantDeliveries.filter((l: any) => l.status === 'in_progress').length,
       completed: relevantDeliveries.filter((l: any) => l.status === 'completed').length,
     }
-  }, [deliveries, isDriver, user?.id])
+  }, [deliveries, isDriverOrHelper, user?.id])
 
   const statusConfig: Record<string, { label: string; variant: 'default' | 'warning' | 'success' }> = {
     pending: { label: 'Pendente', variant: 'warning' },
@@ -210,12 +210,12 @@ export default function Dashboard() {
 
             {isDeliveriesRecentExpanded && (
               <div className="space-y-2">
-                {(isDriver ? deliveries.filter((r: any) => r.driver_id === user?.id) : deliveries).length === 0 ? (
+                {(isDriverOrHelper ? deliveries.filter((r: any) => r.driver_id === user?.id || r.helper_id === user?.id) : deliveries).length === 0 ? (
                   <div className="glass-card text-center py-8">
                     <p className="text-sm text-muted-foreground">Nenhuma entrega registrada.</p>
                   </div>
                 ) : (
-                  (isDriver ? deliveries.filter((r: any) => r.driver_id === user?.id) : deliveries).slice(0, 5).map((route: any, index: number) => (
+                  (isDriverOrHelper ? deliveries.filter((r: any) => r.driver_id === user?.id || r.helper_id === user?.id) : deliveries).slice(0, 5).map((route: any, index: number) => (
                     <Link key={route.id} to={`/entregas/${route.id}`} className="block group">
                       <div className="glass-card glass-card-hover p-4 flex items-center justify-between transition-all duration-200" style={{ animationDelay: `${index * 50}ms` }}>
                         <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ export default function Dashboard() {
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3 shrink-0 text-primary" /> Rota de Entrega
                             </span>
-                            {!isDriver && route.driver?.name && (
+                            {!isDriverOrHelper && route.driver?.name && (
                               <span>Motorista: {route.driver.name}</span>
                             )}
                           </div>

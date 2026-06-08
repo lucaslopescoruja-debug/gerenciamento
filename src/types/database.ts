@@ -5,7 +5,7 @@
 export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT' | 'RECEIPT' | 'RETURN'
 export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
-export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista'
+export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista' | 'ajudante'
 
 export interface UserPermissions {
   can_view_dashboard: boolean
@@ -219,6 +219,7 @@ export interface DeliveryRoute {
   company_id: string
   operation_id: string
   driver_id: string
+  helper_id?: string
   status: 'pending' | 'in_progress' | 'completed'
   created_at: string
 }

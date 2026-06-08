@@ -55,10 +55,10 @@ export default function DeliveriesList() {
     }
   })
 
-  // Motorista só vê as rotas dele. Gestor vê tudo.
+  // Motorista ou Ajudante só vê as rotas deles. Gestor vê tudo.
   const filteredRoutes = useMemo(() => {
     if (isManager) return routes
-    return routes.filter((r: any) => r.driver_id === user?.id)
+    return routes.filter((r: any) => r.driver_id === user?.id || r.helper_id === user?.id)
   }, [routes, isManager, user?.id])
 
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando rotas de entrega...</div>
@@ -121,6 +121,7 @@ export default function DeliveriesList() {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Truck className="h-4 w-4" /> {route.driver?.name || 'Sem Motorista'}
+                          {route.helper?.name && ` | Ajudante: ${route.helper.name}`}
                         </span>
                       </div>
                     </div>

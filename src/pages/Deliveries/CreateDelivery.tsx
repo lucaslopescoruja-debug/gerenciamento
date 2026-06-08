@@ -20,6 +20,7 @@ export default function CreateDelivery() {
 
   const [operationId, setOperationId] = useState('')
   const [driverId, setDriverId] = useState('')
+  const [helperId, setHelperId] = useState('')
 
   const { data: operations = [] } = useQuery({
     queryKey: ['operations'],
@@ -33,12 +34,13 @@ export default function CreateDelivery() {
   })
   
   const drivers = usersList.filter(u => u.role === 'motorista' && u.active)
+  const helpers = usersList.filter(u => u.role === 'ajudante' && u.active)
   
   // Only show operations that are not completely cancelled. Usually you deliver something that is dispatched or completed in the warehouse.
   const availableOperations = operations.filter(o => o.status !== 'cancelled')
 
   const createMutation = useMutation({
-    mutationFn: () => deliveriesApi.createDeliveryRoute(operationId, driverId),
+    mutationFn: () => deliveriesApi.createDeliveryRoute(operationId, driverId, helperId || undefined),
     onSuccess: (data) => {
       toast.success('Rota de Entrega criada com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['delivery_routes'] })
@@ -115,6 +117,22 @@ export default function CreateDelivery() {
               {drivers.length === 0 && (
                 <p className="text-xs text-amber-500 mt-1">Nenhum motorista cadastrado no sistema.</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ajudante (Opcional)</Label>
+              <select 
+                className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={helperId}
+                onChange={e => setHelperId(e.target.value)}
+              >
+                <option value="">Selecione o ajudante...</option>
+                {helpers.map(helper => (
+                  <option key={helper.id} value={helper.id}>
+                    {helper.name} ({helper.username})
+                  </option>
+                ))}
+              </select>
             </div>
           </CardContent>
         </Card>
