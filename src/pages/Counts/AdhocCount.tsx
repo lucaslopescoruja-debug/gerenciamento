@@ -223,6 +223,7 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
   const scanRef = useRef<HTMLInputElement>(null)
   const [scanInput, setScanInput] = useState('')
   const [searchAddInput, setSearchAddInput] = useState('')
+  const [manualQty, setManualQty] = useState<number | ''>(1)
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   const [isCameraOpen, setIsCameraOpen] = useState(false)
@@ -318,14 +319,28 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
 
   const processScannedBarcode = (raw: string) => {
     if (!raw.trim() || count?.status === 'completed') return
-    const code = normalizeCode(raw)
+    
+    let qty = 1
+    let rawCode = raw.trim()
+
+    if (rawCode.includes('*')) {
+      const parts = rawCode.split('*')
+      const parsedQty = parseInt(parts[0], 10)
+      if (!isNaN(parsedQty) && parsedQty > 0) {
+        qty = parsedQty
+        rawCode = parts[1] || ''
+      }
+    }
+
+    const code = normalizeCode(rawCode)
     const product = allProducts.find(p => normalizeCode(p.code) === code || (p.external_code && normalizeCode(p.external_code) === code))
+    
     if (!product) {
       toast.error('Produto não encontrado')
       if (navigator.vibrate) navigator.vibrate([200, 100, 200])
       return
     }
-    addItemMutation.mutate({ product })
+    addItemMutation.mutate({ product, qty })
   }
 
   const handleScan = (e: React.FormEvent) => {
@@ -337,22 +352,38 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
 
   const handleManualAdd = (rawCode: string) => {
     if (!rawCode.trim() || count?.status === 'completed') return
-    const term = normalizeCode(rawCode.trim())
+    
+    let qty = typeof manualQty === 'number' ? manualQty : 1
+    let searchStr = rawCode.trim()
+
+    if (searchStr.includes('*')) {
+      const parts = searchStr.split('*')
+      const parsedQty = parseInt(parts[0], 10)
+      if (!isNaN(parsedQty) && parsedQty > 0) {
+        qty = parsedQty
+        searchStr = parts[1] || ''
+      }
+    }
+
+    const term = normalizeCode(searchStr)
     const product = allProducts.find(p =>
       normalizeCode(p.code) === term ||
       (p.external_code && normalizeCode(p.external_code) === term)
     )
     if (!product) { toast.error('Produto não encontrado com esse código exato'); return }
     
-    addItemMutation.mutate({ product })
+    addItemMutation.mutate({ product, qty })
     setSearchAddInput('')
+    setManualQty(1)
     setShowDropdown(false)
   }
 
   const handleManualSelect = (product: Product) => {
     if (count?.status === 'completed') return
-    addItemMutation.mutate({ product })
+    const qty = typeof manualQty === 'number' ? manualQty : 1
+    addItemMutation.mutate({ product, qty })
     setSearchAddInput('')
+    setManualQty(1)
     setShowDropdown(false)
   }
 
@@ -405,13 +436,22 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
 
           {/* Manual Add with Autocomplete */}
           <div className="flex gap-2 relative">
+            <Input
+              type="number"
+              min="1"
+              value={manualQty}
+              onChange={e => setManualQty(e.target.value === '' ? '' : parseInt(e.target.value) || 1)}
+              className="w-20 text-center font-bold h-10"
+              placeholder="Qtd"
+              title="Quantidade"
+            />
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
                 value={searchAddInput} 
                 onChange={e => setSearchAddInput(e.target.value)} 
-                placeholder="Busca manual por código exato ou descrição..." 
-                className="pl-9 bg-background/50"
+                placeholder="Busca por código ou descrição..." 
+                className="pl-9 bg-background/50 h-10"
                 onKeyDown={e => { 
                   if (e.key === 'Enter') { 
                     e.preventDefault(); 
@@ -446,7 +486,9 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
                 </div>
               )}
             </div>
-            <Button onClick={() => handleManualAdd(searchAddInput)}><Plus className="h-4 w-4" /></Button>
+            <Button className="h-10 w-10 p-0 shrink-0" onClick={() => handleManualAdd(searchAddInput)}>
+              <Plus className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       )}
