@@ -132,7 +132,7 @@ export default function ReturnConference() {
       const newQty = currentScanned + 1
       
       if (newQty > existingItem.quantity_expected) {
-        playBeep('warning')
+        playBeep('error')
         toast.warning(`Atenção: Este item excedeu a quantidade esperada de retorno (${existingItem.quantity_expected}).`)
       } else {
         playBeep('success')
@@ -145,7 +145,7 @@ export default function ReturnConference() {
     } else {
       const prod = allProducts.find(p => normalizeCode(p.code) === normalized || (p.external_code && normalizeCode(p.external_code) === normalized))
       if (prod) {
-        playBeep('warning')
+        playBeep('error')
         toast.warning(`Atenção: Produto '${prod.description}' NÃO consta como pendente de retorno. Você pode bipá-lo, mas é uma divergência.`)
         // We still allow it? The user said "vai voltar pro estoque". 
         // We can add it dynamically to expectedReturnItems or handle it.

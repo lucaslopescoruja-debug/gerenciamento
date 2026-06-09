@@ -214,7 +214,7 @@ export default function ClientConference() {
       if (newQty === existingItem.quantity_expected) status = 'ok'
       
       if (newQty > existingItem.quantity_expected) {
-        playBeep('warning')
+        playBeep('error')
         if (window.confirm(`ATENÇÃO: Este item excedeu a quantidade do pedido (${existingItem.quantity_expected}). Deseja solicitar liberação do gestor para adicionar esta quantidade extra?`)) {
           requestApprovalMutation.mutate({ itemId: existingItem.id, requestedQty: newQty })
         }
@@ -228,7 +228,7 @@ export default function ClientConference() {
       const prod = allProducts.find(p => normalizeCode(p.code) === normalized || (p.external_code && normalizeCode(p.external_code) === normalized))
       
       if (prod) {
-        playBeep('warning')
+        playBeep('error')
         if (window.confirm(`ATENÇÃO: Produto '${prod.description}' NÃO pertence a este pedido. Deseja solicitar liberação do gestor para adicioná-lo?`)) {
           toast.info('Solicitando liberação...')
           addItemMutation.mutate({

@@ -356,7 +356,7 @@ export default function Conference() {
           window.alert(`ACESSO NEGADO: O produto ${matchedProduct.description} não está na rota. Procure um Gestor.`)
           return
         }
-        playBeep('warning')
+        playBeep('error')
         const ok = window.confirm(`${matchedProduct.description} não está na rota. Deseja adicionar?`)
         if (!ok) return
       }
@@ -370,7 +370,7 @@ export default function Conference() {
         status: 'ok' as const
       }
       addItemMutation.mutate(newItem)
-      playBeep('warning')
+      playBeep('error')
       toast.success(`${matchedProduct.description} adicionado à rota!`)
       if (op && op.status === 'pending') {
         updateOpMutation.mutate({ status: 'in_progress' })
@@ -388,13 +388,13 @@ export default function Conference() {
           window.alert(`LIMITE ATINGIDO: A quantidade de ${item.description} já foi alcançada. Procure um Gestor.`)
           return
         }
-        playBeep('warning')
+        playBeep('error')
         const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
         if (!ok) return
       }
 
       nextExpected = cur + 1
-      playBeep('warning')
+      playBeep('error')
       toast.success(`${item.description}: Quantidade extra (+1) adicionada à rota!`)
     } else {
       const nq = cur + 1
