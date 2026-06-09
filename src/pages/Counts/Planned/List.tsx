@@ -11,8 +11,8 @@ import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, Plus, Map, LayoutGrid, CheckCircle2, Trash2, ArrowRight } from 'lucide-react'
 
 export default function PlannedInventoriesList() {
-  const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const { user, company } = useAuth()
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.is_super_admin
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isCreating, setIsCreating] = useState(false)
@@ -32,10 +32,13 @@ export default function PlannedInventoriesList() {
 
   const createMutation = useMutation({
     mutationFn: async (name: string) => {
+      const companyId = company?.id || user?.company_id;
+      if (!companyId) throw new Error("Nenhuma empresa selecionada");
+      
       const { data, error } = await supabase.from('planned_inventories').insert([{
         name,
         status: 'planning',
-        company_id: user?.company_id
+        company_id: companyId
       }]).select()
       
       if (error) throw error
