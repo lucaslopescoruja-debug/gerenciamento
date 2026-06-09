@@ -322,6 +322,18 @@ export const deliveriesApi = {
     return data as DeliveryItem
   },
 
+  async updateDeliveryItem(itemId: string, updates: Partial<DeliveryItem>) {
+    const { data, error } = await supabase
+      .from('delivery_items')
+      .update(updates)
+      .eq('id', itemId)
+      .eq('company_id', currentCompanyId)
+      .select()
+      .single()
+    if (error) throw error
+    return data as DeliveryItem
+  },
+
   async addDeliveryItem(clientId: string, item: Partial<DeliveryItem>) {
     if (!currentCompanyId) throw new Error('No company context')
     const { data, error } = await supabase

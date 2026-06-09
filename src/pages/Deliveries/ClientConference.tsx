@@ -372,21 +372,34 @@ export default function ClientConference() {
               </Button>
             )}
             {isManager && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  try {
-                    generateDeliveryProofPDF({ ...client, delivery_items: items }, company);
-                    toast.success('Comprovante gerado com sucesso!');
-                  } catch(e) {
-                    toast.error('Erro ao gerar comprovante');
-                  }
-                }}
-              >
-                <FileDown className="h-4 w-4 md:mr-1.5" />
-                <span className="hidden md:inline">Comprovante</span>
-              </Button>
+              <div className="flex gap-2 mt-2">
+                {!isFinished && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-primary border-primary/30 hover:bg-primary/10"
+                    onClick={() => navigate(`/entregas/cliente/${clientId}/editar`)}
+                  >
+                    <PenTool className="h-4 w-4 md:mr-1.5" />
+                    <span className="hidden md:inline">Editar Pedido</span>
+                  </Button>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    try {
+                      generateDeliveryProofPDF({ ...client, delivery_items: items }, company);
+                      toast.success('Comprovante gerado com sucesso!');
+                    } catch(e) {
+                      toast.error('Erro ao gerar comprovante');
+                    }
+                  }}
+                >
+                  <FileDown className="h-4 w-4 md:mr-1.5" />
+                  <span className="hidden md:inline">Comprovante</span>
+                </Button>
+              </div>
             )}
           </div>
         </div>
