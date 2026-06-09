@@ -174,7 +174,7 @@ export default function RouteClientForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery_clients', routeId] })
       toast.success('Cliente adicionado com sucesso!')
-      navigate(`/entregas/${routeId}`, { replace: true })
+      navigate(-1)
     },
     onError: (error: any) => {
       toast.error(`Erro ao salvar cliente: ${error.message}`)
@@ -220,7 +220,7 @@ export default function RouteClientForm() {
       queryClient.invalidateQueries({ queryKey: ['delivery_client', clientId] })
       queryClient.invalidateQueries({ queryKey: ['delivery_items', clientId] })
       toast.success('Pedido do cliente atualizado!')
-      navigate(`/entregas/cliente/${clientId}`, { replace: true })
+      navigate(-1)
     },
     onError: (error: any) => {
       toast.error(`Erro ao atualizar cliente: ${error.message}`)
@@ -268,10 +268,7 @@ export default function RouteClientForm() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-20 slide-in">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => {
-          if (clientId) navigate(`/entregas/cliente/${clientId}`)
-          else navigate(`/entregas/${routeId}`)
-        }}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
