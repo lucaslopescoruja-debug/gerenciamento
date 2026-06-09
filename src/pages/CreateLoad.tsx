@@ -261,11 +261,11 @@ export default function CreateLoad() {
         })
 
         if (hasClientData) {
-          // Client-product parser (exactly like RouteClients.tsx)
           const clientsMap = new Map<string, any>()
           let notFoundCount = 0
           let currentClientName = ''
           let currentOrderNumber = ''
+          let currentClientKey = ''
 
           for (let i = 0; i < data.length; i++) {
             const row = data[i]
@@ -285,8 +285,10 @@ export default function CreateLoad() {
             const firstCell = row.find(c => c)
             if (typeof firstCell === 'string' && firstCell.trim().startsWith('À ')) {
               currentClientName = firstCell.replace('À ', '').trim()
-              if (!clientsMap.has(currentClientName)) {
-                clientsMap.set(currentClientName, {
+              currentClientKey = currentOrderNumber ? `${currentClientName}_${currentOrderNumber}` : currentClientName
+              
+              if (!clientsMap.has(currentClientKey)) {
+                clientsMap.set(currentClientKey, {
                   name: currentClientName,
                   address: '',
                   phone: '',
@@ -301,7 +303,7 @@ export default function CreateLoad() {
                  const addrRow = data[i+1]
                  const addrCell = addrRow.find(c => c)
                  if (addrCell && typeof addrCell === 'string' && !addrCell.trim().startsWith('A/C') && !addrCell.trim().startsWith('Telefone')) {
-                   clientsMap.get(currentClientName).address = addrCell.trim()
+                   clientsMap.get(currentClientKey).address = addrCell.trim()
                  }
               }
             }
@@ -309,12 +311,12 @@ export default function CreateLoad() {
             // Check for Phone
             if (typeof firstCell === 'string' && firstCell.trim().toLowerCase().startsWith('telefone:')) {
               const phone = firstCell.replace(/telefone:/i, '').trim()
-              if (phone && currentClientName && clientsMap.has(currentClientName)) {
-                 clientsMap.get(currentClientName).phone = phone
+              if (phone && currentClientKey && clientsMap.has(currentClientKey)) {
+                 clientsMap.get(currentClientKey).phone = phone
               } else if (row.length > 1) { 
                  const nextCell = row[1] || row[2]
-                 if (nextCell && currentClientName && clientsMap.has(currentClientName)) {
-                   clientsMap.get(currentClientName).phone = String(nextCell).trim()
+                 if (nextCell && currentClientKey && clientsMap.has(currentClientKey)) {
+                   clientsMap.get(currentClientKey).phone = String(nextCell).trim()
                  }
               }
             }
@@ -324,18 +326,18 @@ export default function CreateLoad() {
                if (data[i+1]) {
                  const obsRow = data[i+1]
                  const obsCell = obsRow.find(c => c)
-                 if (obsCell && typeof obsCell === 'string' && currentClientName && clientsMap.has(currentClientName)) {
+                 if (obsCell && typeof obsCell === 'string' && currentClientKey && clientsMap.has(currentClientKey)) {
                    const obsText = obsCell.trim()
                    if (obsText && !obsText.toLowerCase().startsWith('atenciosamente')) {
-                     const existingNotes = clientsMap.get(currentClientName).notes
-                     clientsMap.get(currentClientName).notes = existingNotes ? existingNotes + '\nObs: ' + obsText : 'Obs: ' + obsText
+                     const existingNotes = clientsMap.get(currentClientKey).notes
+                     clientsMap.get(currentClientKey).notes = existingNotes ? existingNotes + '\nObs: ' + obsText : 'Obs: ' + obsText
                    }
                  }
                }
             }
 
             // Check for Products explicitly via columns
-            if (currentClientName && clientsMap.has(currentClientName)) {
+            if (currentClientKey && clientsMap.has(currentClientKey)) {
                const codeCell = row[2]
                const hasRowNumber = (row[0] && /^\d+$/.test(String(row[0]).trim())) || (row[1] && /^\d+$/.test(String(row[1]).trim()))
                
@@ -373,7 +375,7 @@ export default function CreateLoad() {
                         }
                      } 
 
-                     clientsMap.get(currentClientName).items.push({
+                     clientsMap.get(currentClientKey).items.push({
                        product_id: foundProduct ? foundProduct.id : null,
                        product_code: finalCode,
                        description: finalDesc,
