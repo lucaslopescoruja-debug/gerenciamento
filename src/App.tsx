@@ -57,9 +57,8 @@ import CountsMenu from './pages/Counts'
 import AdhocCount from './pages/Counts/AdhocCount'
 import InventoryCount from './pages/Counts/InventoryCount'
 import PlannedInventoriesList from './pages/Counts/Planned/List'
-// We will create these shortly:
-// import PlannedInventoryManager from './pages/Counts/Planned/Manager'
-// import PlannedInventoryOperator from './pages/Counts/Planned/Operator'
+import PlannedInventoryManager from './pages/Counts/Planned/Manager'
+import PlannedInventoryOperator from './pages/Counts/Planned/Operator'
 
 import ReceiptsList from './pages/Receipts/index'
 import CreateReceipt from './pages/Receipts/CreateReceipt'
@@ -98,8 +97,8 @@ function App() {
             <Route path="/contagens/avulsa" element={<AdhocCount />} />
             <Route path="/contagens/inventario" element={<InventoryCount />} />
             <Route path="/contagens/planejados" element={<PlannedInventoriesList />} />
-            {/* <Route path="/contagens/planejados/:id/gestao" element={<PlannedInventoryManager />} /> */}
-            {/* <Route path="/contagens/planejados/:id/coleta" element={<PlannedInventoryOperator />} /> */}
+            <Route path="/contagens/planejados/:id/gestao" element={<PlannedInventoryManager />} />
+            <Route path="/contagens/planejados/:id/coleta" element={<PlannedInventoryOperator />} />
             
             {/* Receipts Routes */}
             <Route path="/recebimentos" element={<ReceiptsList />} />

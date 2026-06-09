@@ -11,7 +11,8 @@ import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, Plus, Map, LayoutGrid, CheckCircle2, Trash2, ArrowRight } from 'lucide-react'
 
 export default function PlannedInventoriesList() {
-  const { user, isManager } = useAuth()
+  const { user } = useAuth()
+  const isManager = user?.role === 'admin' || user?.role === 'gestor'
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isCreating, setIsCreating] = useState(false)
