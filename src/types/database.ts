@@ -214,6 +214,34 @@ export interface InventoryCountItem {
   updated_at: string
 }
 
+export interface PlannedInventory {
+  id: string
+  name: string
+  status: 'planning' | 'in_progress' | 'completed'
+  company_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface PlannedInventoryArea {
+  id: string
+  inventory_id: string
+  name: string
+  description?: string
+  created_at: string
+}
+
+export interface PlannedInventoryCount {
+  id: string
+  inventory_id: string
+  area_id: string
+  product_code: string
+  quantity: number
+  user_name: string
+  created_at: string
+  updated_at: string
+}
+
 export interface DeliveryRoute {
   id: string
   company_id: string
