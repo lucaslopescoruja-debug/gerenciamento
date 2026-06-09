@@ -219,13 +219,24 @@ export interface PlannedInventory {
   name: string
   status: 'planning' | 'in_progress' | 'completed'
   company_id: string
+  collection_rule: 'any' | 'registered_only' | 'confirm_unknown'
+  divergence_rule: 'ignore_uncollected' | 'zero_uncollected'
   created_at: string
   updated_at: string
+}
+
+export interface PlannedInventorySector {
+  id: string
+  inventory_id: string
+  name: string
+  created_at: string
 }
 
 export interface PlannedInventoryArea {
   id: string
   inventory_id: string
+  sector_id?: string
+  area_number?: number
   name: string
   description?: string
   created_at: string
