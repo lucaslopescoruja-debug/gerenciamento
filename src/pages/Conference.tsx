@@ -70,41 +70,38 @@ export default function Conference() {
 
   const pendingReturnsCount = useMemo(() => {
     let count = 0
-    clients.forEach((c: any) => {
-      const isClientReturned = c.status === 'returned'
-      c.delivery_items?.forEach((item: any) => {
-        if (item.returned_to_stock) return
-        let returnQty = 0
-        if (isClientReturned) {
-          returnQty = item.quantity_expected
-        } else {
-          returnQty = Math.max(0, item.quantity_expected - item.quantity_scanned)
-        }
-        if (returnQty > 0) count += returnQty
-      })
+    
+    // 1. O que foi carregado no caminhão
+    const loadedMap = new Map<string, number>()
+    items.forEach((item: any) => {
+      if (item.quantity_scanned > 0 && !item.description.startsWith('🔄')) {
+        const code = item.product_code
+        loadedMap.set(code, (loadedMap.get(code) || 0) + item.quantity_scanned)
+      }
     })
-    return count
-  }, [clients])
 
-  const returnedClientsItems = useMemo(() => {
-    const list: any[] = []
+    // 2. O que foi resolvido (entregue ou já retornado)
+    const resolvedMap = new Map<string, number>()
     clients.forEach((c: any) => {
-      c.delivery_items?.forEach((item: any) => {
-        if (item.returned_to_stock) {
-          let returnQty = c.status === 'returned' ? item.quantity_expected : Math.max(0, item.quantity_expected - item.quantity_scanned)
-          if (returnQty > 0) {
-            const existing = list.find(i => i.product_code === item.product_code)
-            if (existing) {
-              existing.quantity_returned += returnQty
-            } else {
-              list.push({ id: `ret_${item.id}`, product_code: item.product_code, description: item.description, quantity_returned: returnQty })
-            }
-          }
-        }
-      })
+      if (c.status !== 'returned') {
+        c.delivery_items?.forEach((item: any) => {
+          const resolved = item.returned_to_stock ? item.quantity_expected : (item.quantity_scanned || 0)
+          resolvedMap.set(item.product_code, (resolvedMap.get(item.product_code) || 0) + resolved)
+        })
+      }
     })
-    return list
-  }, [clients])
+
+    // 3. Calculando o retorno esperado
+    for (const [code, loaded] of loadedMap.entries()) {
+      const resolved = resolvedMap.get(code) || 0
+      const expectedReturn = Math.max(0, loaded - resolved)
+      if (expectedReturn > 0) {
+        count += expectedReturn
+      }
+    }
+    
+    return count
+  }, [items, clients])
 
   const updateItemMutation = useMutation({
     mutationFn: async ({ itemId, qty, expected, status, extraUpdates }: { 

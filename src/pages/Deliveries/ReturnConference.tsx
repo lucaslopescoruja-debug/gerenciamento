@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { deliveriesApi } from '@/api/deliveries'
+import { operationsApi } from '@/api/operations'
 import { productsApi } from '@/api/products'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,12 @@ export default function ReturnConference() {
     enabled: !!id,
   })
 
+  const { data: loadItems = [], isLoading: isLoadItemsLoading } = useQuery({
+    queryKey: ['operation_items', route?.operation_id],
+    queryFn: () => operationsApi.getOperationItems(route!.operation_id),
+    enabled: !!route?.operation_id,
+  })
+
   const { data: clients = [], isLoading: isClientsLoading } = useQuery({
     queryKey: ['delivery_clients', id],
     queryFn: () => deliveriesApi.getDeliveryClients(id!),
@@ -44,40 +51,66 @@ export default function ReturnConference() {
 
   // Compute the expected return items from clients
   const expectedReturnItems = useMemo(() => {
-    const itemsMap = new Map<string, any>()
+    const loadedMap = new Map<string, any>()
     
+    // 1. O que foi carregado no caminhão
+    loadItems.forEach((item: any) => {
+      if (item.quantity_scanned > 0 && !item.description.startsWith('🔄')) {
+        const code = item.product_code
+        if (loadedMap.has(code)) {
+          loadedMap.get(code).loadedQty += item.quantity_scanned
+        } else {
+          loadedMap.set(code, {
+            product_id: item.product_id,
+            product_code: item.product_code,
+            description: item.description,
+            loadedQty: item.quantity_scanned,
+            items_ids: []
+          })
+        }
+      }
+    })
+
+    // 2. O que foi resolvido (entregue ou já retornado ao estoque)
+    const resolvedMap = new Map<string, number>()
     clients.forEach((c: any) => {
       const isClientReturned = c.status === 'returned'
       c.delivery_items?.forEach((item: any) => {
-        if (item.returned_to_stock) return
-        
-        let returnQty = 0
-        if (isClientReturned) {
-          returnQty = item.quantity_expected
-        } else {
-          returnQty = Math.max(0, item.quantity_expected - item.quantity_scanned)
+        if (!isClientReturned) {
+          const resolved = item.returned_to_stock ? item.quantity_expected : (item.quantity_scanned || 0)
+          resolvedMap.set(item.product_code, (resolvedMap.get(item.product_code) || 0) + resolved)
         }
         
-        if (returnQty > 0) {
-          const existing = itemsMap.get(item.product_code)
-          if (existing) {
-            existing.quantity_expected += returnQty
-            existing.items_ids.push(item.id)
+        // Coleta os IDs de delivery_items que ainda precisam de returned_to_stock = true
+        if (!item.returned_to_stock) {
+          let pendingReturnForThisItem = 0
+          if (isClientReturned) {
+            pendingReturnForThisItem = item.quantity_expected
           } else {
-            itemsMap.set(item.product_code, {
-              product_id: item.product_id,
-              product_code: item.product_code,
-              description: item.description,
-              quantity_expected: returnQty,
-              items_ids: [item.id]
-            })
+            pendingReturnForThisItem = Math.max(0, item.quantity_expected - (item.quantity_scanned || 0))
+          }
+          if (pendingReturnForThisItem > 0) {
+            const info = loadedMap.get(item.product_code)
+            if (info) info.items_ids.push(item.id)
           }
         }
       })
     })
+
+    // 3. Calculando o retorno esperado: Carregado - Resolvido
+    const returns: any[] = []
+    for (const [code, info] of loadedMap.entries()) {
+      const resolved = resolvedMap.get(code) || 0
+      const expectedReturn = Math.max(0, info.loadedQty - resolved)
+      
+      if (expectedReturn > 0) {
+        info.quantity_expected = expectedReturn
+        returns.push(info)
+      }
+    }
     
-    return Array.from(itemsMap.values())
-  }, [clients])
+    return returns
+  }, [loadItems, clients])
 
   const confirmReturnMutation = useMutation({
     mutationFn: ({ items, hasDivergence }: { items: any[], hasDivergence: boolean }) => 
@@ -250,7 +283,7 @@ export default function ReturnConference() {
     confirmReturnMutation.mutate({ items: finalItems, hasDivergence })
   }
 
-  if (isRouteLoading || isClientsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando retorno...</div>
+  if (isRouteLoading || isClientsLoading || isLoadItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando retorno...</div>
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-120px)] slide-in max-w-2xl mx-auto">
