@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, ScanLine, Search, CheckCircle2, LayoutGrid, Camera, ChevronRight, ScanBarcode, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, ScanLine, Search, CheckCircle2, LayoutGrid, Camera, ChevronRight, ChevronDown, ScanBarcode, Trash2 } from 'lucide-react'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
 
 export default function PlannedInventoryOperator() {
@@ -17,6 +17,14 @@ export default function PlannedInventoryOperator() {
   const { user } = useAuth()
   
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
+  const [collapsedSectors, setCollapsedSectors] = useState<Record<string, boolean>>({})
+
+  const toggleSector = (sectorId: string) => {
+    setCollapsedSectors(prev => ({
+      ...prev,
+      [sectorId]: !prev[sectorId]
+    }))
+  }
 
   const { data: inventory } = useQuery({
     queryKey: ['planned_inventory', id],
@@ -109,11 +117,19 @@ export default function PlannedInventoryOperator() {
               if (sectorAreas.length === 0) return null
 
               return (
-                <div key={sector.id} className="space-y-1">
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-2 mb-2">
-                    {sector.name}
+                <div key={sector.id} className="space-y-1 mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer px-3 py-2 mb-2 bg-muted/40 rounded-lg hover:bg-muted/70 transition-colors"
+                    onClick={() => toggleSector(sector.id)}
+                  >
+                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {sector.name}
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${collapsedSectors[sector.id] ? '-rotate-90' : ''}`} />
                   </div>
-                  <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
+                  
+                  {!collapsedSectors[sector.id] && (
+                    <div className="bg-card border border-border/50 rounded-xl overflow-hidden shadow-sm">
                     {sectorAreas.map((area, idx) => {
                       const areaQty = counts.filter(c => c.area_id === area.id).reduce((sum, c) => sum + c.quantity, 0)
                       
@@ -154,7 +170,8 @@ export default function PlannedInventoryOperator() {
                         </div>
                       )
                     })}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
