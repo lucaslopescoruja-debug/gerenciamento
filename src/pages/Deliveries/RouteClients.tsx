@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map, ListOrdered } from 'lucide-react'
+import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import * as XLSX from 'xlsx'
 
@@ -79,7 +79,7 @@ export default function RouteClients() {
       return deliveriesApi.updateDeliveryClient(clientId, { delivery_sequence: seq })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery_clients', id] })
+      queryClient.invalidateQueries({ queryKey: ['delivery_clients', id!] })
     },
     onError: (error: any) => toast.error(`Erro ao salvar sequência: ${error.message}`)
   })
@@ -347,7 +347,7 @@ export default function RouteClients() {
               className="gap-2"
               onClick={() => setIsGroupedByCity(!isGroupedByCity)}
             >
-              <Map className="h-4 w-4" />
+              <MapIcon className="h-4 w-4" />
               {isGroupedByCity ? 'Desagrupar Cidades' : 'Agrupar por Cidade'}
             </Button>
             
