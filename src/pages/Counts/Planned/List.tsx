@@ -93,14 +93,14 @@ export default function PlannedInventoriesList() {
   }
 
   const duplicateMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, newName }: { id: string, newName: string }) => {
       // 1. Fetch original inventory
       const { data: invData, error: invErr } = await supabase.from('planned_inventories').select('*').eq('id', id).single()
       if (invErr) throw invErr
 
       // 2. Insert new inventory
       const { data: newInvData, error: newInvErr } = await supabase.from('planned_inventories').insert([{
-        name: `${invData.name} (Cópia)`,
+        name: newName,
         status: 'planning',
         company_id: invData.company_id,
         collection_rule: invData.collection_rule,
@@ -119,8 +119,7 @@ export default function PlannedInventoriesList() {
         for (const sector of sectorsData) {
           const { data: newSector, error: secErr } = await supabase.from('planned_inventory_sectors').insert([{
             inventory_id: newInvId,
-            name: sector.name,
-            description: sector.description
+            name: sector.name
           }]).select().single()
           if (!secErr && newSector) {
             sectorMap[sector.id] = newSector.id
@@ -137,7 +136,6 @@ export default function PlannedInventoriesList() {
             sector_id: area.sector_id ? sectorMap[area.sector_id] : null,
             area_number: area.area_number,
             name: area.name,
-            description: area.description,
             status: 'pending'
           }])
         }
@@ -154,10 +152,11 @@ export default function PlannedInventoriesList() {
     }
   })
 
-  const handleDuplicate = (id: string, e: React.MouseEvent) => {
+  const handleDuplicate = (id: string, currentName: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm('Deseja duplicar este inventário? Apenas as configurações, setores e áreas serão copiados (sem as bipagens).')) {
-      duplicateMutation.mutate(id)
+    const newName = window.prompt(`Duplicar Inventário\nAs configurações, setores e áreas serão copiados (sem as bipagens).\n\nDigite o nome para o novo inventário:`, `${currentName} (Cópia)`)
+    if (newName && newName.trim()) {
+      duplicateMutation.mutate({ id, newName: newName.trim() })
     }
   }
 
@@ -280,7 +279,7 @@ export default function PlannedInventoriesList() {
                 <div className="flex items-center gap-2">
                   {isManager && (
                     <>
-                      <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" onClick={(e) => handleDuplicate(inv.id, e)} title="Duplicar Inventário">
+                      <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" onClick={(e) => handleDuplicate(inv.id, inv.name, e)} title="Duplicar Inventário">
                         <Copy className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={(e) => { e.stopPropagation(); confirmDelete(inv.id); }} title="Excluir">
