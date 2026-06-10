@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, Map, LayoutGrid, CheckCircle2, Trash2, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Plus, Map, LayoutGrid, CheckCircle2, Trash2, ArrowRight, Copy } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -89,6 +89,75 @@ export default function PlannedInventoriesList() {
   const confirmDelete = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este inventário e todas as suas contagens?')) {
       deleteMutation.mutate(id)
+    }
+  }
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // 1. Fetch original inventory
+      const { data: invData, error: invErr } = await supabase.from('planned_inventories').select('*').eq('id', id).single()
+      if (invErr) throw invErr
+
+      // 2. Insert new inventory
+      const { data: newInvData, error: newInvErr } = await supabase.from('planned_inventories').insert([{
+        name: `${invData.name} (Cópia)`,
+        status: 'planning',
+        company_id: invData.company_id,
+        collection_rule: invData.collection_rule,
+        divergence_rule: invData.divergence_rule
+      }]).select().single()
+      if (newInvErr) throw newInvErr
+
+      const newInvId = newInvData.id
+
+      // 3. Fetch sectors
+      const { data: sectorsData } = await supabase.from('planned_inventory_sectors').select('*').eq('inventory_id', id)
+      
+      // 4. Insert sectors and keep mapping
+      const sectorMap: Record<string, string> = {} // oldId -> newId
+      if (sectorsData && sectorsData.length > 0) {
+        for (const sector of sectorsData) {
+          const { data: newSector, error: secErr } = await supabase.from('planned_inventory_sectors').insert([{
+            inventory_id: newInvId,
+            name: sector.name,
+            description: sector.description
+          }]).select().single()
+          if (!secErr && newSector) {
+            sectorMap[sector.id] = newSector.id
+          }
+        }
+      }
+
+      // 5. Fetch areas
+      const { data: areasData } = await supabase.from('planned_inventory_areas').select('*').eq('inventory_id', id)
+      if (areasData && areasData.length > 0) {
+        for (const area of areasData) {
+          await supabase.from('planned_inventory_areas').insert([{
+            inventory_id: newInvId,
+            sector_id: area.sector_id ? sectorMap[area.sector_id] : null,
+            area_number: area.area_number,
+            name: area.name,
+            description: area.description,
+            status: 'pending'
+          }])
+        }
+      }
+      
+      return newInvData
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planned_inventories'] })
+      toast.success('Inventário duplicado com sucesso!')
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao duplicar: ${error.message}`)
+    }
+  })
+
+  const handleDuplicate = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('Deseja duplicar este inventário? Apenas as configurações, setores e áreas serão copiados (sem as bipagens).')) {
+      duplicateMutation.mutate(id)
     }
   }
 
@@ -210,9 +279,14 @@ export default function PlannedInventoriesList() {
                 
                 <div className="flex items-center gap-2">
                   {isManager && (
-                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={() => confirmDelete(inv.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" onClick={(e) => handleDuplicate(inv.id, e)} title="Duplicar Inventário">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={(e) => { e.stopPropagation(); confirmDelete(inv.id); }} title="Excluir">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                   <Button variant="ghost" size="icon" onClick={() => navigate(isManager ? `/contagens/planejados/${inv.id}/gestao` : `/contagens/planejados/${inv.id}/coleta`)}>
                     <ArrowRight className="h-5 w-5 text-muted-foreground" />
