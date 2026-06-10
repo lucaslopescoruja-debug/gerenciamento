@@ -337,7 +337,18 @@ export default function Conference() {
   }
 
   const processConfCode = (raw: string) => {
-    const code = normalizeCode(raw)
+    let parsedCode = raw.trim()
+    let qtyToAdd = 1
+
+    if (parsedCode.includes('*')) {
+      const parts = parsedCode.split('*')
+      if (parts.length === 2 && !isNaN(Number(parts[0])) && Number(parts[0]) > 0) {
+        qtyToAdd = parseInt(parts[0], 10)
+        parsedCode = parts[1]
+      }
+    }
+
+    const code = normalizeCode(parsedCode)
     const matchedProduct = allProducts.find(p => normalizeCode(p.code) === code || (p.external_code && normalizeCode(p.external_code) === code))
     const item = items.find(i =>
       normalizeCode(i.product_code) === code ||
@@ -365,13 +376,13 @@ export default function Conference() {
         product_id: matchedProduct.id,
         product_code: matchedProduct.code,
         description: matchedProduct.description,
-        quantity_expected: 1,
-        quantity_scanned: 1,
+        quantity_expected: qtyToAdd,
+        quantity_scanned: qtyToAdd,
         status: 'ok' as const
       }
       addItemMutation.mutate(newItem)
       playBeep('error')
-      toast.success(`${matchedProduct.description} adicionado à rota!`)
+      toast.success(`${matchedProduct.description} (${qtyToAdd}x) adicionado à rota!`)
       if (op && op.status === 'pending') {
         updateOpMutation.mutate({ status: 'in_progress' })
       }
@@ -380,8 +391,9 @@ export default function Conference() {
     
     const cur = item.quantity_scanned || 0
     let nextExpected = item.quantity_expected
+    const nq = cur + qtyToAdd
     
-    if (cur >= item.quantity_expected) { 
+    if (nq > item.quantity_expected) { 
       if (op?.type !== 'RECEIPT') {
         if (!isManager) {
           playBeep('error')
@@ -389,22 +401,20 @@ export default function Conference() {
           return
         }
         playBeep('error')
-        const ok = window.confirm(`Atenção: A quantidade esperada para ${item.description} já foi atingida (${item.quantity_expected}). Deseja adicionar uma unidade extra à rota?`)
+        const ok = window.confirm(`Atenção: A quantidade escaneada (${nq}) ultrapassa o esperado (${item.quantity_expected}) para ${item.description}. Deseja adicionar o extra à rota?`)
         if (!ok) return
       }
 
-      nextExpected = cur + 1
+      nextExpected = nq
       playBeep('error')
-      toast.success(`${item.description}: Quantidade extra (+1) adicionada à rota!`)
+      toast.success(`${item.description}: Quantidade extra adicionada à rota!`)
     } else {
-      const nq = cur + 1
       const ns = nq >= nextExpected ? 'ok' : 'pending'
       playBeep('success')
       if (ns === 'ok') toast.success(`${item.description}: Conferido! ✓`)
-      else toast.info(`${item.description}: +1 (${nq}/${nextExpected})`)
+      else toast.info(`${item.description}: +${qtyToAdd} (${nq}/${nextExpected})`)
     }
     
-    const nq = cur + 1
     const ns = nq >= nextExpected ? 'ok' : 'pending'
     
     // Check stock alerts and physical divergence
