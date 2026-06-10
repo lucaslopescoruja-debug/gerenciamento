@@ -18,7 +18,7 @@ export const customersApi = {
     if (!currentCompanyId) return null
     const { data, error } = await supabase
       .from('customers')
-      .select('*')
+      .select('*, equipments:customer_equipments(*)')
       .eq('id', id)
       .eq('company_id', currentCompanyId)
       .single()
@@ -28,25 +28,49 @@ export const customersApi = {
 
   async createCustomer(customer: Partial<Customer>) {
     if (!currentCompanyId) throw new Error('No company context')
+    const { equipments, ...customerData } = customer
     const { data, error } = await supabase
       .from('customers')
-      .insert([{ ...customer, company_id: currentCompanyId }])
+      .insert([{ ...customerData, company_id: currentCompanyId }])
       .select()
       .single()
     if (error) throw error
+
+    if (equipments && equipments.length > 0) {
+      await supabase.from('customer_equipments').insert(
+        equipments.map(eq => ({ ...eq, customer_id: data.id, company_id: currentCompanyId }))
+      )
+    }
+
     return data as Customer
   },
 
   async updateCustomer(id: string, updates: Partial<Customer>) {
     if (!currentCompanyId) throw new Error('No company context')
+    const { equipments, ...customerData } = updates
     const { data, error } = await supabase
       .from('customers')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...customerData, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('company_id', currentCompanyId)
       .select()
       .single()
     if (error) throw error
+
+    if (equipments) {
+      // Very simple sync: delete all and re-insert
+      await supabase.from('customer_equipments').delete().eq('customer_id', id)
+      if (equipments.length > 0) {
+        await supabase.from('customer_equipments').insert(
+          equipments.map(({ id: _id, created_at, updated_at, ...eq }) => ({ 
+            ...eq, 
+            customer_id: id, 
+            company_id: currentCompanyId 
+          }))
+        )
+      }
+    }
+
     return data as Customer
   },
 

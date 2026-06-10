@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Save, Building2, MapPin, Phone, Wallet, Briefcase } from 'lucide-react'
+import { ArrowLeft, Save, Building2, MapPin, Phone, Wallet, Briefcase, Plus, Trash2, Box } from 'lucide-react'
 import { customersApi } from '@/api/customers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,7 +42,8 @@ export default function CustomerForm() {
     sales_rep: '',
     payment_condition: '',
     allow_unit_price_change: false,
-    region: ''
+    region: '',
+    equipments: [] as any[]
   })
 
   const { data: customer, isLoading } = useQuery({
@@ -78,7 +79,8 @@ export default function CustomerForm() {
         sales_rep: customer.sales_rep || '',
         payment_condition: customer.payment_condition || '',
         allow_unit_price_change: customer.allow_unit_price_change || false,
-        region: customer.region || ''
+        region: customer.region || '',
+        equipments: customer.equipments || []
       })
     }
   }, [customer])
@@ -120,6 +122,32 @@ export default function CustomerForm() {
         // ignore
       }
     }
+  }
+
+  const addEquipment = () => {
+    setFormData(prev => ({
+      ...prev,
+      equipments: [
+        ...prev.equipments,
+        { description: '', serial_number: '', delivered_at: new Date().toISOString().split('T')[0], status: 'active', notes: '' }
+      ]
+    }))
+  }
+
+  const removeEquipment = (index: number) => {
+    setFormData(prev => {
+      const arr = [...prev.equipments]
+      arr.splice(index, 1)
+      return { ...prev, equipments: arr }
+    })
+  }
+
+  const updateEquipment = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const arr = [...prev.equipments]
+      arr[index] = { ...arr[index], [field]: value }
+      return { ...prev, equipments: arr }
+    })
   }
 
   if (!isManager) {
@@ -379,6 +407,78 @@ export default function CustomerForm() {
                 <span className="font-bold text-sm">Alterar valor unitário</span>
               </label>
             </div>
+          </div>
+        </div>
+
+        {/* Comodatos / Equipamentos */}
+        <div className="glass-card p-6 border-t-4 border-t-orange-500">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <Box className="h-5 w-5 text-orange-500" />
+              Equipamentos em Comodato
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={addEquipment} className="shadow-sm hover:shadow-md transition-shadow">
+              <Plus className="h-4 w-4 mr-2" /> Adicionar Equipamento
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            {formData.equipments.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border/50">
+                Nenhum equipamento em comodato registrado para este cliente.
+              </div>
+            ) : (
+              formData.equipments.map((eq, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-background/50 border border-border/50 rounded-xl relative group">
+                  <div className="md:col-span-4">
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Equipamento / Descrição *</label>
+                    <Input 
+                      required
+                      value={eq.description} 
+                      onChange={e => updateEquipment(index, 'description', e.target.value)} 
+                      placeholder="Ex: Freezer 2 Portas"
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Nº de Série</label>
+                    <Input 
+                      value={eq.serial_number || ''} 
+                      onChange={e => updateEquipment(index, 'serial_number', e.target.value)} 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Data de Entrega</label>
+                    <Input 
+                      type="date"
+                      value={eq.delivered_at || ''} 
+                      onChange={e => updateEquipment(index, 'delivered_at', e.target.value)} 
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Status</label>
+                    <select 
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      value={eq.status}
+                      onChange={e => updateEquipment(index, 'status', e.target.value)}
+                    >
+                      <option value="active">Com o Cliente</option>
+                      <option value="returned">Devolvido</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-1 flex items-end pb-1 justify-end">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeEquipment(index)}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

@@ -107,6 +107,21 @@ export interface Customer {
   region: string | null
   created_at: string
   updated_at: string
+  equipments?: CustomerEquipment[]
+}
+
+export interface CustomerEquipment {
+  id: string
+  customer_id: string
+  company_id: string
+  description: string
+  serial_number: string | null
+  delivered_at: string | null
+  returned_at: string | null
+  status: 'active' | 'returned'
+  notes: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface Product {

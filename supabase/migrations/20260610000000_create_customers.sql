@@ -53,3 +53,30 @@ create policy "Admins/Gestors can delete customers" on public.customers
         company_id = (select company_id from public.users where id = auth.uid()) and
         exists (select 1 from public.users where id = auth.uid() and role in ('admin', 'gestor'))
     );
+
+-- Equipamentos em Comodato
+create table if not exists public.customer_equipments (
+    id uuid default gen_random_uuid() primary key,
+    customer_id uuid not null references public.customers(id) on delete cascade,
+    company_id uuid not null references public.companies(id) on delete cascade,
+    description text not null,
+    serial_number text,
+    delivered_at date,
+    returned_at date,
+    status text default 'active' check (status in ('active', 'returned')),
+    notes text,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.customer_equipments enable row level security;
+
+create policy "Users can view equipments of their company" on public.customer_equipments
+    for select using (company_id = (select company_id from public.users where id = auth.uid()));
+
+create policy "Admins/Gestors can manage equipments" on public.customer_equipments
+    for all using (
+        company_id = (select company_id from public.users where id = auth.uid()) and
+        exists (select 1 from public.users where id = auth.uid() and role in ('admin', 'gestor'))
+    );
+
