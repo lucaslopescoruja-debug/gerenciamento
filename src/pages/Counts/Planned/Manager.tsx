@@ -28,6 +28,7 @@ export default function PlannedInventoryManager() {
   const queryClient = useQueryClient()
   
   const [isAddSectorOpen, setIsAddSectorOpen] = useState(false)
+  const [editingSectorId, setEditingSectorId] = useState<string | null>(null)
   const [newSectorName, setNewSectorName] = useState('')
   const [rangeStart, setRangeStart] = useState<number | ''>('')
   const [rangeEnd, setRangeEnd] = useState<number | ''>('')
@@ -91,27 +92,46 @@ export default function PlannedInventoryManager() {
     }
   })
 
-  const addSectorMutation = useMutation({
+  const saveSectorMutation = useMutation({
     mutationFn: async () => {
       if (!newSectorName.trim() || !rangeStart || !rangeEnd) throw new Error("Preencha todos os campos corretamente")
       if (rangeStart > rangeEnd) throw new Error("Range final deve ser maior ou igual ao inicial")
       
-      // 1. Criar o Setor
-      const { data: sector, error: sectorError } = await supabase.from('planned_inventory_sectors').insert([{
-        inventory_id: id,
-        name: newSectorName.trim()
-      }]).select().single()
-      
-      if (sectorError) throw sectorError
+      let sectorId = editingSectorId
 
-      // 2. Criar as Áreas do Range
+      if (editingSectorId) {
+        // Edit mode
+        // 1. Update Sector name
+        const { error: sectorError } = await supabase.from('planned_inventory_sectors').update({
+          name: newSectorName.trim()
+        }).eq('id', editingSectorId)
+        if (sectorError) throw sectorError
+
+        // 2. Delete existing areas for this sector
+        const { error: delError } = await supabase.from('planned_inventory_areas').delete().eq('sector_id', editingSectorId)
+        if (delError) throw delError
+
+      } else {
+        // Add mode
+        // 1. Create Sector
+        const { data: sector, error: sectorError } = await supabase.from('planned_inventory_sectors').insert([{
+          inventory_id: id,
+          name: newSectorName.trim()
+        }]).select().single()
+        
+        if (sectorError) throw sectorError
+        sectorId = sector.id
+      }
+
+      // 3. Create Areas
       const areasToInsert = []
       for (let i = rangeStart; i <= rangeEnd; i++) {
         areasToInsert.push({
           inventory_id: id,
-          sector_id: sector.id,
+          sector_id: sectorId,
           name: `Área #${i}`,
-          area_number: i
+          area_number: i,
+          status: 'pending'
         })
       }
 
@@ -121,11 +141,12 @@ export default function PlannedInventoryManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['planned_inventory_sectors', id] })
       queryClient.invalidateQueries({ queryKey: ['planned_inventory_areas', id] })
-      toast.success('Setor e áreas criados com sucesso!')
+      toast.success(editingSectorId ? 'Setor atualizado com sucesso!' : 'Setor e áreas criados com sucesso!')
       setIsAddSectorOpen(false)
       setNewSectorName('')
       setRangeStart('')
       setRangeEnd('')
+      setEditingSectorId(null)
     },
     onError: (error: any) => toast.error(error.message)
   })
@@ -142,24 +163,16 @@ export default function PlannedInventoryManager() {
     }
   })
 
-  const editSectorMutation = useMutation({
-    mutationFn: async ({ sectorId, newName }: { sectorId: string, newName: string }) => {
-      if (!newName.trim()) throw new Error("O nome não pode ser vazio")
-      const { error } = await supabase.from('planned_inventory_sectors').update({ name: newName.trim() }).eq('id', sectorId)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['planned_inventory_sectors', id] })
-      toast.success('Nome do setor atualizado')
-    },
-    onError: (error: any) => toast.error(error.message)
-  })
-
   const handleEditSector = (sector: PlannedInventorySector) => {
-    const newName = window.prompt("Digite o novo nome para o setor:", sector.name)
-    if (newName && newName.trim() !== sector.name) {
-      editSectorMutation.mutate({ sectorId: sector.id, newName })
-    }
+    const sectorAreas = areas.filter(a => a.sector_id === sector.id)
+    const minArea = sectorAreas.length > 0 ? Math.min(...sectorAreas.map(a => a.area_number || 0)) : ''
+    const maxArea = sectorAreas.length > 0 ? Math.max(...sectorAreas.map(a => a.area_number || 0)) : ''
+    
+    setEditingSectorId(sector.id)
+    setNewSectorName(sector.name)
+    setRangeStart(minArea)
+    setRangeEnd(maxArea)
+    setIsAddSectorOpen(true)
   }
 
   const exportTXT = () => {
@@ -459,12 +472,20 @@ export default function PlannedInventoryManager() {
         )}
       </div>
 
-      {/* Modal Adicionar Setor */}
-      <Dialog open={isAddSectorOpen} onOpenChange={setIsAddSectorOpen}>
+      {/* Modal Adicionar/Editar Setor */}
+      <Dialog open={isAddSectorOpen} onOpenChange={(open) => {
+        setIsAddSectorOpen(open)
+        if (!open) {
+          setEditingSectorId(null)
+          setNewSectorName('')
+          setRangeStart('')
+          setRangeEnd('')
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-blue-500" /> Adicionar setor
+              <MapPin className="h-5 w-5 text-blue-500" /> {editingSectorId ? 'Editar setor' : 'Adicionar setor'}
             </DialogTitle>
           </DialogHeader>
           
@@ -501,8 +522,9 @@ export default function PlannedInventoryManager() {
           </div>
 
           <DialogFooter>
-            <Button className="w-full bg-blue-500 hover:bg-blue-600" onClick={() => addSectorMutation.mutate()} disabled={addSectorMutation.isPending}>
-              SALVAR
+            <Button variant="ghost" onClick={() => setIsAddSectorOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveSectorMutation.mutate()} disabled={saveSectorMutation.isPending || !newSectorName.trim()}>
+              {saveSectorMutation.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
