@@ -121,24 +121,27 @@ export default function PlannedInventoriesList() {
             inventory_id: newInvId,
             name: sector.name
           }]).select().single()
-          if (!secErr && newSector) {
+          if (secErr) throw secErr
+          if (newSector) {
             sectorMap[sector.id] = newSector.id
           }
         }
       }
 
       // 5. Fetch areas
-      const { data: areasData } = await supabase.from('planned_inventory_areas').select('*').eq('inventory_id', id)
+      const { data: areasData, error: areasFetchErr } = await supabase.from('planned_inventory_areas').select('*').eq('inventory_id', id)
+      if (areasFetchErr) throw areasFetchErr
+
       if (areasData && areasData.length > 0) {
-        for (const area of areasData) {
-          await supabase.from('planned_inventory_areas').insert([{
-            inventory_id: newInvId,
-            sector_id: area.sector_id ? sectorMap[area.sector_id] : null,
-            area_number: area.area_number,
-            name: area.name,
-            status: 'pending'
-          }])
-        }
+        const areasToInsert = areasData.map(area => ({
+          inventory_id: newInvId,
+          sector_id: area.sector_id ? sectorMap[area.sector_id] : null,
+          area_number: area.area_number,
+          name: area.name,
+          status: 'pending'
+        }))
+        const { error: areasInsertErr } = await supabase.from('planned_inventory_areas').insert(areasToInsert)
+        if (areasInsertErr) throw areasInsertErr
       }
       
       return newInvData
