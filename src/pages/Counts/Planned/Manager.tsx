@@ -186,29 +186,49 @@ export default function PlannedInventoryManager() {
       data = notCollected.map(p => ({
         Codigo: p.code,
         Descricao: p.description,
-        Categoria: p.category || '',
-        EstoqueSistema: 0 // Sem controle de estoque no app ainda
+        Categoria: p.group_name || '',
+        EstoqueSistema: p.stock || 0
       }))
       filename = `nao_coletados_${inventory?.name}`
     } else if (type === 'divergencias') {
-      if (counts.length === 0) return toast.info('Nenhuma contagem para exportar divergências.')
-      // Como não temos saldo inicial, tudo que foi bipado é uma 'divergência' contra o 0 do sistema
       const grouped = counts.reduce((acc, curr) => {
         if (!acc[curr.product_code]) acc[curr.product_code] = 0
         acc[curr.product_code] += curr.quantity
         return acc
       }, {} as Record<string, number>)
 
-      data = Object.entries(grouped).map(([code, qty]) => {
+      const divergenceData: any[] = []
+
+      // 1. Avaliar tudo que foi coletado
+      Object.entries(grouped).forEach(([code, qty]) => {
         const product = allProducts.find(p => p.code === code)
-        return {
-          Codigo: code,
-          Descricao: product?.description || 'Desconhecido',
-          EstoqueSistema: 0,
-          Coletado: qty,
-          Divergencia: qty
+        const sysStock = product?.stock || 0
+        if (qty !== sysStock) {
+          divergenceData.push({
+            Codigo: code,
+            Descricao: product?.description || 'Desconhecido',
+            EstoqueSistema: sysStock,
+            Coletado: qty,
+            Divergencia: qty - sysStock
+          })
         }
       })
+
+      // 2. Avaliar itens do sistema que não foram coletados mas tem estoque > 0
+      allProducts.forEach(p => {
+        if (!grouped[p.code] && (p.stock || 0) > 0) {
+          divergenceData.push({
+            Codigo: p.code,
+            Descricao: p.description,
+            EstoqueSistema: p.stock,
+            Coletado: 0,
+            Divergencia: -(p.stock)
+          })
+        }
+      })
+
+      if (divergenceData.length === 0) return toast.info('Nenhuma divergência encontrada!')
+      data = divergenceData
       filename = `divergencias_${inventory?.name}`
     } else if (type === 'resumo_final') {
       // Resumo por Setor/Area
