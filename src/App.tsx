@@ -55,7 +55,6 @@ function ProtectedRoute() {
 
 import CountsMenu from './pages/Counts'
 import AdhocCount from './pages/Counts/AdhocCount'
-import InventoryCount from './pages/Counts/InventoryCount'
 import PlannedInventoriesList from './pages/Counts/Planned/List'
 import PlannedInventoryManager from './pages/Counts/Planned/Manager'
 import PlannedInventoryOperator from './pages/Counts/Planned/Operator'
@@ -95,7 +94,6 @@ function App() {
             <Route path="/produtos" element={<Products />} />
             <Route path="/contagens" element={<CountsMenu />} />
             <Route path="/contagens/avulsa" element={<AdhocCount />} />
-            <Route path="/contagens/inventario" element={<InventoryCount />} />
             <Route path="/contagens/planejados" element={<PlannedInventoriesList />} />
             <Route path="/contagens/planejados/:id/gestao" element={<PlannedInventoryManager />} />
             <Route path="/contagens/planejados/:id/coleta" element={<PlannedInventoryOperator />} />
