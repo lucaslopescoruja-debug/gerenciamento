@@ -240,6 +240,7 @@ export interface PlannedInventoryArea {
   area_number?: number
   name: string
   description?: string
+  status?: 'pending' | 'in_progress' | 'completed'
   created_at: string
 }
 

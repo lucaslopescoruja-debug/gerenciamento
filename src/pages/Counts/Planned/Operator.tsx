@@ -117,6 +117,23 @@ export default function PlannedInventoryOperator() {
                     {sectorAreas.map((area, idx) => {
                       const areaQty = counts.filter(c => c.area_id === area.id).reduce((sum, c) => sum + c.quantity, 0)
                       
+                      let indicatorColor = 'bg-red-500'
+                      let bgColor = 'bg-muted'
+                      let iconColor = 'text-foreground'
+                      let statusText = 'Aguardando'
+                      
+                      if (area.status === 'completed') {
+                        indicatorColor = 'bg-emerald-500'
+                        bgColor = 'bg-emerald-500/10'
+                        iconColor = 'text-emerald-600'
+                        statusText = 'Finalizada'
+                      } else if (area.status === 'in_progress' || areaQty > 0) {
+                        indicatorColor = 'bg-amber-500'
+                        bgColor = 'bg-amber-500/10'
+                        iconColor = 'text-amber-600'
+                        statusText = 'Em andamento'
+                      }
+                      
                       return (
                         <div 
                           key={area.id} 
@@ -124,11 +141,12 @@ export default function PlannedInventoryOperator() {
                           className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${idx !== sectorAreas.length - 1 ? 'border-b border-border/50' : ''}`}
                         >
                           <div className="flex items-center gap-4">
-                            <div className="bg-muted p-2 rounded-full">
-                              <ScanBarcode className="h-6 w-6 text-foreground" />
+                            <div className={`${bgColor} p-2 rounded-full relative`}>
+                              <ScanBarcode className={`h-6 w-6 ${iconColor}`} />
+                              <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 border-2 border-background rounded-full ${indicatorColor}`}></div>
                             </div>
                             <div>
-                              <div className="font-bold text-foreground">Area #{area.area_number}</div>
+                              <div className="font-bold text-foreground">Area #{area.area_number} <span className="text-[10px] uppercase font-bold tracking-wider ml-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{statusText}</span></div>
                               <div className="text-xs text-muted-foreground">Qtd Itens: {areaQty}</div>
                             </div>
                           </div>
@@ -272,6 +290,20 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
     onError: (error: any) => toast.error(`Erro ao apagar item: ${error.message}`)
   })
 
+  const updateAreaStatusMutation = useMutation({
+    mutationFn: async (status: 'pending' | 'in_progress' | 'completed') => {
+      const { error } = await supabase.from('planned_inventory_areas')
+        .update({ status })
+        .eq('id', area.id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planned_inventory_areas'] })
+      toast.success('Status da área atualizado')
+    },
+    onError: (error: any) => toast.error(`Erro ao atualizar status: ${error.message}`)
+  })
+
   const processScannedBarcode = (raw: string) => {
     if (!raw.trim()) return
     
@@ -409,6 +441,7 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
   }
 
   const totalItems = counts.reduce((acc, curr) => acc + curr.quantity, 0)
+  const isCompleted = area.status === 'completed'
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto pb-24 slide-in flex flex-col min-h-screen">
@@ -424,7 +457,27 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
       </div>
 
       <div className="space-y-4 shrink-0">
-        <div className="bg-card px-4 py-3 pb-4 shadow-sm border border-border/50 md:rounded-lg">
+        {isCompleted ? (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 text-center">
+            <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
+            <h3 className="font-bold text-emerald-700 dark:text-emerald-500">Área Finalizada</h3>
+            <p className="text-sm text-emerald-600/80 mb-4">Esta área já teve sua contagem concluída.</p>
+            <Button 
+              variant="outline" 
+              className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 w-full max-w-xs mx-auto"
+              onClick={() => {
+                if (window.confirm('Tem certeza que deseja reabrir esta área para bipagem?')) {
+                  updateAreaStatusMutation.mutate('in_progress')
+                }
+              }}
+              disabled={updateAreaStatusMutation.isPending}
+            >
+              Reabrir Área
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="bg-card px-4 py-3 pb-4 shadow-sm border border-border/50 md:rounded-lg">
           <div className="flex gap-4 items-end border-b-2 border-primary/20 pb-2 focus-within:border-primary transition-colors relative">
             <div className="w-16 shrink-0">
               <label className="text-[11px] text-muted-foreground font-medium block mb-0.5">Qtd</label>
@@ -539,7 +592,25 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
               </div>
             )}
           </div>
-        </div>
+          </div>
+            
+            <Button 
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-12 text-base font-bold"
+              onClick={() => {
+                if (counts.length === 0) {
+                  if (!window.confirm('Esta área não possui itens bipados. Tem certeza que deseja finalizar vazia?')) return
+                } else {
+                  if (!window.confirm('Deseja realmente finalizar a contagem desta área?')) return
+                }
+                updateAreaStatusMutation.mutate('completed')
+              }}
+              disabled={updateAreaStatusMutation.isPending}
+            >
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              Finalizar Área
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col min-h-0 bg-card rounded-t-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border border-border/50">
