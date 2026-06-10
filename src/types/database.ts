@@ -187,6 +187,7 @@ export interface AdhocCountItem {
   description: string
   group_category?: string
   quantity: number
+  extra_info?: string | null
   created_at: string
   updated_at: string
 }
@@ -248,6 +249,7 @@ export interface PlannedInventoryCount {
   area_id: string
   product_code: string
   quantity: number
+  extra_info?: string | null
   user_name: string
   created_at: string
   updated_at: string

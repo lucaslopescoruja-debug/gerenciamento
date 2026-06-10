@@ -173,6 +173,12 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   const [isCameraOpen, setIsCameraOpen] = useState(false)
+  
+  const [extraInfo, setExtraInfo] = useState('')
+  const [keepExtraInfo, setKeepExtraInfo] = useState(true)
+  const [askAfterScan, setAskAfterScan] = useState(false)
+  const [showExtra, setShowExtra] = useState(false)
+  const extraInfoRef = useRef<HTMLInputElement>(null)
 
   const { data: counts = [] } = useQuery({
     queryKey: ['planned_inventory_counts', inventory.id, area.id],
@@ -209,8 +215,8 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
   }, [searchAddInput, allProducts]);
 
   const addItemMutation = useMutation({
-    mutationFn: async ({ productCode, qty = 1 }: { productCode: string, qty?: number }) => {
-      const existing = counts.find(c => c.product_code === productCode)
+    mutationFn: async ({ productCode, qty = 1, extra = '' }: { productCode: string, qty?: number, extra?: string }) => {
+      const existing = counts.find(c => c.product_code === productCode && (c.extra_info || '') === (extra || ''))
       if (existing) {
         const { error } = await supabase.from('planned_inventory_counts')
           .update({ quantity: existing.quantity + qty, updated_at: new Date().toISOString() })
@@ -223,6 +229,7 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
             area_id: area.id,
             product_code: productCode,
             quantity: qty,
+            extra_info: extra || null,
             user_name: user?.name || 'Operador'
           }])
         if (error) throw error
@@ -297,18 +304,38 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
       }
 
       // Se for 'any' ou se confirmou
-      addItemMutation.mutate({ productCode: rawCode, qty })
+      addItemMutation.mutate({ productCode: rawCode, qty, extra: extraInfo.trim() })
       return
     }
 
-    addItemMutation.mutate({ productCode: product.code, qty })
+    addItemMutation.mutate({ productCode: product.code, qty, extra: extraInfo.trim() })
   }
 
-  const handleScan = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!scanInput.trim()) return
-    processScannedBarcode(scanInput.trim())
+  const handleScan = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!scanInput.trim() && !searchAddInput.trim()) return
+    const input = scanInput.trim() || searchAddInput.trim()
+    
+    if (askAfterScan) {
+      setShowExtra(true)
+      setTimeout(() => extraInfoRef.current?.focus(), 50)
+      return
+    }
+    
+    processScannedBarcode(input)
     setScanInput('')
+    setSearchAddInput('')
+    if (!keepExtraInfo) setExtraInfo('')
+  }
+  
+  const submitWithExtraInfo = () => {
+    const input = scanInput.trim() || searchAddInput.trim()
+    if (!input) return
+    processScannedBarcode(input)
+    setScanInput('')
+    setSearchAddInput('')
+    if (!keepExtraInfo) setExtraInfo('')
+    scanRef.current?.focus()
   }
 
   const handleManualAdd = (rawCode: string) => {
@@ -343,25 +370,40 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
         }
       }
       
-      addItemMutation.mutate({ productCode: searchStr, qty })
+      addItemMutation.mutate({ productCode: searchStr, qty, extra: extraInfo.trim() })
       setSearchAddInput('')
+      setScanInput('')
       setManualQty(1)
       setShowDropdown(false)
+      if (!keepExtraInfo) setExtraInfo('')
       return
     }
     
-    addItemMutation.mutate({ productCode: product.code, qty })
+    addItemMutation.mutate({ productCode: product.code, qty, extra: extraInfo.trim() })
     setSearchAddInput('')
+    setScanInput('')
     setManualQty(1)
     setShowDropdown(false)
+    if (!keepExtraInfo) setExtraInfo('')
   }
 
   const handleManualSelect = (product: Product) => {
     const qty = typeof manualQty === 'number' ? manualQty : 1
-    addItemMutation.mutate({ productCode: product.code, qty })
+    
+    if (askAfterScan) {
+      // Se selecionou manual mas pede pra focar a extra info
+      setSearchAddInput(product.code) // Coloca o código do produto no input para ser lido depois
+      setShowExtra(true)
+      setTimeout(() => extraInfoRef.current?.focus(), 50)
+      return
+    }
+    
+    addItemMutation.mutate({ productCode: product.code, qty, extra: extraInfo.trim() })
     setSearchAddInput('')
+    setScanInput('')
     setManualQty(1)
     setShowDropdown(false)
+    if (!keepExtraInfo) setExtraInfo('')
   }
 
   const totalItems = counts.reduce((acc, curr) => acc + curr.quantity, 0)
@@ -380,71 +422,121 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
       </div>
 
       <div className="space-y-4 shrink-0">
-        <Card className="border-blue-500/20 shadow-sm">
-          <CardContent className="p-4">
-            <form onSubmit={handleScan} className="flex gap-2">
-              <div className="relative flex-1">
-                <ScanLine className="absolute left-3 top-3.5 h-5 w-5 text-blue-500/50 scan-pulse" />
-                <Input 
-                  ref={scanRef} 
-                  value={scanInput} 
-                  onChange={e => setScanInput(e.target.value)} 
-                  placeholder="Bipar código..." 
-                  className="pl-11 h-12 text-lg font-mono border-blue-500/30 focus-visible:ring-blue-500 bg-background" 
-                  autoFocus 
-                />
-              </div>
-              <Button type="button" onClick={() => setIsCameraOpen(true)} size="icon" variant="outline" className="h-12 w-12 border-blue-500/30 text-blue-500 hover:bg-blue-500/10" title="Usar câmera"><Camera className="h-5 w-5" /></Button>
-              <Button type="submit" size="icon" className="h-12 w-12 bg-blue-600 hover:bg-blue-700 shadow-md" disabled={addItemMutation.isPending}><Search className="h-5 w-5" /></Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-2 relative">
-          <Input
-            type="number"
-            min="1"
-            value={manualQty}
-            onChange={e => setManualQty(e.target.value === '' ? '' : parseInt(e.target.value) || 1)}
-            className="w-20 text-center font-bold h-10 shadow-sm bg-background"
-            placeholder="Qtd"
-            title="Quantidade"
-          />
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input 
-              value={searchAddInput} 
-              onChange={e => setSearchAddInput(e.target.value)} 
-              placeholder="Busca manual..." 
-              className="pl-9 bg-background h-10 shadow-sm"
-              onKeyDown={e => { 
-                if (e.key === 'Enter') { 
-                  e.preventDefault(); 
-                  if (filteredProducts.length === 1 && normalizeCode(filteredProducts[0].code) === normalizeCode(searchAddInput.trim())) {
-                    handleManualSelect(filteredProducts[0]);
-                  } else {
-                    handleManualAdd(searchAddInput);
+        <div className="bg-card px-4 py-3 pb-4 shadow-sm border border-border/50 md:rounded-lg">
+          <div className="flex gap-4 items-end border-b-2 border-primary/20 pb-2 focus-within:border-primary transition-colors relative">
+            <div className="w-16 shrink-0">
+              <label className="text-[11px] text-muted-foreground font-medium block mb-0.5">Qtd</label>
+              <Input
+                type="number"
+                min="1"
+                value={manualQty}
+                onChange={e => setManualQty(e.target.value === '' ? '' : parseInt(e.target.value) || 1)}
+                className="h-8 text-xl font-bold p-0 border-0 focus-visible:ring-0 bg-transparent shadow-none w-full"
+              />
+            </div>
+            <div className="h-8 w-px bg-border shrink-0 mb-1" />
+            <div className="flex-1 relative">
+              <Input 
+                ref={scanRef}
+                value={searchAddInput}
+                onChange={e => {
+                  setSearchAddInput(e.target.value)
+                  setScanInput(e.target.value)
+                }}
+                placeholder="Cod. de Barras"
+                className="h-8 text-xl p-0 border-0 focus-visible:ring-0 bg-transparent shadow-none w-full placeholder:text-muted-foreground/40"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    if (!searchAddInput.trim()) return
+                    
+                    const isNameSearch = isNaN(Number(searchAddInput.replace(/\*/g, ''))) && searchAddInput.length > 3
+                    if (isNameSearch && filteredProducts.length === 1 && normalizeCode(filteredProducts[0].code) === normalizeCode(searchAddInput.trim())) {
+                      handleManualSelect(filteredProducts[0])
+                    } else if (isNameSearch && filteredProducts.length > 0) {
+                      // Let user select from dropdown
+                    } else {
+                      handleScan()
+                    }
                   }
-                } 
-              }}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-              onFocus={() => { if (searchAddInput.trim().length > 0) setShowDropdown(true) }}
-            />
+                }}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                onFocus={() => { if (searchAddInput.trim().length > 0) setShowDropdown(true) }}
+              />
+              {showDropdown && filteredProducts.length > 0 && (
+                <div className="absolute top-full left-0 z-20 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {filteredProducts.map(p => (
+                    <div key={p.id} className="px-3 py-2 hover:bg-muted cursor-pointer flex flex-col" onClick={() => handleManualSelect(p)}>
+                      <span className="text-sm font-medium">{p.description}</span>
+                      <span className="text-xs text-muted-foreground font-mono">{p.code}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button type="button" onClick={() => setIsCameraOpen(true)} size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground absolute right-0 bottom-1 hover:text-primary hover:bg-primary/10">
+              <Camera className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <button 
+              type="button"
+              onClick={() => setShowExtra(!showExtra)}
+              className="flex items-center gap-2 text-[15px] text-foreground hover:text-primary transition-colors w-full"
+            >
+              <ChevronRight className={`h-4 w-4 transition-transform ${showExtra ? 'rotate-90' : ''}`} />
+              Informação extra:
+            </button>
             
-            {showDropdown && filteredProducts.length > 0 && (
-              <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-                {filteredProducts.map(p => (
-                  <div key={p.id} className="px-3 py-2 hover:bg-muted cursor-pointer flex flex-col" onClick={() => handleManualSelect(p)}>
-                    <span className="text-sm font-medium">{p.description}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{p.code}</span>
-                  </div>
-                ))}
+            {showExtra && (
+              <div className="mt-3 bg-muted/10 p-4 rounded-xl border border-border/50 animate-in slide-in-from-top-2">
+                <Input 
+                  ref={extraInfoRef}
+                  value={extraInfo}
+                  onChange={e => setExtraInfo(e.target.value)}
+                  placeholder="Informação extra, lote, local etc..."
+                  className="border-0 border-b-2 border-foreground/30 hover:border-foreground/50 rounded-none focus-visible:ring-0 px-0 bg-transparent mb-4 shadow-none text-[15px]"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      submitWithExtraInfo()
+                    }
+                  }}
+                />
+                <div className="space-y-4">
+                  <label className="flex items-center gap-3 text-[15px] cursor-pointer">
+                    <div className="relative flex items-center justify-center">
+                      <input 
+                        type="checkbox" 
+                        checked={keepExtraInfo}
+                        onChange={e => setKeepExtraInfo(e.target.checked)}
+                        className="peer appearance-none w-6 h-6 border-2 border-foreground/30 rounded bg-transparent checked:bg-transparent checked:border-foreground transition-all"
+                      />
+                      <svg className="absolute w-4 h-4 text-foreground opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    Incluir em todas leituras seguintes
+                  </label>
+                  <label className="flex items-center gap-3 text-[15px] cursor-pointer">
+                    <div className="relative flex items-center justify-center">
+                      <input 
+                        type="checkbox" 
+                        checked={askAfterScan}
+                        onChange={e => setAskAfterScan(e.target.checked)}
+                        className="peer appearance-none w-6 h-6 border-2 border-foreground/30 rounded bg-transparent checked:bg-transparent checked:border-foreground transition-all"
+                      />
+                      <svg className="absolute w-4 h-4 text-foreground opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    Solicitar após leitura
+                  </label>
+                </div>
               </div>
             )}
           </div>
-          <Button className="h-10 w-10 p-0 shrink-0 bg-blue-600 hover:bg-blue-700 shadow-sm" onClick={() => handleManualAdd(searchAddInput)}>
-            <Plus className="h-5 w-5" />
-          </Button>
         </div>
       </div>
 
@@ -469,7 +561,14 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
                     <p className="font-medium truncate text-foreground text-sm">
                       {product?.description || <span className="text-amber-500 italic">Produto Desconhecido</span>}
                     </p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.product_code}</p>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
+                      {item.extra_info && (
+                        <span className="text-[11px] bg-muted w-fit px-1.5 py-0.5 rounded text-muted-foreground">
+                          {item.extra_info}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Input 
