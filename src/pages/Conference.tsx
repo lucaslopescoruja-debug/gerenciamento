@@ -27,6 +27,7 @@ export default function Conference() {
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
   
   const [scanInput, setScanInput] = useState('')
+  const [manualQty, setManualQty] = useState<number | ''>(1)
   const [activeTab, setActiveTab] = useState('scan')
   const [lastScanned, setLastScanned] = useState<OperationItem | null>(null)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
@@ -457,8 +458,10 @@ export default function Conference() {
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault()
     if (!scanInput.trim()) return
-    processConfCode(scanInput.trim())
+    const inputStr = manualQty && manualQty > 1 ? `${manualQty}*${scanInput.trim()}` : scanInput.trim()
+    processConfCode(inputStr)
     setScanInput('')    
+    setManualQty(1)
   }
 
   const getSystemStock = (item: OperationItem) => {
@@ -789,15 +792,33 @@ export default function Conference() {
         <TabsContent value="scan" className="flex-1 flex flex-col gap-4 mt-4">
           <Card className="border-primary/20 sticky top-[53px] md:top-[64px] z-20 bg-card/95 backdrop-blur-md shadow-sm">
             <CardContent className="p-4">
-              <form onSubmit={handleScan} className="flex gap-2">
-                <div className="relative flex-1">
-                  <ScanLine className="absolute left-3 top-3.5 h-5 w-5 text-primary/50 scan-pulse" />
-                  <Input ref={scanRef} value={scanInput} onChange={e => setScanInput(e.target.value)} placeholder="Bipar código..." className="pl-11 h-12 text-lg font-mono" autoFocus />
+              <form onSubmit={handleScan} className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <div className="w-20 shrink-0">
+                    <Label className="text-xs text-muted-foreground mb-1 block">Qtd</Label>
+                    <Input 
+                      type="number" 
+                      min="1"
+                      value={manualQty} 
+                      onChange={e => setManualQty(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="h-12 text-lg text-center font-bold"
+                    />
+                  </div>
+                  <div className="flex-1 relative">
+                    <Label className="text-xs text-muted-foreground mb-1 block opacity-0">Código</Label>
+                    <Input 
+                      ref={scanRef} 
+                      value={scanInput} 
+                      onChange={e => setScanInput(e.target.value)} 
+                      placeholder="Cod. de Barras" 
+                      className="h-12 text-lg font-mono pr-12" 
+                      autoFocus 
+                    />
+                    <Button type="button" onClick={() => setIsCameraOpen(true)} size="icon" variant="ghost" className="absolute right-1 top-7 h-10 w-10 text-muted-foreground hover:text-primary"><Camera className="h-5 w-5" /></Button>
+                  </div>
                 </div>
-                <Button type="button" onClick={() => setIsCameraOpen(true)} size="icon" variant="outline" className="h-12 w-12 border-primary/30 text-primary hover:bg-primary/10" title="Usar câmera"><Camera className="h-5 w-5" /></Button>
-                <Button type="submit" size="icon" className="h-12 w-12" disabled={updateItemMutation.isPending}><Search className="h-5 w-5" /></Button>
+                <Button type="submit" className="hidden">Buscar</Button>
               </form>
-              <p className="text-xs text-muted-foreground text-center mt-2">Use câmera ou leitor bluetooth</p>
             </CardContent>
           </Card>
 
