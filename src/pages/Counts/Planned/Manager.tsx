@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import * as XLSX from 'xlsx'
-import { ArrowLeft, Plus, MapPin, CheckCircle2, Play, Pause, Download, Trash2, MoreVertical, Search, ScanBarcode, CloudDownload, FileX, ShieldAlert, ListChecks, FileText } from 'lucide-react'
+import { ArrowLeft, Plus, MapPin, CheckCircle2, Play, Pause, Download, Trash2, MoreVertical, Search, ScanBarcode, CloudDownload, FileX, ShieldAlert, ListChecks, FileText, Pencil } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -141,6 +141,26 @@ export default function PlannedInventoryManager() {
       toast.success('Setor removido')
     }
   })
+
+  const editSectorMutation = useMutation({
+    mutationFn: async ({ sectorId, newName }: { sectorId: string, newName: string }) => {
+      if (!newName.trim()) throw new Error("O nome não pode ser vazio")
+      const { error } = await supabase.from('planned_inventory_sectors').update({ name: newName.trim() }).eq('id', sectorId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planned_inventory_sectors', id] })
+      toast.success('Nome do setor atualizado')
+    },
+    onError: (error: any) => toast.error(error.message)
+  })
+
+  const handleEditSector = (sector: PlannedInventorySector) => {
+    const newName = window.prompt("Digite o novo nome para o setor:", sector.name)
+    if (newName && newName.trim() !== sector.name) {
+      editSectorMutation.mutate({ sectorId: sector.id, newName })
+    }
+  }
 
   const exportTXT = () => {
     if (counts.length === 0) return toast.info('Nenhuma contagem para exportar.')
@@ -398,11 +418,16 @@ export default function PlannedInventoryManager() {
                       {pct}% concluído
                     </span>
                     {inventory.status === 'planning' && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={() => {
-                        if(confirm('Excluir este setor e TODAS as áreas dele?')) deleteSectorMutation.mutate(sector.id)
-                      }}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10" onClick={() => handleEditSector(sector)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={() => {
+                          if(confirm('Excluir este setor e TODAS as áreas dele?')) deleteSectorMutation.mutate(sector.id)
+                        }}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
