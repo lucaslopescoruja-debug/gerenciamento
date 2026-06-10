@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, MapPin, CheckCircle2, Play, Pause, Download, Trash2, MoreVertical, Search, ScanBarcode } from 'lucide-react'
+import * as XLSX from 'xlsx'
+import { ArrowLeft, Plus, MapPin, CheckCircle2, Play, Pause, Download, Trash2, MoreVertical, Search, ScanBarcode, CloudDownload, FileX, ShieldAlert, ListChecks, FileText } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ export default function PlannedInventoryManager() {
   const [newSectorName, setNewSectorName] = useState('')
   const [rangeStart, setRangeStart] = useState<number | ''>('')
   const [rangeEnd, setRangeEnd] = useState<number | ''>('')
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false)
 
   // Buscas
   const { data: inventory, isLoading: invLoading } = useQuery({
@@ -65,6 +67,15 @@ export default function PlannedInventoryManager() {
       const { data, error } = await supabase.from('planned_inventory_counts').select('*').eq('inventory_id', id)
       if (error) throw error
       return data as PlannedInventoryCount[]
+    }
+  })
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('products').select('*')
+      if (error) throw error
+      return data
     }
   })
 
@@ -131,6 +142,112 @@ export default function PlannedInventoryManager() {
     }
   })
 
+  const exportTXT = () => {
+    if (counts.length === 0) return toast.info('Nenhuma contagem para exportar.')
+    
+    // Formato: codigo;quantidade;extra_info
+    const lines = counts.map(c => `${c.product_code};${c.quantity};${c.extra_info || ''}`)
+    const content = lines.join('\n')
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `contagem_${inventory?.name.replace(/\s+/g, '_')}.txt`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportExcel = (type: 'padrao' | 'nao_coletados' | 'divergencias' | 'posicoes' | 'conferencias' | 'resumo_final') => {
+    let data: any[] = []
+    let filename = ''
+
+    if (type === 'padrao') {
+      if (counts.length === 0) return toast.info('Nenhuma contagem para exportar.')
+      data = counts.map(c => {
+        const area = areas.find(a => a.id === c.area_id)
+        const sector = sectors.find(s => s.id === area?.sector_id)
+        const product = allProducts.find(p => p.code === c.product_code)
+        return {
+          Setor: sector?.name || '',
+          Area: area?.name || '',
+          Codigo: c.product_code,
+          Descricao: product?.description || 'Desconhecido',
+          Quantidade: c.quantity,
+          InformacaoExtra: c.extra_info || '',
+          DataColeta: new Date(c.created_at).toLocaleString()
+        }
+      })
+      filename = `contagem_${inventory?.name}`
+    } else if (type === 'nao_coletados') {
+      const collectedCodes = new Set(counts.map(c => c.product_code))
+      const notCollected = allProducts.filter(p => !collectedCodes.has(p.code))
+      if (notCollected.length === 0) return toast.info('Nenhum item não coletado.')
+      data = notCollected.map(p => ({
+        Codigo: p.code,
+        Descricao: p.description,
+        Categoria: p.category || '',
+        EstoqueSistema: 0 // Sem controle de estoque no app ainda
+      }))
+      filename = `nao_coletados_${inventory?.name}`
+    } else if (type === 'divergencias') {
+      if (counts.length === 0) return toast.info('Nenhuma contagem para exportar divergências.')
+      // Como não temos saldo inicial, tudo que foi bipado é uma 'divergência' contra o 0 do sistema
+      const grouped = counts.reduce((acc, curr) => {
+        if (!acc[curr.product_code]) acc[curr.product_code] = 0
+        acc[curr.product_code] += curr.quantity
+        return acc
+      }, {} as Record<string, number>)
+
+      data = Object.entries(grouped).map(([code, qty]) => {
+        const product = allProducts.find(p => p.code === code)
+        return {
+          Codigo: code,
+          Descricao: product?.description || 'Desconhecido',
+          EstoqueSistema: 0,
+          Coletado: qty,
+          Divergencia: qty
+        }
+      })
+      filename = `divergencias_${inventory?.name}`
+    } else if (type === 'resumo_final') {
+      // Resumo por Setor/Area
+      data = areas.map(area => {
+        const sector = sectors.find(s => s.id === area.sector_id)
+        const areaCounts = counts.filter(c => c.area_id === area.id)
+        const totalQty = areaCounts.reduce((acc, c) => acc + c.quantity, 0)
+        const uniqueCodes = new Set(areaCounts.map(c => c.product_code)).size
+        return {
+          Setor: sector?.name || 'Sem Setor',
+          Area: area.name,
+          Status: area.status,
+          ItensBipados: totalQty,
+          CodigosDistintos: uniqueCodes
+        }
+      })
+      filename = `resumo_final_${inventory?.name}`
+    } else if (type === 'posicoes' || type === 'conferencias') {
+      // Log detalhado de coletas
+      data = counts.map(c => {
+        const area = areas.find(a => a.id === c.area_id)
+        const sector = sectors.find(s => s.id === area?.sector_id)
+        return {
+          Setor: sector?.name || '',
+          Area: area?.name || '',
+          Codigo: c.product_code,
+          Quantidade: c.quantity,
+          Data: new Date(c.created_at).toLocaleString(),
+        }
+      })
+      filename = `${type}_${inventory?.name}`
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(data)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Relatorio")
+    XLSX.writeFile(workbook, `${filename}.xlsx`)
+  }
+
   if (!isManager) {
     return <div className="p-8 text-center">Acesso negado. Apenas gestores podem planejar inventários.</div>
   }
@@ -182,11 +299,9 @@ export default function PlannedInventoryManager() {
               </Button>
             </>
           )}
-          {inventory.status === 'completed' && (
-            <Button variant="outline" className="border-green-500/50 text-green-500">
-              <Download className="h-4 w-4 mr-2" /> Exportar Relatório Final
-            </Button>
-          )}
+          <Button onClick={() => setIsReportsModalOpen(true)} className="bg-sky-500 hover:bg-sky-600 text-white font-medium border-0">
+            <CloudDownload className="h-4 w-4 mr-2" /> Relatórios
+          </Button>
         </div>
       </div>
 
@@ -345,6 +460,72 @@ export default function PlannedInventoryManager() {
               SALVAR
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Relatórios */}
+      <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
+        <DialogContent className="max-w-3xl bg-[#f5f5f5] p-0 overflow-hidden border-0">
+          <div className="bg-[#0ea5e9] text-white p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CloudDownload className="h-6 w-6" />
+              <h2 className="text-xl font-medium">Relatórios</h2>
+            </div>
+            <button onClick={() => setIsReportsModalOpen(false)} className="text-white hover:bg-white/20 p-1 rounded-full">
+              <FileX className="h-5 w-5 opacity-0 pointer-events-none" /> {/* Placeholder para fechar */}
+            </button>
+          </div>
+          
+          <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+            {/* Seção Contagem */}
+            <div className="bg-white rounded-md shadow-sm p-4">
+              <h3 className="text-gray-500 font-medium mb-4">Contagem</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-[#bce6f8] rounded-md p-6 flex flex-col items-center justify-center gap-4 text-center border border-[#9edbf5]">
+                  <span className="text-[#555] font-medium">Arquivo TXT</span>
+                  <Button variant="outline" className="bg-white text-[#0ea5e9] border-white hover:bg-white hover:text-[#0ea5e9] hover:shadow-md transition-all font-bold text-xs px-6 py-5" onClick={() => exportTXT()}>
+                    CONFIGURAR E BAIXAR
+                  </Button>
+                </div>
+                <div className="bg-[#c8e6c9] rounded-md p-6 flex flex-col items-center justify-center gap-4 text-center border border-[#a5d6a7]">
+                  <span className="text-[#555] font-medium">Arquivo Excel</span>
+                  <Button variant="outline" className="bg-white text-[#0ea5e9] border-white hover:bg-white hover:text-[#0ea5e9] hover:shadow-md transition-all font-bold text-xs px-6 py-5" onClick={() => exportExcel('padrao')}>
+                    CONFIGURAR E BAIXAR
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Seção Outros */}
+            <div className="bg-white rounded-md shadow-sm p-4">
+              <h3 className="text-gray-500 font-medium mb-4">Outros</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <Button variant="outline" className="h-auto py-6 flex flex-col items-center gap-3 bg-white border-border/50 hover:bg-sky-50 transition-colors rounded-md shadow-sm" onClick={() => exportExcel('nao_coletados')}>
+                  <FileX className="h-7 w-7 text-[#0ea5e9]" />
+                  <span className="text-[10px] text-[#0ea5e9] font-bold whitespace-normal text-center leading-tight">ITENS NÃO<br/>COLETADOS</span>
+                </Button>
+                <Button variant="outline" className="h-auto py-6 flex flex-col items-center gap-3 bg-white border-border/50 hover:bg-sky-50 transition-colors rounded-md shadow-sm" onClick={() => exportExcel('divergencias')}>
+                  <ShieldAlert className="h-7 w-7 text-[#0ea5e9]" />
+                  <span className="text-[10px] text-[#0ea5e9] font-bold whitespace-normal text-center leading-tight">DIVERGÊNCIAS</span>
+                </Button>
+                <Button variant="outline" className="h-auto py-6 flex flex-col items-center gap-3 bg-white border-border/50 hover:bg-sky-50 transition-colors rounded-md shadow-sm" onClick={() => exportExcel('posicoes')}>
+                  <MapPin className="h-7 w-7 text-[#0ea5e9]" />
+                  <span className="text-[10px] text-[#0ea5e9] font-bold whitespace-normal text-center leading-tight">POSIÇÕES</span>
+                </Button>
+                <Button variant="outline" className="h-auto py-6 flex flex-col items-center gap-3 bg-white border-border/50 hover:bg-sky-50 transition-colors rounded-md shadow-sm" onClick={() => exportExcel('conferencias')}>
+                  <ListChecks className="h-7 w-7 text-[#0ea5e9]" />
+                  <span className="text-[10px] text-[#0ea5e9] font-bold whitespace-normal text-center leading-tight">CONFERÊNCIAS</span>
+                </Button>
+                <Button variant="outline" className="h-auto py-6 flex flex-col items-center gap-3 bg-white border-border/50 hover:bg-sky-50 transition-colors rounded-md shadow-sm" onClick={() => exportExcel('resumo_final')}>
+                  <FileText className="h-7 w-7 text-[#0ea5e9]" />
+                  <span className="text-[10px] text-[#0ea5e9] font-bold whitespace-normal text-center leading-tight">RESUMO FINAL</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-4 border-t flex justify-end">
+             <Button variant="ghost" onClick={() => setIsReportsModalOpen(false)} className="text-gray-600 font-bold">FECHAR</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
