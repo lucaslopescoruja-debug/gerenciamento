@@ -155,6 +155,7 @@ export default function ClientHistory() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
+                  {client.status !== 'pending' && client.status !== 'waiting' && client.status !== 'canceled' && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -168,6 +169,7 @@ export default function ClientHistory() {
                       <FileDown className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">{isExporting === client.id ? 'Gerando...' : 'Exportar PDF'}</span>
                     </Button>
+                  )}
                   <div className="text-muted-foreground">
                     {isExpanded ? <ChevronUp className="h-6 w-6" /> : <ChevronDown className="h-6 w-6" />}
                   </div>
@@ -215,18 +217,7 @@ export default function ClientHistory() {
                         <h4 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" /> Comprovante de Entrega
                         </h4>
-                        {client.status !== 'pending' && client.status !== 'waiting' && client.status !== 'canceled' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleExportPDF(client)}
-                            disabled={isExporting !== null}
-                            className="h-8 border-primary/30 text-primary hover:bg-primary/5 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
-                          >
-                            <FileDown className="h-3.5 w-3.5" />
-                            {isExporting === client.id ? 'Gerando...' : 'Exportar PDF'}
-                          </Button>
-                        )}
+                        {/* Botão de exportar foi movido para o cabeçalho */}
                       </div>
                       
                       {client.status === 'pending' || client.status === 'waiting' ? (
