@@ -280,6 +280,7 @@ export interface DeliveryClient {
   receiver_doc?: string
   return_reason?: string
   signed_at?: string
+  delivery_sequence?: number
   created_at: string
 }
 

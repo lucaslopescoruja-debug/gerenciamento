@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, User, MapPin, Upload, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus } from 'lucide-react'
+import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map, ListOrdered } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import * as XLSX from 'xlsx'
 
@@ -27,11 +27,11 @@ export default function RouteClients() {
   const queryClient = useQueryClient()
   const { user, hasPermission } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
-  const canDoConference = hasPermission('can_do_conference') || isManager
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [isImporting, setIsImporting] = useState(false)
-  const [sortBy, setSortBy] = useState<'alphabetical' | 'city' | 'neighborhood' | 'status'>('alphabetical')
+  const [sortBy, setSortBy] = useState<'sequence' | 'alphabetical' | 'neighborhood' | 'status'>('sequence')
+  const [isGroupedByCity, setIsGroupedByCity] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
   const { data: route, isLoading: isLoadingRoute } = useQuery({
@@ -49,7 +49,7 @@ export default function RouteClients() {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: productsApi.getProducts,
-    enabled: isManager // we only need products for parsing excel
+    enabled: isManager 
   })
 
   const importMutation = useMutation({
@@ -74,7 +74,35 @@ export default function RouteClients() {
     onError: (error: any) => toast.error(`Erro ao remover: ${error.message}`)
   })
 
-  const sortedClients = useMemo(() => {
+  const updateSequenceMutation = useMutation({
+    mutationFn: async ({ clientId, seq }: { clientId: string, seq: number }) => {
+      return deliveriesApi.updateDeliveryClient(clientId, { delivery_sequence: seq })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_clients', id] })
+    },
+    onError: (error: any) => toast.error(`Erro ao salvar sequência: ${error.message}`)
+  })
+
+  const handleSequenceChange = (clientId: string, val: string) => {
+    const seq = parseInt(val, 10) || 0
+    updateSequenceMutation.mutate({ clientId, seq })
+  }
+
+  const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+
+  const getCity = (addr: string) => {
+    if (!addr) return 'Sem Cidade'
+    const parts = addr.split('- ')
+    if (parts.length > 1) {
+      const p = parts[parts.length - 1].split('/')[0].trim()
+      if (p) return p
+    }
+    // Falha na extração, retornar inteiro ou padrão
+    return 'Outras'
+  }
+
+  const processedClients = useMemo(() => {
     let filtered = clients
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase().trim()
@@ -89,17 +117,14 @@ export default function RouteClients() {
       })
     }
 
-    return [...filtered].sort((a: any, b: any) => {
-      if (sortBy === 'alphabetical') {
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      if (sortBy === 'sequence') {
+        const seqA = a.delivery_sequence || 0
+        const seqB = b.delivery_sequence || 0
+        if (seqA !== seqB) return seqA - seqB
         return a.name.localeCompare(b.name)
-      } else if (sortBy === 'city') {
-        const getCity = (addr: string) => {
-          if (!addr) return ''
-          const parts = addr.split('- ')
-          if (parts.length > 1) return parts[parts.length - 1].split('/')[0].trim()
-          return addr
-        }
-        return getCity(a.address).localeCompare(getCity(b.address)) || a.name.localeCompare(b.name)
+      } else if (sortBy === 'alphabetical') {
+        return a.name.localeCompare(b.name)
       } else if (sortBy === 'neighborhood') {
         const getNeighborhood = (addr: string) => {
           if (!addr) return ''
@@ -116,28 +141,24 @@ export default function RouteClients() {
       }
       return 0
     })
-  }, [clients, sortBy, searchTerm])
 
-  const pendingReturnsCount = useMemo(() => {
-    let count = 0
-    clients.forEach((c: any) => {
-      const isClientReturned = c.status === 'returned'
-      c.delivery_items?.forEach((item: any) => {
-        if (item.returned_to_stock) return
-        let returnQty = 0
-        if (isClientReturned) {
-          returnQty = item.quantity_expected
-        } else {
-          returnQty = Math.max(0, item.quantity_expected - item.quantity_scanned)
-        }
-        if (returnQty > 0) count += returnQty
+    if (isGroupedByCity) {
+      const groups: Record<string, any[]> = {}
+      sorted.forEach(c => {
+        const city = getCity(c.address)
+        if (!groups[city]) groups[city] = []
+        groups[city].push(c)
       })
-    })
-    return count
-  }, [clients])
+      
+      // Ordena as cidades alfabeticamente
+      return Object.keys(groups).sort().map(city => ({
+        city,
+        clients: groups[city]
+      }))
+    }
 
-  // Helper to strip non-alphanumeric characters
-  const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+    return [{ city: 'Todos', clients: sorted }]
+  }, [clients, sortBy, searchTerm, isGroupedByCity])
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -162,18 +183,13 @@ export default function RouteClients() {
         for (let i = 0; i < data.length; i++) {
           const row = data[i]
           if (!row || row.length === 0) continue
-
           const rowStr = row.join(' ').trim()
           
-          // Check for Order Number
           if (rowStr.toLowerCase().includes('pedido de venda')) {
             const match = rowStr.match(/pedido de venda (\d+)/i)
-            if (match) {
-              currentOrderNumber = match[1]
-            }
+            if (match) currentOrderNumber = match[1]
           }
 
-          // Check for Client Name
           const firstCell = row.find(c => c)
           if (typeof firstCell === 'string' && firstCell.trim().startsWith('À ')) {
             currentClientName = firstCell.replace('À ', '').trim()
@@ -190,7 +206,6 @@ export default function RouteClients() {
               })
             }
             
-            // Extract address (usually next line)
             if (data[i+1]) {
                const addrRow = data[i+1]
                const addrCell = addrRow.find(c => c)
@@ -200,7 +215,6 @@ export default function RouteClients() {
             }
           }
 
-          // Check for Phone
           if (typeof firstCell === 'string' && firstCell.trim().toLowerCase().startsWith('telefone:')) {
             const phone = firstCell.replace(/telefone:/i, '').trim()
             if (phone && currentClientKey && clientsMap.has(currentClientKey)) {
@@ -213,7 +227,6 @@ export default function RouteClients() {
             }
           }
 
-          // Check for Observacoes
           if (typeof firstCell === 'string' && firstCell.trim().toLowerCase() === 'observações') {
              if (data[i+1]) {
                const obsRow = data[i+1]
@@ -228,26 +241,15 @@ export default function RouteClients() {
              }
           }
 
-          // Check for Products explicitly via columns
           if (currentClientKey && clientsMap.has(currentClientKey)) {
-             // In this specific Excel format:
-             // Column C (index 2) is always the Code
-             // Column E (index 4) is always the Description
-             // Column L (index 11) or K (index 10) is the Quantity
              const codeCell = row[2]
-             
-             // The '#' column might be in Column A (index 0) or Column B (index 1)
              const hasRowNumber = (row[0] && /^\d+$/.test(String(row[0]).trim())) || (row[1] && /^\d+$/.test(String(row[1]).trim()))
              
              if (codeCell && hasRowNumber) {
                 const strCode = String(codeCell).trim()
-                
-                // Ignore the header row and ensure the code is not insanely long (e.g. a whole paragraph)
                 if (strCode.toLowerCase() !== 'código' && strCode.toLowerCase() !== 'codigo' && strCode.length > 0 && strCode.length < 30) {
                    const normalizedCode = normalizeCode(strCode)
-                   const isNumStr = /^\d+$/.test(normalizedCode)
                    
-                   // Try to find the product in DB to get the official ID
                    let foundProduct = null
                    if (normalizedCode.length >= 2) {
                      foundProduct = products.find(prod => {
@@ -258,27 +260,21 @@ export default function RouteClients() {
                      })
                    }
 
-                   // Description
                    const descCell = row[4] || row[5] || row[3]
                    let finalDesc = foundProduct ? foundProduct.description : (descCell ? String(descCell).trim() : 'Produto sem descrição')
                    let finalCode = foundProduct ? foundProduct.code : strCode
 
-                   // Quantity (User said exactly column L, index 11, but merged cells might put it in K, index 10)
                    const qtyCell = row[11] || row[10] || row[12]
                    let qty = 1
                    if (qtyCell) {
                       const strQty = String(qtyCell).trim()
-                      // If it's a date or looks like one, skip aggressive parsing
                       if (!strQty.includes('/') && !strQty.includes(':')) {
                         const digitsOnly = strQty.replace(/[^\d]/g, '') 
                         const parsed = parseInt(digitsOnly, 10)
-                        if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
-                           qty = parsed
-                        }
+                        if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) qty = parsed
                       }
                    } 
 
-                   // Force add item, even if not found in DB! No item left behind.
                    clientsMap.get(currentClientKey).items.push({
                      product_id: foundProduct ? foundProduct.id : null,
                      product_code: finalCode,
@@ -286,9 +282,7 @@ export default function RouteClients() {
                      quantity_expected: qty
                    })
                    
-                   if (!foundProduct) {
-                     notFoundCount++
-                   }
+                   if (!foundProduct) notFoundCount++
                 }
              }
           }
@@ -348,13 +342,22 @@ export default function RouteClients() {
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto lg:ml-auto">
+            <Button 
+              variant={isGroupedByCity ? "default" : "outline"}
+              className="gap-2"
+              onClick={() => setIsGroupedByCity(!isGroupedByCity)}
+            >
+              <Map className="h-4 w-4" />
+              {isGroupedByCity ? 'Desagrupar Cidades' : 'Agrupar por Cidade'}
+            </Button>
+            
             <select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="flex h-10 w-full sm:w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full sm:w-[160px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="alphabetical">Ordem Alfabética</option>
-              <option value="city">Por Cidade</option>
+              <option value="sequence">Sequência</option>
+              <option value="alphabetical">Alfabética</option>
               <option value="neighborhood">Por Bairro</option>
               <option value="status">Por Status</option>
             </select>
@@ -367,10 +370,10 @@ export default function RouteClients() {
                   className="gap-2 flex-1 sm:flex-none border-primary text-primary hover:bg-primary/10"
                   onClick={() => navigate(`/entregas/${id}/novo-cliente`)}
                 >
-                  <Plus className="h-5 w-5" /> Adicionar Cliente
+                  <Plus className="h-5 w-5" /> Novo Cliente
                 </Button>
                 <Button 
-                  className="gap-2 flex-1 sm:flex-none bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)]"
+                  className="gap-2 flex-1 sm:flex-none bg-amber-600 hover:bg-amber-700 text-white"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
                 >
@@ -382,93 +385,121 @@ export default function RouteClients() {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-6">
         {clients.length === 0 ? (
           <div className="glass-card text-center py-12">
             <User className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
             <p className="text-muted-foreground font-medium">Nenhum cliente cadastrado nesta rota</p>
-            {isManager && <p className="text-sm text-muted-foreground mt-2">Clique em Importar XLRS para carregar os clientes e seus pedidos.</p>}
           </div>
         ) : (
-          sortedClients.map((client: any, index: number) => {
-            const config = statusConfig[client.status] || statusConfig.pending
-            const totalItems = client.delivery_items?.length || 0
-            const totalVolume = client.delivery_items?.reduce((sum: number, item: any) => sum + item.quantity_expected, 0) || 0
+          processedClients.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-3">
+              {isGroupedByCity && (
+                <div className="flex items-center gap-2 mb-4 border-b border-border/50 pb-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-bold tracking-tight">{group.city}</h2>
+                  <span className="text-sm font-medium bg-muted px-2 py-0.5 rounded-full text-muted-foreground ml-2">
+                    {group.clients.length}
+                  </span>
+                </div>
+              )}
 
-            return (
-              <Card key={client.id} className="overflow-hidden border-primary/20 hover:border-primary/50 transition-all glass-card slide-up" style={{ animationDelay: `${index * 60}ms` }}>
-                <CardContent className="p-0">
-                  <Link to={`/entregas/cliente/${client.id}`} className="flex items-center gap-4 p-4 hover:bg-muted/10 cursor-pointer">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary">
-                      <User className="h-5 w-5" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="font-bold text-foreground text-sm leading-tight">{client.name}</span>
-                        <Badge variant={config.variant} className="shrink-0 mt-0.5">{config.label}</Badge>
-                      </div>
-                      {(client.address || client.phone || client.order_number) && (
-                        <div className="flex gap-3 text-sm text-muted-foreground flex-wrap mb-2">
-                          {client.order_number && <span className="font-mono bg-muted/50 px-2 py-0.5 rounded text-primary font-bold">Pedido: {client.order_number}</span>}
-                          {client.address && (
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-center gap-1 truncate max-w-[200px] hover:text-primary transition-colors hover:underline"
-                              title="Ver no Google Maps"
-                            >
-                              <MapPin className="h-3 w-3 shrink-0 text-primary" /> {client.address}
-                            </a>
+              {group.clients.map((client: any, index: number) => {
+                const config = statusConfig[client.status] || statusConfig.pending
+                const totalItems = client.delivery_items?.length || 0
+                const totalVolume = client.delivery_items?.reduce((sum: number, item: any) => sum + item.quantity_expected, 0) || 0
+
+                return (
+                  <Card key={client.id} className="overflow-hidden border-primary/20 hover:border-primary/50 transition-all glass-card slide-up" style={{ animationDelay: `${index * 30}ms` }}>
+                    <CardContent className="p-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-4 p-4 hover:bg-muted/10 cursor-pointer" onClick={(e) => {
+                        // Impedir navegação se clicou no input de sequência
+                        if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
+                        navigate(`/entregas/cliente/${client.id}`)
+                      }}>
+                        
+                        {/* Indicador de Sequência Editável */}
+                        <div className="flex sm:flex-col items-center sm:justify-center gap-2 mb-3 sm:mb-0 bg-muted/30 p-2 sm:p-3 rounded-lg border border-border/50" onClick={e => e.stopPropagation()}>
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider flex items-center gap-1">
+                            <ListOrdered className="h-3 w-3" /> Seq.
+                          </span>
+                          <Input 
+                            type="number"
+                            defaultValue={client.delivery_sequence || ''}
+                            onBlur={(e) => handleSequenceChange(client.id, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur()
+                              }
+                            }}
+                            className="w-16 h-8 text-center font-bold text-lg p-0"
+                            placeholder="0"
+                          />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="font-bold text-foreground text-sm sm:text-base leading-tight">{client.name}</span>
+                            <Badge variant={config.variant} className="shrink-0 mt-0.5">{config.label}</Badge>
+                          </div>
+                          {(client.address || client.phone || client.order_number) && (
+                            <div className="flex gap-3 text-sm text-muted-foreground flex-wrap mb-2">
+                              {client.order_number && <span className="font-mono bg-muted/50 px-2 py-0.5 rounded text-primary font-bold">Pedido: {client.order_number}</span>}
+                              {client.address && (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1 truncate max-w-[200px] hover:text-primary transition-colors hover:underline"
+                                  title="Ver no Google Maps"
+                                >
+                                  <MapPin className="h-3 w-3 shrink-0 text-primary" /> {client.address}
+                                </a>
+                              )}
+                              {client.phone && <span>📞 {client.phone}</span>}
+                            </div>
                           )}
-                          {client.phone && <span>📞 {client.phone}</span>}
+                          {client.notes && (
+                            <div className="text-xs text-amber-700 bg-amber-500/10 dark:text-amber-400 p-2 rounded mt-1 mb-2 border border-amber-500/20 whitespace-pre-wrap">
+                              <span className="font-bold uppercase tracking-wider text-[10px] opacity-70 block mb-0.5">Observação</span>
+                              {client.notes.replace('Obs: ', '')}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 bg-muted/20 w-max px-2 py-1 rounded-md">
+                            <span className="font-medium text-foreground">{totalItems} <span className="font-normal opacity-70">itens</span></span>
+                            <span className="text-muted-foreground/50">•</span>
+                            <span className="font-medium text-foreground">{totalVolume} <span className="font-normal opacity-70">volumes</span></span>
+                          </div>
                         </div>
-                      )}
-                      {client.notes && (
-                        <div className="text-xs text-amber-700 bg-amber-500/10 dark:text-amber-400 p-2 rounded mt-1 mb-2 border border-amber-500/20 whitespace-pre-wrap">
-                          <span className="font-bold uppercase tracking-wider text-[10px] opacity-70 block mb-0.5">Observação</span>
-                          {client.notes.replace('Obs: ', '')}
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 bg-muted/20 w-max px-2 py-1 rounded-md">
-                        <span className="font-medium text-foreground">{totalItems} <span className="font-normal opacity-70">itens</span></span>
-                        <span className="text-muted-foreground/50">•</span>
-                        <span className="font-medium text-foreground">{totalVolume} <span className="font-normal opacity-70">volumes</span></span>
+                        
+                        <ChevronRight className="h-5 w-5 text-muted-foreground/30 shrink-0 hidden sm:block" />
                       </div>
-                      {client.status === 'delivered_with_divergence' && (
-                        <div className="text-amber-600 dark:text-amber-600 dark:text-amber-400 text-xs mt-1 font-bold flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" /> Divergência reportada
+
+                      {isManager && client.status === 'pending' && (
+                        <div className="px-4 pb-3 flex justify-end border-t border-border/30 pt-2 sm:border-none sm:pt-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-8"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              if (window.confirm('Tem certeza que deseja apagar este cliente da rota?')) {
+                                deleteClientMutation.mutate(client.id)
+                              }
+                            }}
+                            disabled={deleteClientMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Apagar Cliente
+                          </Button>
                         </div>
                       )}
-                    </div>
-                    
-                    <ChevronRight className="h-5 w-5 text-muted-foreground/30 shrink-0" />
-                  </Link>
-
-                  {isManager && client.status === 'pending' && (
-                    <div className="px-4 pb-3 flex justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10 h-8"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          if (window.confirm('Tem certeza que deseja apagar este cliente da rota?')) {
-                            deleteClientMutation.mutate(client.id)
-                          }
-                        }}
-                        disabled={deleteClientMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> Apagar Cliente
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          ))
         )}
       </div>
     </div>

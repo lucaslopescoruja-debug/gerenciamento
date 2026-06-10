@@ -527,5 +527,17 @@ export const deliveriesApi = {
     
     // Ordena do mais recente para o mais antigo
     return uniqueClients.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  },
+
+  async updateDeliveryClient(id: string, updates: Partial<DeliveryClient>) {
+    const { data, error } = await supabase
+      .from('delivery_clients')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+      
+    if (error) throw error
+    return data
   }
 }
