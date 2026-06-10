@@ -317,6 +317,29 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
     }
   })
 
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ itemId, qty }: { itemId: string, qty: number }) => {
+      const { error } = await supabase.from('adhoc_count_items')
+        .update({ quantity: qty, updated_at: new Date().toISOString() })
+        .eq('id', itemId)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adhoc_count_items', countId] }),
+    onError: (error: any) => toast.error(`Erro ao atualizar quantidade: ${error.message}`)
+  })
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error } = await supabase.from('adhoc_count_items').delete().eq('id', itemId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adhoc_count_items', countId] })
+      toast.success('Item removido')
+    },
+    onError: (error: any) => toast.error(`Erro ao apagar item: ${error.message}`)
+  })
+
   const processScannedBarcode = (raw: string) => {
     if (!raw.trim() || count?.status === 'completed') return
     
@@ -513,10 +536,44 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
                   <p className="font-medium truncate text-foreground">{item.description}</p>
                   <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <span className="text-lg font-bold font-mono text-primary">+{item.quantity}</span>
-                  </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {isCompleted ? (
+                    <div className="text-right">
+                      <span className="text-lg font-bold font-mono text-primary">+{item.quantity}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Input 
+                        type="number"
+                        min="1"
+                        defaultValue={item.quantity}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value, 10)
+                          if (!isNaN(val) && val > 0 && val !== item.quantity) {
+                            updateItemMutation.mutate({ itemId: item.id, qty: val })
+                          } else {
+                            e.target.value = item.quantity.toString()
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                        }}
+                        className="w-16 h-8 text-center font-bold text-primary bg-primary/5 border-primary/20 p-0"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 shrink-0"
+                        onClick={() => {
+                          if (window.confirm('Tem certeza que deseja apagar este item da contagem?')) {
+                            deleteItemMutation.mutate(item.id)
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

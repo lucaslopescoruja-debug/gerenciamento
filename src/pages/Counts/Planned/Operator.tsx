@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, ScanLine, Search, CheckCircle2, LayoutGrid, Camera, ChevronRight, ScanBarcode } from 'lucide-react'
+import { ArrowLeft, Plus, ScanLine, Search, CheckCircle2, LayoutGrid, Camera, ChevronRight, ScanBarcode, Trash2 } from 'lucide-react'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
 
 export default function PlannedInventoryOperator() {
@@ -242,6 +242,29 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
     }
   })
 
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ itemId, qty }: { itemId: string, qty: number }) => {
+      const { error } = await supabase.from('planned_inventory_counts')
+        .update({ quantity: qty, updated_at: new Date().toISOString() })
+        .eq('id', itemId)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planned_inventory_counts'] }),
+    onError: (error: any) => toast.error(`Erro ao atualizar quantidade: ${error.message}`)
+  })
+
+  const deleteItemMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error } = await supabase.from('planned_inventory_counts').delete().eq('id', itemId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planned_inventory_counts'] })
+      toast.success('Item removido')
+    },
+    onError: (error: any) => toast.error(`Erro ao apagar item: ${error.message}`)
+  })
+
   const processScannedBarcode = (raw: string) => {
     if (!raw.trim()) return
     
@@ -448,10 +471,36 @@ function AreaCountView({ inventory, area, allProducts, user, onBack }: {
                     </p>
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">{item.product_code}</p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
-                      <span className="text-lg font-bold font-mono text-blue-600">+{item.quantity}</span>
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Input 
+                      type="number"
+                      min="1"
+                      defaultValue={item.quantity}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        if (!isNaN(val) && val > 0 && val !== item.quantity) {
+                          updateItemMutation.mutate({ itemId: item.id, qty: val })
+                        } else {
+                          e.target.value = item.quantity.toString()
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                      }}
+                      className="w-16 h-8 text-center font-bold text-blue-600 bg-blue-500/5 border-blue-500/20 p-0"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 shrink-0"
+                      onClick={() => {
+                        if (window.confirm('Tem certeza que deseja apagar este item da contagem?')) {
+                          deleteItemMutation.mutate(item.id)
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )
