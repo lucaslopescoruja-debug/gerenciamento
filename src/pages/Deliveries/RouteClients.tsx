@@ -91,7 +91,7 @@ export default function RouteClients() {
 
   const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
-  const getCity = (addr: string) => {
+  const getCity = (addr?: string | null) => {
     if (!addr) return 'Sem Cidade'
     const parts = addr.split('- ')
     if (parts.length > 1) {
@@ -126,7 +126,7 @@ export default function RouteClients() {
       } else if (sortBy === 'alphabetical') {
         return a.name.localeCompare(b.name)
       } else if (sortBy === 'neighborhood') {
-        const getNeighborhood = (addr: string) => {
+        const getNeighborhood = (addr?: string | null) => {
           if (!addr) return ''
           const match = addr.match(/bairro\s+(.*?)(?=\s*-|\s*,|$)/i)
           if (match) return match[1].trim()
