@@ -77,6 +77,38 @@ export interface User {
   created_at: string
 }
 
+export interface Customer {
+  id: string
+  company_id: string
+  active: boolean
+  nickname: string | null
+  document_type: 'CPF' | 'CNPJ' | null
+  document: string | null
+  fantasy_name: string | null
+  legal_name: string | null
+  cep: string | null
+  address: string | null
+  number: string | null
+  complement: string | null
+  neighborhood: string | null
+  po_box: string | null
+  city: string | null
+  state: string | null
+  phone1: string | null
+  phone2: string | null
+  phone3: string | null
+  phone4: string | null
+  email: string | null
+  credit_limit: number | null
+  price_table: string | null
+  sales_rep: string | null
+  payment_condition: string | null
+  allow_unit_price_change: boolean | null
+  region: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Product {
   id: string
   company_id: string
