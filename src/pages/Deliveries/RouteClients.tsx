@@ -412,16 +412,16 @@ export default function RouteClients() {
                 return (
                   <Card key={client.id} className="overflow-hidden border-primary/20 hover:border-primary/50 transition-all glass-card slide-up" style={{ animationDelay: `${index * 30}ms` }}>
                     <CardContent className="p-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-4 p-4 hover:bg-muted/10 cursor-pointer" onClick={(e) => {
+                      <div className="flex items-start gap-3 p-4 hover:bg-muted/10 cursor-pointer" onClick={(e) => {
                         // Impedir navegação se clicou no input de sequência
                         if ((e.target as HTMLElement).tagName.toLowerCase() === 'input') return;
                         navigate(`/entregas/cliente/${client.id}`)
                       }}>
                         
                         {/* Indicador de Sequência Editável */}
-                        <div className="flex sm:flex-col items-center sm:justify-center gap-2 mb-3 sm:mb-0 bg-muted/30 p-2 sm:p-3 rounded-lg border border-border/50" onClick={e => e.stopPropagation()}>
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider flex items-center gap-1">
-                            <ListOrdered className="h-3 w-3" /> Seq.
+                        <div className="flex flex-col items-center justify-center shrink-0 bg-muted/30 p-1.5 rounded-md border border-border/50" onClick={e => e.stopPropagation()}>
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider mb-1">
+                            Seq.
                           </span>
                           <Input 
                             type="number"
@@ -432,7 +432,7 @@ export default function RouteClients() {
                                 (e.target as HTMLInputElement).blur()
                               }
                             }}
-                            className="w-16 h-8 text-center font-bold text-lg p-0"
+                            className="w-12 h-8 text-center font-bold text-sm p-0 bg-background"
                             placeholder="0"
                           />
                         </div>
