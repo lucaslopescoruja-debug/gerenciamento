@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom'
 import { Search, Plus, Edit2, Trash2, Building2, UploadCloud, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import Papa from 'papaparse'
 import { customersApi } from '@/api/customers'
+import { regionsApi } from '@/api/regions'
+import { priceTablesApi } from '@/api/priceTables'
+import { salesRepsApi } from '@/api/salesReps'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
@@ -35,6 +38,10 @@ export default function CustomersList() {
 
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const { data: regions = [] } = useQuery({ queryKey: ['regions'], queryFn: regionsApi.getRegions })
+  const { data: priceTables = [] } = useQuery({ queryKey: ['priceTables'], queryFn: priceTablesApi.getPriceTables })
+  const { data: salesReps = [] } = useQuery({ queryKey: ['salesReps'], queryFn: salesRepsApi.getSalesReps })
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers'],
@@ -81,25 +88,37 @@ export default function CustomersList() {
       skipEmptyLines: true,
       complete: (results) => {
         try {
-          const payload = results.data.map((row: any) => ({
-            nickname: row['Apelido'] || '',
-            fantasy_name: row['Nome fantasia'] || '',
-            legal_name: row['Razão social/Nome'] || '',
-            document: row['CNPJ/CPF'] || '',
-            document_type: ((row['CNPJ/CPF'] || '').length > 14 ? 'CNPJ' : 'CPF') as 'CNPJ' | 'CPF',
-            phone1: row['Telefone 1'] || '',
-            address: row['Endereço'] || '',
-            number: row['Núm.'] || '',
-            complement: row['Complemento'] || '',
-            neighborhood: row['Bairro'] || '',
-            cep: row['CEP'] || '',
-            city: row['Município'] || '',
-            state: row['UF'] || '',
-            region: row['Região'] || '',
-            email: row['Email'] || '',
-            sales_rep: row['Representante/ vendedor'] || '',
-            active: true
-          }))
+          const payload = results.data.map((row: any) => {
+            const regionName = (row['Região'] || '').trim().toLowerCase()
+            const regionId = regions.find(r => (r.name || '').toLowerCase() === regionName)?.id || null
+
+            const priceTableName = (row['Tabela de Preços'] || row['Tabela de preço'] || '').trim().toLowerCase()
+            const priceTableId = priceTables.find(t => (t.name || '').toLowerCase() === priceTableName || (t.code || '').toLowerCase() === priceTableName)?.id || null
+
+            const repName = (row['Representante/ vendedor'] || row['Vendedor'] || '').trim().toLowerCase()
+            const repId = salesReps.find(s => (s.name || '').toLowerCase() === repName)?.id || null
+
+            return {
+              nickname: row['Apelido'] || '',
+              fantasy_name: row['Nome fantasia'] || '',
+              legal_name: row['Razão social/Nome'] || '',
+              document: row['CNPJ/CPF'] || '',
+              document_type: ((row['CNPJ/CPF'] || '').length > 14 ? 'CNPJ' : 'CPF') as 'CNPJ' | 'CPF',
+              phone1: row['Telefone 1'] || '',
+              address: row['Endereço'] || '',
+              number: row['Núm.'] || '',
+              complement: row['Complemento'] || '',
+              neighborhood: row['Bairro'] || '',
+              cep: row['CEP'] || '',
+              city: row['Município'] || '',
+              state: row['UF'] || '',
+              region_id: regionId,
+              price_table_id: priceTableId,
+              sales_rep_id: repId,
+              email: row['Email'] || '',
+              active: true
+            }
+          })
           
           if (payload.length === 0) {
             toast.error('O arquivo parece estar vazio ou no formato incorreto.')
