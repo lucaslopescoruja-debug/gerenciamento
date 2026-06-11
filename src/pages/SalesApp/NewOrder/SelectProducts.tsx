@@ -5,7 +5,7 @@ import { productsApi } from '@/api/products'
 import { priceTablesApi } from '@/api/priceTables'
 import { useSalesCart } from '@/stores/salesCart'
 import type { CartItem } from '@/stores/salesCart'
-import { Search, ArrowLeft, ShoppingCart, Info } from 'lucide-react'
+import { Search, ArrowLeft, ShoppingCart, Filter, History, Tag, Star, X, LayoutGrid } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/utils/formatters'
@@ -13,6 +13,9 @@ import { formatCurrency } from '@/utils/formatters'
 export default function SelectProducts() {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<'todos' | 'reposicoes' | 'promocoes' | 'destaques'>('todos')
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   
   const { customer_id, price_table_id, items, addItem, updateQuantity, getItemsCount, getTotal } = useSalesCart()
 
@@ -59,7 +62,36 @@ export default function SelectProducts() {
     })
   }, [products, priceTableItems, price_table_id, cartMap])
 
+  const categories = useMemo(() => {
+    const cats = new Set(products.map((p: any) => p.group_name).filter(Boolean))
+    return Array.from(cats).sort() as string[]
+  }, [products])
+
   const filteredProducts = productsWithPrices.filter(p => {
+    // Aba filter
+    if (activeTab === 'reposicoes') {
+      // TODO: Filter by past purchases (requires sales history data). For now, return empty or all.
+      // We will let it show nothing to indicate no reposicoes found, or just show all for demo.
+      // Let's show nothing for now to simulate the filter working.
+      return false
+    }
+    if (activeTab === 'promocoes') {
+      // Todo: Add is_promo flag.
+      return false
+    }
+    if (activeTab === 'destaques') {
+      // Todo: Add is_highlight flag.
+      return false
+    }
+
+    // Category filter
+    if (selectedCategory === 'sem-categoria') {
+      if (p.group_name) return false
+    } else if (selectedCategory && selectedCategory !== 'all') {
+      if (p.group_name !== selectedCategory) return false
+    }
+
+    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       return p.description.toLowerCase().includes(term) || p.code?.toLowerCase().includes(term)
@@ -99,8 +131,40 @@ export default function SelectProducts() {
         </div>
       </header>
 
-      <div className="bg-white p-4 shadow-sm sticky top-[60px] z-10">
-        <div className="relative">
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 flex overflow-x-auto hide-scrollbar sticky top-[52px] z-10">
+        <button 
+          onClick={() => setActiveTab('todos')}
+          className={`flex-1 min-w-[80px] py-3 px-2 flex flex-col items-center justify-center gap-1 border-b-2 transition-colors ${activeTab === 'todos' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}
+        >
+          <LayoutGrid className="w-5 h-5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Todos</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('reposicoes')}
+          className={`flex-1 min-w-[90px] py-3 px-2 flex flex-col items-center justify-center gap-1 border-b-2 transition-colors ${activeTab === 'reposicoes' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}
+        >
+          <History className="w-5 h-5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Reposições</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('promocoes')}
+          className={`flex-1 min-w-[90px] py-3 px-2 flex flex-col items-center justify-center gap-1 border-b-2 transition-colors ${activeTab === 'promocoes' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}
+        >
+          <Tag className="w-5 h-5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Promoções</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('destaques')}
+          className={`flex-1 min-w-[90px] py-3 px-2 flex flex-col items-center justify-center gap-1 border-b-2 transition-colors ${activeTab === 'destaques' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}
+        >
+          <Star className="w-5 h-5" />
+          <span className="text-[10px] font-bold uppercase tracking-wider">Destaques</span>
+        </button>
+      </div>
+
+      <div className="bg-white p-4 shadow-sm sticky top-[118px] z-10 flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <Input 
             placeholder="Buscar por nome ou código" 
@@ -109,6 +173,14 @@ export default function SelectProducts() {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`h-12 w-12 shrink-0 rounded-xl ${selectedCategory && selectedCategory !== 'all' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600'}`}
+          onClick={() => setIsCategoryModalOpen(true)}
+        >
+          <Filter className="h-5 w-5" />
+        </Button>
       </div>
 
       <div className="flex-1 overflow-auto p-2">
@@ -191,8 +263,48 @@ export default function SelectProducts() {
         </Button>
       </div>
       
+      {/* Category Modal */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="w-10" /> {/* Spacer */}
+              <h2 className="font-bold text-lg text-gray-900">Categorias</h2>
+              <Button variant="ghost" size="icon" onClick={() => setIsCategoryModalOpen(false)} className="w-10 h-10 rounded-full">
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="overflow-y-auto p-2">
+              <button
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${!selectedCategory || selectedCategory === 'all' ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}
+                onClick={() => { setSelectedCategory('all'); setIsCategoryModalOpen(false); }}
+              >
+                Selecionar todas
+              </button>
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${selectedCategory === cat ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}
+                  onClick={() => { setSelectedCategory(cat); setIsCategoryModalOpen(false); }}
+                >
+                  {cat}
+                </button>
+              ))}
+              <button
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors ${selectedCategory === 'sem-categoria' ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}
+                onClick={() => { setSelectedCategory('sem-categoria'); setIsCategoryModalOpen(false); }}
+              >
+                Produtos sem categoria
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   )
