@@ -7,7 +7,7 @@ export const salesRepsApi = {
     if (!currentCompanyId) return []
     const { data, error } = await supabase
       .from('sales_reps')
-      .select('*, sales_rep_regions(region(*))')
+      .select('*, sales_rep_regions(regions(*))')
       .eq('company_id', currentCompanyId)
       .order('nickname')
     if (error) throw error

@@ -103,7 +103,7 @@ export default function SalesRepsList() {
         (r.legal_name || '').toLowerCase().includes(s) ||
         (r.document || '').includes(s) ||
         (r.city || '').toLowerCase().includes(s) ||
-        (r.regions?.join(' ') || '').toLowerCase().includes(s)
+        (r.sales_rep_regions?.map((sr: any) => sr.regions?.name).join(' ') || '').toLowerCase().includes(s)
       )
     })
   }, [reps, searchTerm])
@@ -201,7 +201,7 @@ export default function SalesRepsList() {
                         {rep.sales_rep_regions && rep.sales_rep_regions.length > 0 ? (
                           rep.sales_rep_regions.map((sr: any, idx: number) => (
                             <span key={idx} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
-                              {sr.region?.name || '-'}
+                              {sr.regions?.name || '-'}
                             </span>
                           ))
                         ) : (

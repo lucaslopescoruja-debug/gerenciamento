@@ -50,7 +50,7 @@ export default function SalesRepForm() {
         state: rep.state || ''
       })
       if (rep.sales_rep_regions) {
-        setRegionIds(rep.sales_rep_regions.map((sr: any) => sr.region.id))
+        setRegionIds(rep.sales_rep_regions.map((sr: any) => sr.regions?.id).filter(Boolean))
       }
     }
   }, [rep])
