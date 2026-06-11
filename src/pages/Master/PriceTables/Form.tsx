@@ -443,7 +443,7 @@ export default function PriceTableForm() {
                       <td className="px-4 py-3 font-mono text-muted-foreground">{item.product?.code || '-'}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{item.product?.group_name || '-'}</td>
                       <td className="px-4 py-3 font-medium text-foreground">{item.product?.description || 'Produto removido'}</td>
-                      <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
+                      <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-bold whitespace-nowrap">
                         R$ {item.price.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-center">{item.discount_percent ? `${item.discount_percent}%` : '-'}</td>
