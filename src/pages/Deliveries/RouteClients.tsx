@@ -349,11 +349,17 @@ export default function RouteClients() {
 
                    let qty = 1
                    if (qtyCell) {
-                      const strQty = String(qtyCell).trim()
+                      let strQty = String(qtyCell).trim()
                       if (!strQty.includes('/') && !strQty.includes(':')) {
-                        const digitsOnly = strQty.replace(/[^\d]/g, '') 
-                        const parsed = parseInt(digitsOnly, 10)
-                        if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) qty = parsed
+                        strQty = strQty.replace(',', '.')
+                        // Extract numeric part (including dots)
+                        const numericPartMatch = strQty.match(/[\d.]+/)
+                        if (numericPartMatch) {
+                           const parsed = parseFloat(numericPartMatch[0])
+                           if (!isNaN(parsed) && parsed > 0 && parsed < 1000000) {
+                              qty = Math.round(parsed) // Round to nearest integer (quantities are usually integer)
+                           }
+                        }
                       }
                    } 
 
