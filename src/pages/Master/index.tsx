@@ -29,7 +29,7 @@ export default function MasterPanel() {
   const [maxUsers, setMaxUsers] = useState(5);
   const [billingDay, setBillingDay] = useState(10);
   const [monthlyFee, setMonthlyFee] = useState(0);
-  const [plan, setPlan] = useState<'bronze' | 'prata' | 'ouro'>('ouro');
+  const [plan, setPlan] = useState<'bronze' | 'prata' | 'ouro' | 'platina'>('ouro');
   const [adminName, setAdminName] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
 
@@ -53,7 +53,7 @@ export default function MasterPanel() {
     enabled: isMaster
   });
 
-  const handlePlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro') => {
+  const handlePlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro' | 'platina') => {
     setPlan(selectedPlan);
     const planDefaults = saasPlans.find(p => p.id === selectedPlan);
     if (planDefaults) {
@@ -62,7 +62,7 @@ export default function MasterPanel() {
     }
   };
 
-  const handleEditPlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro') => {
+  const handleEditPlanChange = (selectedPlan: 'bronze' | 'prata' | 'ouro' | 'platina') => {
     if (!editingCompany) return;
     const planDefaults = saasPlans.find(p => p.id === selectedPlan);
     
@@ -288,7 +288,7 @@ export default function MasterPanel() {
                     )}
                     <span className={cn(
                       "text-xs px-2 py-1 rounded-full font-medium uppercase",
-                      (!comp.plan || comp.plan === 'ouro') && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+                      (!comp.plan || comp.plan === 'ouro' || comp.plan === 'platina') && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
                       comp.plan === 'prata' && "bg-slate-400/10 text-slate-600 dark:text-slate-300",
                       comp.plan === 'bronze' && "bg-orange-600/10 text-orange-600 dark:text-orange-400"
                     )}>
@@ -393,6 +393,7 @@ export default function MasterPanel() {
                     <option value="bronze">Bronze (Apenas Estoque)</option>
                     <option value="prata">Prata (+ Expedição)</option>
                     <option value="ouro">Ouro (+ Entregas e Motoristas)</option>
+                    <option value="platina">Platina (+ Força de Vendas e CRM)</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -471,6 +472,7 @@ export default function MasterPanel() {
                     <option value="bronze">Bronze (Apenas Estoque)</option>
                     <option value="prata">Prata (+ Expedição)</option>
                     <option value="ouro">Ouro (+ Entregas e Motoristas)</option>
+                    <option value="platina">Platina (+ Força de Vendas e CRM)</option>
                   </select>
                 </div>
                 <div className="space-y-2">

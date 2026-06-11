@@ -1,0 +1,1 @@
+INSERT INTO saas_plans (id, name, base_price, base_users, extra_user_price) VALUES ('platina', 'Platina', 1990.00, 15, 150.00) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, base_price = EXCLUDED.base_price, base_users = EXCLUDED.base_users, extra_user_price = EXCLUDED.extra_user_price;

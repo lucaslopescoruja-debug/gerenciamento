@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 
 interface PlanGuardProps {
   children: React.ReactNode
-  requiredPlan: 'bronze' | 'prata' | 'ouro'
+  requiredPlan: 'bronze' | 'prata' | 'ouro' | 'platina'
 }
 
 export function PlanGuard({ children, requiredPlan }: PlanGuardProps) {
@@ -17,7 +17,8 @@ export function PlanGuard({ children, requiredPlan }: PlanGuardProps) {
 
   let isAllowed = true
   if (requiredPlan === 'prata' && plan === 'bronze') isAllowed = false
-  if (requiredPlan === 'ouro' && plan !== 'ouro') isAllowed = false
+  if (requiredPlan === 'ouro' && (plan === 'bronze' || plan === 'prata')) isAllowed = false
+  if (requiredPlan === 'platina' && plan !== 'platina') isAllowed = false
 
   if (!isAllowed) {
     return (
@@ -30,7 +31,7 @@ export function PlanGuard({ children, requiredPlan }: PlanGuardProps) {
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-foreground">Recurso Premium</h2>
             <p className="text-muted-foreground">
-              Esta funcionalidade é exclusiva para assinantes do plano <strong>{requiredPlan === 'ouro' ? 'Ouro' : 'Prata'}</strong>.
+              Esta funcionalidade é exclusiva para assinantes do plano <strong>{requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1)}</strong>.
             </p>
           </div>
 
@@ -45,12 +46,18 @@ export function PlanGuard({ children, requiredPlan }: PlanGuardProps) {
                 </>
               )}
               {requiredPlan === 'ouro' && (
-                <>
-                  <li>Aplicativo exclusivo para Motoristas</li>
-                  <li>Assinatura digital na tela do celular</li>
-                  <li>Comprovantes (POD) gerados em PDF</li>
-                  <li>Acompanhamento em tempo real das entregas</li>
-                </>
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1 mb-6">
+                  <li>Rotas e Entregas (Mobile)</li>
+                  <li>Assinatura Digital</li>
+                  <li>Motoristas e Ajudantes</li>
+                </ul>
+              )}
+              {requiredPlan === 'platina' && (
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1 mb-6">
+                  <li>Força de Vendas e CRM</li>
+                  <li>Sincronização com ERP Maxiprod</li>
+                  <li>Representantes Comerciais</li>
+                </ul>
               )}
             </ul>
           </div>

@@ -92,6 +92,7 @@ export default function AppLayout() {
   const getPlanRequirement = (path: string) => {
     if (path === '/cargas') return 'prata'
     if (path === '/entregas') return 'ouro'
+    if (path.startsWith('/vendas') || path.startsWith('/cadastros')) return 'platina'
     return 'bronze'
   }
 
@@ -101,7 +102,8 @@ export default function AppLayout() {
     
     if (requirement === 'bronze') return false
     if (requirement === 'prata' && plan === 'bronze') return true
-    if (requirement === 'ouro' && plan !== 'ouro') return true
+    if (requirement === 'ouro' && (plan === 'bronze' || plan === 'prata')) return true
+    if (requirement === 'platina' && plan !== 'platina') return true
     return false
   }
 

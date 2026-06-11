@@ -237,9 +237,9 @@ export default function AccessControl() {
                   <option value="admin">Administrador Geral</option>
                   <option value="gestor">Gestor</option>
                   <option value="conferente">Conferente</option>
-                  {(!company?.plan || company.plan === 'ouro') && <option value="motorista">Motorista</option>}
-                  {(!company?.plan || company.plan === 'ouro') && <option value="ajudante">Ajudante</option>}
-                  <option value="vendedor">Vendedor</option>
+                  {(company?.plan === 'ouro' || company?.plan === 'platina') && <option value="motorista">Motorista</option>}
+                  {(company?.plan === 'ouro' || company?.plan === 'platina') && <option value="ajudante">Ajudante</option>}
+                  {company?.plan === 'platina' && <option value="vendedor">Vendedor</option>}
                 </select>
               </div>
 
@@ -257,10 +257,10 @@ export default function AccessControl() {
                       <span className="text-sm">Gerenciar Cargas/Rotas</span>
                     </label>
                   )}
-                  {(!company?.plan || company.plan === 'ouro') && (
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Acessar Módulo Entregas</span>
+                  {(company?.plan === 'ouro' || company?.plan === 'platina') && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="rounded" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} />
+                      <span className="text-sm">Realizar Entregas (Mobile)</span>
                     </label>
                   )}
                   <label className="flex items-center gap-3 cursor-pointer">
