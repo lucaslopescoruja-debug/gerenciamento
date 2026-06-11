@@ -66,7 +66,7 @@ export default function CartReview() {
         notes
       }
 
-      const orderItemsPayload = items.map(i => ({
+      const orderItemsPayload = items.map((i: any) => ({
         product_id: i.product_id,
         quantity: i.quantity,
         unit_price: i.price,
@@ -74,7 +74,15 @@ export default function CartReview() {
         total_price: (i.price * i.quantity) * (1 - (discountPerc / 100))
       }))
 
-      return salesApi.createSalesOrder(orderPayload, orderItemsPayload)
+      const createdOrder = await salesApi.createSalesOrder(orderPayload)
+      
+      const orderItemsToInsert = orderItemsPayload.map(item => ({
+        ...item,
+        sales_order_id: createdOrder.id
+      }))
+      
+      await salesApi.addSalesOrderItems(orderItemsToInsert)
+      return createdOrder
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
@@ -124,7 +132,7 @@ export default function CartReview() {
             <Button variant="link" className="h-auto p-0 text-primary text-xs" onClick={() => navigate('/vendas/novo-pedido/produtos')}>Editar</Button>
           </div>
           <div className="space-y-3 divide-y divide-gray-50">
-            {items.map(item => (
+            {items.map((item: any) => (
               <div key={item.product_id} className="pt-3 first:pt-0 flex justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 leading-tight truncate">{item.name}</p>

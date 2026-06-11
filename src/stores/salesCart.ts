@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create, StoreApi } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export interface CartItem {
@@ -40,10 +40,10 @@ export const useSalesCart = create<SalesCartStore>()(
       items: [],
       notes: '',
 
-      setCustomer: (id, priceTableId) => set({ customer_id: id, price_table_id: priceTableId, items: [] }),
-      setPaymentCondition: (id) => set({ payment_condition_id: id }),
+      setCustomer: (id: string, priceTableId: string | null) => set({ customer_id: id, price_table_id: priceTableId, items: [] }),
+      setPaymentCondition: (id: string) => set({ payment_condition_id: id }),
       
-      addItem: (item) => set((state) => {
+      addItem: (item: CartItem) => set((state: SalesCartStore) => {
         const existing = state.items.find(i => i.product_id === item.product_id)
         if (existing) {
           return {
@@ -57,11 +57,11 @@ export const useSalesCart = create<SalesCartStore>()(
         return { items: [...state.items, item] }
       }),
 
-      removeItem: (productId) => set((state) => ({
+      removeItem: (productId: string) => set((state: SalesCartStore) => ({
         items: state.items.filter(i => i.product_id !== productId)
       })),
 
-      updateQuantity: (productId, quantity) => set((state) => {
+      updateQuantity: (productId: string, quantity: number) => set((state: SalesCartStore) => {
         if (quantity <= 0) {
           return { items: state.items.filter(i => i.product_id !== productId) }
         }
@@ -72,7 +72,7 @@ export const useSalesCart = create<SalesCartStore>()(
         }
       }),
 
-      setNotes: (notes) => set({ notes }),
+      setNotes: (notes: string) => set({ notes }),
 
       clearCart: () => set({
         customer_id: null,
@@ -84,12 +84,12 @@ export const useSalesCart = create<SalesCartStore>()(
 
       getTotal: () => {
         const { items } = get()
-        return items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+        return items.reduce((acc: number, item: CartItem) => acc + (item.price * item.quantity), 0)
       },
 
       getItemsCount: () => {
         const { items } = get()
-        return items.reduce((acc, item) => acc + item.quantity, 0)
+        return items.reduce((acc: number, item: CartItem) => acc + item.quantity, 0)
       }
     }),
     {

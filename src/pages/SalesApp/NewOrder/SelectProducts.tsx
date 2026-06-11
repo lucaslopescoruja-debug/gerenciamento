@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { productsApi } from '@/api/products'
 import { priceTablesApi } from '@/api/priceTables'
-import { useSalesCart, CartItem } from '@/stores/salesCart'
+import { useSalesCart } from '@/stores/salesCart'
+import type { CartItem } from '@/stores/salesCart'
 import { Search, ArrowLeft, ShoppingCart, Info } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -26,11 +27,12 @@ export default function SelectProducts() {
     queryFn: productsApi.getProducts,
   })
 
-  const { data: priceTableItems = [] } = useQuery({
-    queryKey: ['price_table_items', price_table_id],
-    queryFn: () => priceTablesApi.getPriceTableItems(price_table_id!),
+  const { data: priceTableData } = useQuery({
+    queryKey: ['price_table', price_table_id],
+    queryFn: () => priceTablesApi.getPriceTable(price_table_id!),
     enabled: !!price_table_id,
   })
+  const priceTableItems = priceTableData?.price_table_items || []
 
   const cartMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -39,11 +41,11 @@ export default function SelectProducts() {
   }, [items])
 
   const productsWithPrices = useMemo(() => {
-    return products.map(product => {
-      let finalPrice = product.price || 0
+    return products.map((product: any) => {
+      let finalPrice = 0
       
       if (price_table_id) {
-        const tableItem = priceTableItems.find(pti => pti.product_id === product.id)
+        const tableItem = priceTableItems.find((pti: any) => pti.product_id === product.id)
         if (tableItem) {
           finalPrice = tableItem.price
         }
@@ -60,7 +62,7 @@ export default function SelectProducts() {
   const filteredProducts = productsWithPrices.filter(p => {
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      return p.name.toLowerCase().includes(term) || p.code?.toLowerCase().includes(term)
+      return p.description.toLowerCase().includes(term) || p.code?.toLowerCase().includes(term)
     }
     return true
   })
@@ -69,11 +71,11 @@ export default function SelectProducts() {
     if (product.cartQuantity === 0) {
       addItem({
         product_id: product.id,
-        name: product.name,
+        name: product.description,
         code: product.code || '',
         price: product.finalPrice,
         quantity: 1,
-        stock: product.current_stock || 0
+        stock: product.stock || 0
       })
     } else {
       updateQuantity(product.id, product.cartQuantity + 1)
@@ -117,17 +119,17 @@ export default function SelectProducts() {
         ) : (
           <div className="space-y-2">
             {filteredProducts.map(product => {
-              const isOutOfStock = (product.current_stock || 0) <= 0
+              const isOutOfStock = (product.stock || 0) <= 0
               
               return (
                 <div key={product.id} className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between gap-3 ${product.cartQuantity > 0 ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}>
                   <div className="flex-1 min-w-0 py-1">
                     <p className="text-xs text-gray-500 font-mono mb-0.5">{product.code}</p>
-                    <h3 className="font-bold text-sm text-gray-900 leading-tight mb-1">{product.name}</h3>
+                    <h3 className="font-bold text-sm text-gray-900 leading-tight mb-1">{product.description}</h3>
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className="font-bold text-emerald-600">{formatCurrency(product.finalPrice)}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                        Estoque: {product.current_stock || 0}
+                        Estoque: {product.stock || 0}
                       </span>
                     </div>
                   </div>
