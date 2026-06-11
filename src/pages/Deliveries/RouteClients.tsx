@@ -201,6 +201,44 @@ export default function RouteClients() {
           if (!row || row.length === 0) continue
           const rowStr = row.join(' ').trim()
           
+          const col1 = typeof row[0] === 'string' ? row[0].trim() : ''
+          const col2 = typeof row[1] === 'string' ? row[1].trim() : ''
+          const col3 = typeof row[2] === 'string' ? row[2].trim() : ''
+
+          // ==== TEMPLATE ESTOQUE FACIL ====
+          if (col1 === 'Numero de pedido:' || col2 === 'Numero de pedido:') {
+             currentOrderNumber = (col1 === 'Numero de pedido:' ? col2 : col3).replace(/[^\d]/g, '')
+          }
+          if (col1 === 'Razao Social:' || col2 === 'Razao Social:') {
+             const rawName = col1 === 'Razao Social:' ? col2 : col3
+             currentClientName = rawName.replace(/[()]/g, '').trim()
+             currentClientKey = currentOrderNumber ? `${currentClientName}_${currentOrderNumber}` : currentClientName
+             
+             if (!clientsMap.has(currentClientKey)) {
+                clientsMap.set(currentClientKey, {
+                  name: currentClientName,
+                  customer_id: null,
+                  document: '',
+                  address: '',
+                  phone: '',
+                  notes: '',
+                  order_number: currentOrderNumber || null,
+                  items: []
+                })
+             }
+          }
+          if (col1 === 'CNPJ:' || col2 === 'CNPJ:') {
+             if (currentClientKey && clientsMap.has(currentClientKey)) {
+                clientsMap.get(currentClientKey).document = String(col1 === 'CNPJ:' ? col2 : col3).replace(/[^\d]/g, '')
+             }
+          }
+          if (col1 === 'Endereço' || col2 === 'Endereço') {
+             if (currentClientKey && clientsMap.has(currentClientKey)) {
+                clientsMap.get(currentClientKey).address = String(col1 === 'Endereço' ? col2 : col3).trim()
+             }
+          }
+
+          // ==== TEMPLATE ANTIGO ====
           if (rowStr.toLowerCase().includes('pedido de venda')) {
             const match = rowStr.match(/pedido de venda (\d+)/i)
             if (match) currentOrderNumber = match[1]
@@ -254,13 +292,15 @@ export default function RouteClients() {
           }
 
           if (typeof firstCell === 'string' && (firstCell.trim().toLowerCase().includes('cnpj:') || firstCell.trim().toLowerCase().includes('cpf:'))) {
+            // Só se o parser de template antigo passar por aqui
             const doc = firstCell.replace(/cnpj\/cpf:|cnpj:|cpf:/i, '').replace(/[^\d]/g, '').trim()
             if (doc && currentClientKey && clientsMap.has(currentClientKey)) {
                clientsMap.get(currentClientKey).document = doc
             }
           }
 
-          if (typeof firstCell === 'string' && firstCell.trim().toLowerCase() === 'observações') {
+          // Observações comum a ambos os templates
+          if (typeof firstCell === 'string' && (firstCell.trim().toLowerCase() === 'observações' || firstCell.trim().toLowerCase() === 'observações:')) {
              if (data[i+1]) {
                const obsRow = data[i+1]
                const obsCell = obsRow.find(c => c)
@@ -274,6 +314,7 @@ export default function RouteClients() {
              }
           }
 
+          // ITEMS (Comum aos dois templates, com desvios condicionais)
           if (currentClientKey && clientsMap.has(currentClientKey)) {
              const codeCell = row[2]
              const hasRowNumber = (row[0] && /^\d+$/.test(String(row[0]).trim())) || (row[1] && /^\d+$/.test(String(row[1]).trim()))
@@ -293,11 +334,19 @@ export default function RouteClients() {
                      })
                    }
 
-                   const descCell = row[4] || row[5] || row[3]
+                   // Decide based on whether row[11] exists
+                   let descCell = row[5] || row[4] || row[3]
+                   let qtyCell = row[11] || row[10] || row[12]
+                   
+                   if (row[11] === undefined && row[10] === undefined && row[12] === undefined) {
+                     // Probably EstoqueFacil
+                     descCell = row[3]
+                     qtyCell = row[4]
+                   }
+
                    let finalDesc = foundProduct ? foundProduct.description : (descCell ? String(descCell).trim() : 'Produto sem descrição')
                    let finalCode = foundProduct ? foundProduct.code : strCode
 
-                   const qtyCell = row[11] || row[10] || row[12]
                    let qty = 1
                    if (qtyCell) {
                       const strQty = String(qtyCell).trim()
