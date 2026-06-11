@@ -1,13 +1,12 @@
 import { supabase } from '@/lib/supabase'
-import { PaymentCondition, CustomerPaymentCondition, SalesOrder, SalesOrderItem } from '@/types/database'
-import { getCurrentCompanyId } from './company'
+import type { PaymentCondition, CustomerPaymentCondition, SalesOrder, SalesOrderItem } from '@/types/database'
+import { currentCompanyId } from '@/contexts/AuthContext'
 
 export const salesApi = {
   // ============================================
   // Payment Conditions
   // ============================================
   async getPaymentConditions() {
-    const currentCompanyId = await getCurrentCompanyId()
     if (!currentCompanyId) return []
 
     const { data, error } = await supabase
@@ -21,7 +20,6 @@ export const salesApi = {
   },
 
   async createPaymentCondition(condition: Omit<PaymentCondition, 'id' | 'company_id' | 'created_at' | 'updated_at'>) {
-    const currentCompanyId = await getCurrentCompanyId()
     if (!currentCompanyId) throw new Error('Empresa não selecionada')
 
     const { data, error } = await supabase
@@ -92,7 +90,6 @@ export const salesApi = {
   // Sales Orders
   // ============================================
   async getSalesOrders() {
-    const currentCompanyId = await getCurrentCompanyId()
     if (!currentCompanyId) return []
 
     const { data, error } = await supabase
@@ -133,7 +130,6 @@ export const salesApi = {
   },
 
   async createSalesOrder(order: Omit<SalesOrder, 'id' | 'company_id' | 'created_at' | 'updated_at' | 'customer' | 'sales_rep' | 'payment_condition' | 'price_table' | 'items'>) {
-    const currentCompanyId = await getCurrentCompanyId()
     if (!currentCompanyId) throw new Error('Empresa não selecionada')
 
     const { data, error } = await supabase
