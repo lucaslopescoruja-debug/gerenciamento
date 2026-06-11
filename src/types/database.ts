@@ -109,7 +109,7 @@ export interface Customer {
   created_at: string
   updated_at: string
   equipments?: CustomerEquipment[]
-  sales_rep?: SalesRep | null
+  sales_rep_obj?: SalesRep | null
 }
 
 export interface SalesRep {
