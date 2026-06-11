@@ -39,7 +39,10 @@ export default function PriceTablesList() {
   const filteredTables = useMemo(() => {
     return priceTables.filter(t => {
       const s = searchTerm.toLowerCase()
-      return (t.name || '').toLowerCase().includes(s)
+      return (
+        (t.name || '').toLowerCase().includes(s) ||
+        (t.code || '').toLowerCase().includes(s)
+      )
     })
   }, [priceTables, searchTerm])
 
@@ -69,7 +72,7 @@ export default function PriceTablesList() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar tabela de preço..."
+            placeholder="Buscar por código ou descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9 h-10 bg-background/50 border-border/50 focus:bg-background transition-colors"
@@ -82,16 +85,17 @@ export default function PriceTablesList() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium w-full">Nome da Tabela</th>
+                <th className="px-4 py-3 font-medium w-24">Status</th>
+                <th className="px-4 py-3 font-medium w-32">Código</th>
+                <th className="px-4 py-3 font-medium">Descrição</th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Carregando tabelas de preço...</td></tr>
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Carregando tabelas de preço...</td></tr>
               ) : filteredTables.length === 0 ? (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Nenhuma tabela encontrada.</td></tr>
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhuma tabela encontrada.</td></tr>
               ) : (
                 filteredTables.map(table => (
                   <tr key={table.id} className="hover:bg-muted/30 transition-colors group">
@@ -104,9 +108,8 @@ export default function PriceTablesList() {
                         {table.active ? 'Ativa' : 'Inativa'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{table.name}</div>
-                    </td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">{table.code || '-'}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{table.name}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Link to={`/cadastros/tabelas-de-preco/${table.id}/editar`}>

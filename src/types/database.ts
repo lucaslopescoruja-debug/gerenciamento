@@ -141,10 +141,23 @@ export interface Region {
 export interface PriceTable {
   id: string
   company_id: string
+  code: string | null
   name: string
   active: boolean
   created_at: string
   updated_at: string
+}
+
+export interface PriceTableItem {
+  id: string
+  price_table_id: string
+  product_id: string
+  price: number
+  discount_percent: number | null
+  max_discount_percent: number | null
+  created_at: string
+  updated_at: string
+  product?: Product // Relation
 }
 
 export interface CustomerEquipment {
