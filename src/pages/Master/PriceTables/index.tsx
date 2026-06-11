@@ -166,13 +166,29 @@ export default function PriceTablesList() {
   }
 
   const filteredTables = useMemo(() => {
-    return priceTables.filter(t => {
+    let result = priceTables.filter(t => {
       const s = searchTerm.toLowerCase()
       return (
         (t.name || '').toLowerCase().includes(s) ||
         (t.code || '').toLowerCase().includes(s)
       )
     })
+
+    result.sort((a, b) => {
+      const codeA = a.code || ''
+      const codeB = b.code || ''
+      
+      const numA = parseInt(codeA, 10)
+      const numB = parseInt(codeB, 10)
+
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB
+      }
+
+      return codeA.localeCompare(codeB)
+    })
+
+    return result
   }, [priceTables, searchTerm])
 
   if (!isManager) {
