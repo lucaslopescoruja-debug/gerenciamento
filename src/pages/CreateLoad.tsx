@@ -257,7 +257,9 @@ export default function CreateLoad() {
         const hasClientData = data.some(row => {
           if (!row) return false
           const firstCell = row.find(c => c)
-          return typeof firstCell === 'string' && (firstCell.trim().startsWith('À ') || row.includes('Numero de pedido:') || row.includes('Razao Social:'))
+          const isAntigo = typeof firstCell === 'string' && firstCell.trim().startsWith('À ')
+          const isNovo = row.some(c => typeof c === 'string' && (c.includes('Numero de pedido') || c.includes('Razao Social')))
+          return isAntigo || isNovo
         })
 
         if (hasClientData) {
