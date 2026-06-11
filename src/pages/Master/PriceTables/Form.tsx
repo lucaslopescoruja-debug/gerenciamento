@@ -28,8 +28,7 @@ export default function PriceTableForm() {
     product_id: '',
     price: 0,
     discount_percent: 0,
-    max_discount_percent: 0,
-    commission_percent: 0
+    max_discount_percent: 0
   })
 
   // Modal State for Import By Group
@@ -139,8 +138,7 @@ export default function PriceTableForm() {
         product_id: item.product_id,
         price: item.price,
         discount_percent: item.discount_percent || 0,
-        max_discount_percent: item.max_discount_percent || 0,
-        commission_percent: (item as any).commission_percent || 0
+        max_discount_percent: item.max_discount_percent || 0
       })
     } else {
       setEditingItemId(null)
@@ -148,8 +146,7 @@ export default function PriceTableForm() {
         product_id: '',
         price: 0,
         discount_percent: 0,
-        max_discount_percent: 0,
-        commission_percent: 0
+        max_discount_percent: 0
       })
     }
     setIsModalOpen(true)
