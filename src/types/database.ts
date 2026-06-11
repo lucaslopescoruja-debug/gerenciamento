@@ -5,7 +5,7 @@
 export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT' | 'RECEIPT' | 'RETURN'
 export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
-export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista' | 'ajudante'
+export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista' | 'ajudante' | 'vendedor'
 
 export interface UserPermissions {
   can_view_dashboard: boolean

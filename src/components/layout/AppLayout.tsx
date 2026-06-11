@@ -21,6 +21,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' },
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
   { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
+  { label: 'Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_products' },
   { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
 ] as const
@@ -30,6 +31,7 @@ const crmItems = [
   { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
   { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_products' },
   { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' },
+  { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' },
 ] as const
 
 export default function AppLayout() {

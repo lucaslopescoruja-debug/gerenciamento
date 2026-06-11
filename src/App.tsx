@@ -71,6 +71,8 @@ import RegionsList from './pages/Master/Regions/index'
 import RegionForm from './pages/Master/Regions/Form'
 import PriceTablesList from './pages/Master/PriceTables/index'
 import PriceTableForm from './pages/Master/PriceTables/Form'
+import PaymentConditionsList from './pages/Master/PaymentConditions/index'
+import PaymentConditionForm from './pages/Master/PaymentConditions/Form'
 
 import DeliveriesList from './pages/Deliveries/index'
 import CreateDelivery from './pages/Deliveries/CreateDelivery'
@@ -81,6 +83,7 @@ import ReturnConference from './pages/Deliveries/ReturnConference'
 import SignaturePad from './pages/Deliveries/SignaturePad'
 import ApprovalsPage from './pages/Approvals'
 import ClientHistory from './pages/ClientHistory'
+import SalesManagement from './pages/SalesManagement/index'
 import { PlanGuard } from './components/PlanGuard'
 
 function App() {
@@ -127,6 +130,9 @@ function App() {
             <Route path="/liberacoes" element={<ApprovalsPage />} />
             <Route path="/historico" element={<PlanGuard requiredPlan="ouro"><ClientHistory /></PlanGuard>} />
 
+            {/* Sales Management */}
+            <Route path="/vendas/gestao" element={<SalesManagement />} />
+
             <Route path="/acesso" element={<AccessControl />} />
 
 
@@ -145,6 +151,10 @@ function App() {
             <Route path="cadastros/tabelas-de-preco" element={<PriceTablesList />} />
             <Route path="cadastros/tabelas-de-preco/nova" element={<PriceTableForm />} />
             <Route path="cadastros/tabelas-de-preco/:id/editar" element={<PriceTableForm />} />
+
+            <Route path="cadastros/condicoes-pagamento" element={<PaymentConditionsList />} />
+            <Route path="cadastros/condicoes-pagamento/nova" element={<PaymentConditionForm />} />
+            <Route path="cadastros/condicoes-pagamento/:id/editar" element={<PaymentConditionForm />} />
 
 
             {/* SaaS Master Routes */}

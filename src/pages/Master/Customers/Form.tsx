@@ -6,6 +6,7 @@ import { customersApi } from '@/api/customers'
 import { salesRepsApi } from '@/api/salesReps'
 import { regionsApi } from '@/api/regions'
 import { priceTablesApi } from '@/api/priceTables'
+import { salesApi } from '@/api/sales'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
@@ -43,7 +44,7 @@ export default function CustomerForm() {
     credit_limit: 0,
     price_table_id: '',
     sales_rep_id: '',
-    payment_condition: '',
+    payment_condition_ids: [] as string[],
     allow_unit_price_change: false,
     region_id: '',
     equipments: [] as any[]
@@ -62,6 +63,17 @@ export default function CustomerForm() {
   const { data: priceTables = [] } = useQuery({
     queryKey: ['priceTables'],
     queryFn: priceTablesApi.getPriceTables
+  })
+
+  const { data: paymentConditions = [] } = useQuery({
+    queryKey: ['payment_conditions'],
+    queryFn: salesApi.getPaymentConditions
+  })
+
+  const { data: customerConditions = [] } = useQuery({
+    queryKey: ['customer_payment_conditions', id],
+    queryFn: () => salesApi.getCustomerPaymentConditions(id!),
+    enabled: isEditing
   })
 
   const { data: customer, isLoading } = useQuery({
@@ -94,20 +106,26 @@ export default function CustomerForm() {
         email: customer.email || '',
         credit_limit: customer.credit_limit || 0,
         price_table_id: customer.price_table_id || '',
-        payment_condition: customer.payment_condition || '',
+        payment_condition_ids: customerConditions.map(c => c.payment_condition_id),
         allow_unit_price_change: customer.allow_unit_price_change || false,
         region_id: customer.region_id || '',
         sales_rep_id: customer.sales_rep_id || '',
         equipments: customer.equipments || []
       })
     }
-  }, [customer])
+  }, [customer, customerConditions])
 
   const mutation = useMutation({
-    mutationFn: (data: any) => isEditing ? customersApi.updateCustomer(id!, data) : customersApi.createCustomer(data),
+    mutationFn: async (data: any) => {
+      const { payment_condition_ids, ...customerData } = data
+      const result = isEditing ? await customersApi.updateCustomer(id!, customerData) : await customersApi.createCustomer(customerData)
+      await salesApi.setCustomerPaymentConditions(result.id, payment_condition_ids)
+      return result
+    },
     onSuccess: () => {
       toast.success(`Cliente ${isEditing ? 'atualizado' : 'cadastrado'} com sucesso!`)
       queryClient.invalidateQueries({ queryKey: ['customers'] })
+      queryClient.invalidateQueries({ queryKey: ['customer_payment_conditions'] })
       navigate('/cadastros/clientes')
     },
     onError: (e: any) => {
@@ -410,13 +428,28 @@ export default function CustomerForm() {
               </select>
             </div>
 
-            <div className="md:col-span-4">
-              <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Condição de Pagamento</label>
-              <Input 
-                value={formData.payment_condition} 
-                onChange={e => setFormData({...formData, payment_condition: e.target.value})} 
-                placeholder="Ex: 30 DDL"
-              />
+            <div className="md:col-span-8">
+              <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">Condições de Pagamento Permitidas</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {paymentConditions.length === 0 && <span className="text-sm text-muted-foreground">Nenhuma condição cadastrada.</span>}
+                {paymentConditions.map(pc => (
+                  <label key={pc.id} className="flex items-center gap-2 p-2 border border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                    <input 
+                      type="checkbox"
+                      checked={formData.payment_condition_ids.includes(pc.id)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({ ...prev, payment_condition_ids: [...prev.payment_condition_ids, pc.id] }))
+                        } else {
+                          setFormData(prev => ({ ...prev, payment_condition_ids: prev.payment_condition_ids.filter(id => id !== pc.id) }))
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-primary text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm">{pc.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="md:col-span-4">

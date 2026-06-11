@@ -13,15 +13,16 @@ import { toast } from '@/components/ui/toaster'
 import { ShieldCheck, Plus, Pencil, Trash2, UserCircle, KeyRound, AlertTriangle } from 'lucide-react'
 import { hashPassword, DEFAULT_PASSWORD_HASH } from '@/utils/crypto'
 
-const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor', conferente: 'Conferente', motorista: 'Motorista', ajudante: 'Ajudante' }
-const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive', ajudante: 'destructive' }
+const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor', conferente: 'Conferente', motorista: 'Motorista', ajudante: 'Ajudante', vendedor: 'Vendedor' }
+const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive', ajudante: 'destructive', vendedor: 'default' }
 
 const defaultPermissions: Record<UserRole, UserPermissions> = {
   admin: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
   gestor: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
-  conferente: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
+  conferente: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
   motorista: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true },
-  ajudante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true }
+  ajudante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true },
+  vendedor: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false }
 }
 
 export default function AccessControl() {
@@ -140,7 +141,7 @@ export default function AccessControl() {
 
   const usersNeedingReset = users.filter(u => u.reset_requested)
 
-  const roleWeight: Record<UserRole, number> = { admin: 1, gestor: 2, conferente: 3, motorista: 4, ajudante: 5 }
+  const roleWeight: Record<UserRole, number> = { admin: 1, gestor: 2, conferente: 3, motorista: 4, ajudante: 5, vendedor: 6 }
   const sortedUsers = [...users].sort((a, b) => {
     if (roleWeight[a.role] !== roleWeight[b.role]) return roleWeight[a.role] - roleWeight[b.role]
     return a.name.localeCompare(b.name)
@@ -238,6 +239,7 @@ export default function AccessControl() {
                   <option value="conferente">Conferente</option>
                   {(!company?.plan || company.plan === 'ouro') && <option value="motorista">Motorista</option>}
                   {(!company?.plan || company.plan === 'ouro') && <option value="ajudante">Ajudante</option>}
+                  <option value="vendedor">Vendedor</option>
                 </select>
               </div>
 
