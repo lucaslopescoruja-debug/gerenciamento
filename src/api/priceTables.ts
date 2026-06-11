@@ -67,6 +67,16 @@ export const priceTablesApi = {
     return data
   },
 
+  async bulkAddPriceTableItems(items: Omit<any, 'id' | 'created_at' | 'updated_at'>[]) {
+    if (items.length === 0) return []
+    const { data, error } = await supabase
+      .from('price_table_items')
+      .insert(items)
+      .select()
+    if (error) throw error
+    return data
+  },
+
   async updatePriceTableItem(id: string, updates: any) {
     const { data, error } = await supabase
       .from('price_table_items')

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Save, Plus, Edit2, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Save, Plus, Edit2, Trash2, X, DownloadCloud } from 'lucide-react'
 import { priceTablesApi } from '@/api/priceTables'
 import { productsApi } from '@/api/products'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,7 @@ export default function PriceTableForm() {
     name: ''
   })
 
-  // Modal State
+  // Modal State for Single Item
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [itemForm, setItemForm] = useState({
@@ -31,6 +31,10 @@ export default function PriceTableForm() {
     max_discount_percent: 0,
     commission_percent: 0
   })
+
+  // Modal State for Import By Group
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
 
   const { data: priceTable, isLoading } = useQuery({
     queryKey: ['priceTable', id],
@@ -42,6 +46,15 @@ export default function PriceTableForm() {
     queryKey: ['products'],
     queryFn: productsApi.getProducts
   })
+
+  // Derived groups
+  const productGroups = useMemo(() => {
+    const groups = new Set<string>()
+    products.forEach(p => {
+      if (p.group_name) groups.add(p.group_name)
+    })
+    return Array.from(groups).sort()
+  }, [products])
 
   useEffect(() => {
     if (priceTable) {
@@ -97,6 +110,19 @@ export default function PriceTableForm() {
     }
   })
 
+  const bulkImportMutation = useMutation({
+    mutationFn: priceTablesApi.bulkAddPriceTableItems,
+    onSuccess: (data) => {
+      toast.success(`${data.length} produtos importados com sucesso!`)
+      queryClient.invalidateQueries({ queryKey: ['priceTable', id] })
+      setIsImportModalOpen(false)
+      setSelectedGroups([])
+    },
+    onError: (e: any) => {
+      toast.error(`Erro ao importar: ${e.message}`)
+    }
+  })
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name) {
@@ -140,6 +166,38 @@ export default function PriceTableForm() {
       return
     }
     saveItemMutation.mutate(itemForm)
+  }
+
+  const toggleGroup = (group: string) => {
+    setSelectedGroups(prev => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group])
+  }
+
+  const handleImportByGroups = () => {
+    if (selectedGroups.length === 0) {
+      toast.error('Selecione pelo menos um grupo.')
+      return
+    }
+    const currentItems = priceTable?.price_table_items || []
+    const existingProductIds = new Set(currentItems.map((i: any) => i.product_id))
+
+    const productsToImport = products.filter(p => p.group_name && selectedGroups.includes(p.group_name) && !existingProductIds.has(p.id))
+
+    if (productsToImport.length === 0) {
+      toast.info('Nenhum produto novo encontrado para importar nestes grupos.')
+      setIsImportModalOpen(false)
+      setSelectedGroups([])
+      return
+    }
+
+    const payload = productsToImport.map(p => ({
+      price_table_id: id,
+      product_id: p.id,
+      price: 0,
+      discount_percent: 0,
+      max_discount_percent: 0
+    }))
+
+    bulkImportMutation.mutate(payload)
   }
 
   if (isEditing && isLoading) {
@@ -204,11 +262,16 @@ export default function PriceTableForm() {
       {/* ITEMS SECTION */}
       {isEditing && (
         <div className="glass-card overflow-hidden">
-          <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/10">
+          <div className="p-4 border-b border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/10">
             <h2 className="text-lg font-semibold">Produtos/Serviços</h2>
-            <Button onClick={() => handleOpenItemModal()} size="sm" className="shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-              <Plus className="h-4 w-4 mr-2" /> Novo Produto
-            </Button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button onClick={() => setIsImportModalOpen(true)} variant="secondary" size="sm" className="shadow-sm hover:scale-105 transition-transform flex-1 sm:flex-auto">
+                <DownloadCloud className="h-4 w-4 mr-2" /> Importar por Grupo
+              </Button>
+              <Button onClick={() => handleOpenItemModal()} size="sm" className="shadow-lg shadow-primary/20 hover:scale-105 transition-transform flex-1 sm:flex-auto">
+                <Plus className="h-4 w-4 mr-2" /> Novo Produto
+              </Button>
+            </div>
           </div>
           
           <div className="overflow-x-auto">
@@ -225,7 +288,12 @@ export default function PriceTableForm() {
               </thead>
               <tbody className="divide-y divide-border/50">
                 {items.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto cadastrado nesta tabela.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <p>Nenhum produto cadastrado nesta tabela.</p>
+                      <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>Importar Produtos Cadastrados</Button>
+                    </div>
+                  </td></tr>
                 ) : (
                   items.map(item => (
                     <tr key={item.id} className="hover:bg-muted/30 transition-colors group">
@@ -259,8 +327,9 @@ export default function PriceTableForm() {
               </tbody>
             </table>
           </div>
-          <div className="p-3 border-t border-border/50 text-xs text-muted-foreground text-right bg-muted/10">
-            Total de {items.length} itens
+          <div className="p-3 border-t border-border/50 text-xs text-muted-foreground flex justify-between bg-muted/10">
+            <span>Para editar o preço ou os descontos, clique no ícone do lápis.</span>
+            <span>Total de {items.length} itens</span>
           </div>
         </div>
       )}
@@ -284,6 +353,7 @@ export default function PriceTableForm() {
                   className="w-full flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={itemForm.product_id}
                   onChange={e => setItemForm({ ...itemForm, product_id: e.target.value })}
+                  disabled={Boolean(editingItemId)} // Prevent changing product when editing
                 >
                   <option value="" disabled>Selecione um produto</option>
                   {products.map(p => (
@@ -299,7 +369,7 @@ export default function PriceTableForm() {
                     required
                     type="number"
                     step="0.01"
-                    min="0.01"
+                    min="0"
                     value={itemForm.price || ''}
                     onChange={e => setItemForm({ ...itemForm, price: parseFloat(e.target.value) || 0 })}
                   />
@@ -338,6 +408,62 @@ export default function PriceTableForm() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT BY GROUP MODAL */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-lg shadow-2xl border border-border flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-border flex justify-between items-center bg-muted/20">
+              <h2 className="text-lg font-semibold">Importar por Grupos</h2>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsImportModalOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Selecione os grupos de produtos que deseja importar para esta tabela. Todos os produtos selecionados entrarão com preço zerado e poderão ser editados depois.
+              </p>
+
+              <div className="border border-border/50 rounded-md divide-y divide-border/50 max-h-60 overflow-y-auto">
+                {productGroups.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">Nenhum grupo de produtos encontrado no sistema.</div>
+                ) : (
+                  productGroups.map(group => (
+                    <label key={group} className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+                        checked={selectedGroups.includes(group)}
+                        onChange={() => toggleGroup(group)}
+                      />
+                      <span className="text-sm font-medium">{group}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setSelectedGroups(productGroups)}>Selecionar Todos</Button>
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setSelectedGroups([])}>Limpar</Button>
+              </div>
+
+              <div className="pt-6 border-t border-border flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsImportModalOpen(false)}>Cancelar</Button>
+                <Button 
+                  type="button" 
+                  onClick={handleImportByGroups} 
+                  disabled={bulkImportMutation.isPending || selectedGroups.length === 0} 
+                  className="shadow-lg shadow-primary/20"
+                >
+                  <DownloadCloud className="h-4 w-4 mr-2" />
+                  {bulkImportMutation.isPending ? 'Importando...' : 'Importar Produtos'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
