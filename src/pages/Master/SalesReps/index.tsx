@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Users } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Users, UploadCloud } from 'lucide-react'
+import Papa from 'papaparse'
 import { salesRepsApi } from '@/api/salesReps'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ export default function SalesRepsList() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const [isImporting, setIsImporting] = useState(false)
 
   const { data: reps = [], isLoading } = useQuery({
     queryKey: ['salesReps'],
@@ -29,6 +31,63 @@ export default function SalesRepsList() {
       toast.error(`Erro ao remover representante: ${e.message}`)
     }
   })
+
+  const importMutation = useMutation({
+    mutationFn: async (payload: any[]) => {
+      for (const rep of payload) {
+        await salesRepsApi.createSalesRep(rep)
+      }
+    },
+    onSuccess: () => {
+      toast.success('Representantes importados com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ['salesReps'] })
+      setIsImporting(false)
+    },
+    onError: (e: any) => {
+      toast.error(`Erro ao importar: ${e.message}`)
+      setIsImporting(false)
+    }
+  })
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        try {
+          const payload = results.data.map((row: any) => ({
+            nickname: row['Apelido'] || '',
+            legal_name: row['Razão social/Nome'] || '',
+            document: row['CNPJ/CPF'] || '',
+            phone: row['Telefone 1'] || '',
+            city: row['Município'] || '',
+            state: row['UF'] || '',
+            regions: [],
+            active: true
+          }))
+          
+          if (payload.length === 0) {
+            toast.error('O arquivo parece estar vazio ou no formato incorreto.')
+            setIsImporting(false)
+            return
+          }
+
+          importMutation.mutate(payload)
+        } catch (e: any) {
+          toast.error('Erro ao ler a planilha.')
+          setIsImporting(false)
+        }
+      },
+      error: (e) => {
+        toast.error(`Erro ao processar arquivo: ${e.message}`)
+        setIsImporting(false)
+      }
+    })
+  }
 
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`Deseja realmente excluir o representante "${name}"?`)) {
@@ -64,11 +123,27 @@ export default function SalesRepsList() {
           <p className="text-muted-foreground mt-1">Gerencie a equipe de vendas e suas regiões.</p>
         </div>
         
-        <Link to="/cadastros/representantes/novo">
-          <Button className="w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95">
-            <Plus className="mr-2 h-4 w-4" /> Novo Representante
-          </Button>
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <label className="cursor-pointer">
+            <Button type="button" variant="outline" className="w-full sm:w-auto shadow-sm" disabled={isImporting} onClick={() => document.getElementById('csv-upload')?.click()}>
+              <UploadCloud className="mr-2 h-4 w-4" /> 
+              {isImporting ? 'Importando...' : 'Importar CSV'}
+            </Button>
+            <Input 
+              id="csv-upload"
+              type="file" 
+              accept=".csv" 
+              className="hidden" 
+              onChange={handleFileUpload}
+              disabled={isImporting}
+            />
+          </label>
+          <Link to="/cadastros/representantes/novo">
+            <Button className="w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95">
+              <Plus className="mr-2 h-4 w-4" /> Novo Representante
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="glass-card p-4">
