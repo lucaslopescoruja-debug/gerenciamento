@@ -28,8 +28,7 @@ const navGroups = [
     title: 'OPERAÇÕES',
     items: [
       { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
-      { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
-      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' }
+      { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' }
     ]
   },
   {
@@ -43,7 +42,17 @@ const navGroups = [
     title: 'ESTOQUE',
     items: [
       { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_do_conference' },
-      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' }
+      { 
+        label: 'Preços e Pagamentos', 
+        icon: Tag, 
+        path: '/menu-precos', 
+        permission: 'can_manage_products',
+        children: [
+          { label: 'Tabelas de Preço', path: '/cadastros/tabelas-de-preco' },
+          { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
+          { label: 'Grupos', path: '/cadastros/grupos' }
+        ]
+      }
     ]
   },
   {
@@ -66,6 +75,12 @@ const navGroups = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [crmOpen, setCrmOpen] = useState(false)
+  const [openSubmenus, setOpenSubmenus] = useState<string[]>([])
+  
+  const toggleSubmenu = (path: string) => {
+    setOpenSubmenus(prev => prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path])
+  }
+
   const location = useLocation()
   const { theme, setTheme } = useTheme()
   const { user, company, logout, hasPermission, isMaster } = useAuth()
@@ -258,8 +273,66 @@ export default function AppLayout() {
                 <div className="space-y-0.5">
                   {group.items.map((item) => {
                     if (!hasPermission(item.permission as any)) return null;
-                    const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                    const hasChildren = item.children && item.children.length > 0;
+                    const isSubmenuOpen = openSubmenus.includes(item.path);
+                    const isActive = location.pathname === item.path || (!hasChildren && item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                    
+                    // If it has children, any child active means parent is "active"
+                    const isParentActive = hasChildren && item.children!.some(child => location.pathname.startsWith(child.path));
+                    
                     const isLocked = isFeatureLocked(item.path);
+
+                    if (hasChildren) {
+                      return (
+                        <div key={item.path} className="flex flex-col">
+                          <button
+                            onClick={() => toggleSubmenu(item.path)}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 w-full text-left",
+                              isParentActive || isSubmenuOpen
+                                ? "text-primary"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            )}
+                          >
+                            <item.icon className={cn("h-4.5 w-4.5", (isParentActive || isSubmenuOpen) && "text-primary")} />
+                            <span className="flex-1">{item.label}</span>
+                            <ChevronDown className={cn("h-4 w-4 transition-transform text-muted-foreground", isSubmenuOpen && "rotate-180")} />
+                          </button>
+                          
+                          {/* Submenu items */}
+                          <div className={cn(
+                            "overflow-hidden transition-all duration-200 ease-in-out pl-4",
+                            isSubmenuOpen ? "max-h-60 opacity-100 mt-1" : "max-h-0 opacity-0"
+                          )}>
+                            <div className="border-l-2 border-muted ml-3 space-y-1 pl-3">
+                              {item.children!.map(child => {
+                                const isChildActive = location.pathname.startsWith(child.path);
+                                const isChildLocked = isFeatureLocked(child.path);
+                                return (
+                                  <Link
+                                    key={child.path}
+                                    to={child.path}
+                                    onClick={(e) => handleNavClick(e, child.path, isChildLocked)}
+                                    className={cn(
+                                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group",
+                                      isChildActive
+                                        ? "text-primary font-semibold"
+                                        : isChildLocked 
+                                          ? "opacity-60 grayscale cursor-not-allowed text-muted-foreground" 
+                                          : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                                    )}
+                                  >
+                                    <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", isChildActive ? "bg-primary" : "bg-muted-foreground/30 group-hover:bg-muted-foreground/60")} />
+                                    {child.label}
+                                    {isChildLocked && <Lock className="h-3 w-3 ml-auto text-muted-foreground opacity-70 group-hover:text-red-400 group-hover:opacity-100 transition-colors" />}
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
 
                     return (
                       <Link
