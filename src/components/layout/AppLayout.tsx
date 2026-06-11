@@ -6,7 +6,7 @@ import {
   Settings, Users, CheckSquare, Palette, Sun, Moon, Search,
   Clock, History, UserIcon, FileSignature, Box, Building2, Banknote,
   Megaphone, StickyNote, MapPin, Bell, ShieldCheck, LogOut, Lock,
-  ChevronDown, Map, Tag, Briefcase
+  ChevronDown, Map, Tag, Briefcase, HelpCircle
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,24 +17,51 @@ import { saasApi } from '@/api/saas'
 import { toast } from '@/components/ui/toaster'
 
 
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' },
-  { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
-  { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
-  { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_manage_products' },
-  { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_products' },
-  { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
-  { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
-] as const
-
-const crmItems = [
-  { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_products' },
-  { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
-  { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_products' },
-  { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' },
-  { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' },
-  { label: 'Integração ERP', icon: Settings, path: '/cadastros/configuracoes-erp', permission: 'can_manage_products' },
-] as const
+const navGroups = [
+  {
+    title: 'VISÃO GERAL',
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' }
+    ]
+  },
+  {
+    title: 'OPERAÇÕES',
+    items: [
+      { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
+      { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
+      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' }
+    ]
+  },
+  {
+    title: 'VENDAS',
+    items: [
+      { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_manage_products' },
+      { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_products' }
+    ]
+  },
+  {
+    title: 'ESTOQUE',
+    items: [
+      { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_do_conference' },
+      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' }
+    ]
+  },
+  {
+    title: 'CRM & CADASTROS',
+    items: [
+      { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_products' },
+      { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
+      { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_products' }
+    ]
+  },
+  {
+    title: 'SISTEMA',
+    items: [
+      { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
+      { label: 'Integração ERP', icon: Settings, path: '/cadastros/configuracoes-erp', permission: 'can_manage_products' }
+    ]
+  }
+]
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -218,78 +245,46 @@ export default function AppLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 p-3 space-y-1 overflow-auto md:mt-0">
-          {/* Navigation Items - Only show if user has an active company context */}
-          {company && navItems.map((item) => {
-            let requiredPerm = item.permission as any;
-            if (item.path === '/produtos') requiredPerm = 'can_do_conference';
-
-            if (!hasPermission(requiredPerm)) return null
-            const isActive = location.pathname === item.path
-            const isLocked = isFeatureLocked(item.path)
+          {/* Grouped Navigation Items */}
+          {company && navGroups.map((group, gIdx) => {
+            const hasVisibleItems = group.items.some(item => hasPermission(item.permission as any));
+            if (!hasVisibleItems) return null;
 
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={(e) => handleNavClick(e, item.path, isLocked)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group",
-                  isActive
-                    ? "bg-primary/15 text-primary border border-primary/20"
-                    : isLocked ? "opacity-60 grayscale cursor-not-allowed hover:bg-muted/50 text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <item.icon className={cn("h-4.5 w-4.5", isActive && "text-primary")} />
-                {item.label}
-                {isLocked && <Lock className="h-3.5 w-3.5 ml-auto text-muted-foreground opacity-70 group-hover:text-red-400 group-hover:opacity-100 transition-colors" />}
-              </Link>
-            )
-          })}
-
-          {company && hasPermission('can_manage_products') && (
-            <div className="pt-2 mt-2">
-              <button
-                onClick={() => setCrmOpen(!crmOpen)}
-                className={cn(
-                  "flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                  crmOpen ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Briefcase className="h-4.5 w-4.5" />
-                  CRM & Cadastros
+              <div key={gIdx} className="mb-4">
+                <div className="px-3 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {group.title}
                 </div>
-                <ChevronDown className={cn("h-4 w-4 transition-transform", crmOpen && "rotate-180")} />
-              </button>
-              
-              {crmOpen && (
-                <div className="mt-1 space-y-1 pl-4 border-l-2 border-muted ml-3">
-                  {crmItems.map((item) => {
-                    if (!hasPermission(item.permission as any)) return null
-                    const isActive = location.pathname.startsWith(item.path)
-                    const isLocked = isFeatureLocked(item.path)
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    if (!hasPermission(item.permission as any)) return null;
+                    const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                    const isLocked = isFeatureLocked(item.path);
+
                     return (
                       <Link
                         key={item.path}
                         to={item.path}
                         onClick={(e) => handleNavClick(e, item.path, isLocked)}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group",
                           isActive
-                            ? "text-primary bg-primary/10"
-                            : isLocked ? "opacity-60 grayscale cursor-not-allowed text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                            ? "bg-primary/15 text-primary border border-primary/20"
+                            : isLocked 
+                              ? "opacity-60 grayscale cursor-not-allowed text-muted-foreground hover:bg-muted/50" 
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                         )}
                       >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className={cn("h-4.5 w-4.5", isActive && "text-primary")} />
                         {item.label}
-                        {isLocked && <Lock className="h-3 w-3 ml-auto opacity-70" />}
+                        {isLocked && <Lock className="h-3.5 w-3.5 ml-auto text-muted-foreground opacity-70 group-hover:text-red-400 group-hover:opacity-100 transition-colors" />}
                       </Link>
                     )
                   })}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )
+          })}
           
           {/* Menu SaaS Exclusivo Master */}
           {isMaster && (
@@ -383,6 +378,25 @@ export default function AppLayout() {
               </Link>
             </div>
           )}
+          
+          {/* Bottom Actions */}
+          <div className="pt-4 mt-4 border-t border-border/50 space-y-1 pb-4">
+            <a
+              href="mailto:suporte@estoquefacil.app"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            >
+              <HelpCircle className="h-4.5 w-4.5" />
+              Ajuda e Suporte
+            </a>
+            
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-red-500/70 hover:text-red-500 hover:bg-red-500/10"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+              Sair
+            </button>
+          </div>
         </nav>
       </aside>
 
