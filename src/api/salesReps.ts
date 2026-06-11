@@ -7,24 +7,24 @@ export const salesRepsApi = {
     if (!currentCompanyId) return []
     const { data, error } = await supabase
       .from('sales_reps')
-      .select('*')
+      .select('*, sales_rep_regions(region(*))')
       .eq('company_id', currentCompanyId)
       .order('nickname')
     if (error) throw error
-    return data as SalesRep[]
+    return data as any[]
   },
 
   async getSalesRep(id: string) {
     const { data, error } = await supabase
       .from('sales_reps')
-      .select('*')
+      .select('*, sales_rep_regions(region(*))')
       .eq('id', id)
       .single()
     if (error) throw error
-    return data as SalesRep
+    return data as any
   },
 
-  async createSalesRep(salesRep: Omit<SalesRep, 'id' | 'created_at' | 'updated_at' | 'company_id'>) {
+  async createSalesRep(salesRep: Omit<SalesRep, 'id' | 'created_at' | 'updated_at' | 'company_id'>, regionIds: string[] = []) {
     if (!currentCompanyId) throw new Error('No company context')
     const { data, error } = await supabase
       .from('sales_reps')
@@ -32,10 +32,16 @@ export const salesRepsApi = {
       .select()
       .single()
     if (error) throw error
-    return data as SalesRep
+    
+    if (regionIds.length > 0) {
+      await supabase.from('sales_rep_regions').insert(
+        regionIds.map(rid => ({ sales_rep_id: data.id, region_id: rid }))
+      )
+    }
+    return data
   },
 
-  async updateSalesRep(id: string, updates: Partial<SalesRep>) {
+  async updateSalesRep(id: string, updates: Partial<SalesRep>, regionIds: string[] = []) {
     if (!currentCompanyId) throw new Error('No company context')
     const { data, error } = await supabase
       .from('sales_reps')
@@ -44,7 +50,15 @@ export const salesRepsApi = {
       .select()
       .single()
     if (error) throw error
-    return data as SalesRep
+    
+    // Replace regions
+    await supabase.from('sales_rep_regions').delete().eq('sales_rep_id', id)
+    if (regionIds.length > 0) {
+      await supabase.from('sales_rep_regions').insert(
+        regionIds.map(rid => ({ sales_rep_id: id, region_id: rid }))
+      )
+    }
+    return data
   },
 
   async deleteSalesRep(id: string) {

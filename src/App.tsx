@@ -67,6 +67,10 @@ import CustomersList from './pages/Master/Customers/index'
 import CustomerForm from './pages/Master/Customers/Form'
 import SalesRepsList from './pages/Master/SalesReps/index'
 import SalesRepForm from './pages/Master/SalesReps/Form'
+import RegionsList from './pages/Master/Regions/index'
+import RegionForm from './pages/Master/Regions/Form'
+import PriceTablesList from './pages/Master/PriceTables/index'
+import PriceTableForm from './pages/Master/PriceTables/Form'
 
 import DeliveriesList from './pages/Deliveries/index'
 import CreateDelivery from './pages/Deliveries/CreateDelivery'
@@ -133,6 +137,14 @@ function App() {
             <Route path="cadastros/representantes" element={<SalesRepsList />} />
             <Route path="cadastros/representantes/novo" element={<SalesRepForm />} />
             <Route path="cadastros/representantes/:id/editar" element={<SalesRepForm />} />
+
+            <Route path="cadastros/regioes" element={<RegionsList />} />
+            <Route path="cadastros/regioes/nova" element={<RegionForm />} />
+            <Route path="cadastros/regioes/:id/editar" element={<RegionForm />} />
+
+            <Route path="cadastros/tabelas-de-preco" element={<PriceTablesList />} />
+            <Route path="cadastros/tabelas-de-preco/nova" element={<PriceTableForm />} />
+            <Route path="cadastros/tabelas-de-preco/:id/editar" element={<PriceTableForm />} />
 
 
             {/* SaaS Master Routes */}

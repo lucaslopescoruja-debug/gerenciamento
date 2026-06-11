@@ -198,10 +198,10 @@ export default function SalesRepsList() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {rep.regions && rep.regions.length > 0 ? (
-                          rep.regions.map((reg, idx) => (
+                        {rep.sales_rep_regions && rep.sales_rep_regions.length > 0 ? (
+                          rep.sales_rep_regions.map((sr: any, idx: number) => (
                             <span key={idx} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
-                              {reg}
+                              {sr.region?.name || '-'}
                             </span>
                           ))
                         ) : (

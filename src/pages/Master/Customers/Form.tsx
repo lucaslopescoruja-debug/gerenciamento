@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Save, Building2, MapPin, Phone, Wallet, Briefcase, Plus, Trash2, Box } from 'lucide-react'
 import { customersApi } from '@/api/customers'
 import { salesRepsApi } from '@/api/salesReps'
+import { regionsApi } from '@/api/regions'
+import { priceTablesApi } from '@/api/priceTables'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
@@ -51,6 +53,16 @@ export default function CustomerForm() {
   const { data: salesReps = [] } = useQuery({
     queryKey: ['salesReps'],
     queryFn: salesRepsApi.getSalesReps
+  })
+
+  const { data: regions = [] } = useQuery({
+    queryKey: ['regions'],
+    queryFn: regionsApi.getRegions
+  })
+
+  const { data: priceTables = [] } = useQuery({
+    queryKey: ['priceTables'],
+    queryFn: priceTablesApi.getPriceTables
   })
 
   const { data: customer, isLoading } = useQuery({
@@ -372,11 +384,16 @@ export default function CustomerForm() {
             
             <div className="md:col-span-8">
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Tabela de Preços</label>
-              <Input 
-                value={formData.price_table} 
-                onChange={e => setFormData({...formData, price_table: e.target.value})} 
-                placeholder="Ex: 01 - TABELA GERAL"
-              />
+              <select 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.price_table_id || ''}
+                onChange={e => setFormData({...formData, price_table_id: e.target.value})}
+              >
+                <option value="">Selecione uma tabela...</option>
+                {priceTables.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-12">
@@ -407,10 +424,16 @@ export default function CustomerForm() {
 
             <div className="md:col-span-4">
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Região</label>
-              <Input 
-                value={formData.region} 
-                onChange={e => setFormData({...formData, region: e.target.value})} 
-              />
+              <select 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.region_id || ''}
+                onChange={e => setFormData({...formData, region_id: e.target.value})}
+              >
+                <option value="">Selecione uma região...</option>
+                {regions.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-4 flex items-end pb-2">

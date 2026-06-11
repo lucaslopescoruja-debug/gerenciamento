@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Save, Plus, X } from 'lucide-react'
 import { salesRepsApi } from '@/api/salesReps'
+import { regionsApi } from '@/api/regions'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
@@ -21,11 +22,15 @@ export default function SalesRepForm() {
     document: '',
     phone: '',
     city: '',
-    state: '',
-    regions: []
+    state: ''
   })
 
-  const [newRegion, setNewRegion] = useState('')
+  const [regionIds, setRegionIds] = useState<string[]>([])
+
+  const { data: availableRegions = [] } = useQuery({
+    queryKey: ['regions'],
+    queryFn: regionsApi.getRegions
+  })
 
   const { data: rep, isLoading } = useQuery({
     queryKey: ['salesRep', id],
@@ -35,14 +40,25 @@ export default function SalesRepForm() {
 
   useEffect(() => {
     if (rep) {
-      setFormData(rep)
+      setFormData({
+        active: rep.active ?? true,
+        nickname: rep.nickname || '',
+        legal_name: rep.legal_name || '',
+        document: rep.document || '',
+        phone: rep.phone || '',
+        city: rep.city || '',
+        state: rep.state || ''
+      })
+      if (rep.sales_rep_regions) {
+        setRegionIds(rep.sales_rep_regions.map((sr: any) => sr.region.id))
+      }
     }
   }, [rep])
 
   const saveMutation = useMutation({
     mutationFn: (data: Partial<SalesRep>) => {
-      if (isEditing) return salesRepsApi.updateSalesRep(id!, data)
-      return salesRepsApi.createSalesRep(data as any)
+      if (isEditing) return salesRepsApi.updateSalesRep(id!, data, regionIds)
+      return salesRepsApi.createSalesRep(data as any, regionIds)
     },
     onSuccess: () => {
       toast.success(isEditing ? 'Representante atualizado com sucesso!' : 'Representante criado com sucesso!')
@@ -63,20 +79,10 @@ export default function SalesRepForm() {
     saveMutation.mutate(formData)
   }
 
-  const addRegion = () => {
-    if (!newRegion.trim()) return
-    setFormData(prev => ({
-      ...prev,
-      regions: [...(prev.regions || []), newRegion.trim()]
-    }))
-    setNewRegion('')
-  }
-
-  const removeRegion = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      regions: prev.regions?.filter((_, i) => i !== index)
-    }))
+  const toggleRegion = (regionId: string) => {
+    setRegionIds(prev => 
+      prev.includes(regionId) ? prev.filter(id => id !== regionId) : [...prev, regionId]
+    )
   }
 
   if (isEditing && isLoading) {
@@ -151,41 +157,21 @@ export default function SalesRepForm() {
         {/* Regions */}
         <div className="pt-4 border-t border-border/50">
           <h3 className="text-lg font-medium mb-4">Regiões Atendidas</h3>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nome da região..."
-                value={newRegion}
-                onChange={e => setNewRegion(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addRegion()
-                  }
-                }}
-              />
-              <Button type="button" onClick={addRegion} variant="outline">
-                <Plus className="h-4 w-4 mr-2" /> Adicionar
-              </Button>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {formData.regions?.map((reg, index) => (
-                <div key={index} className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                  <span>{reg}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeRegion(index)}
-                    className="hover:text-red-500 hover:bg-red-500/10 rounded-full p-0.5 transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {(!formData.regions || formData.regions.length === 0) && (
-                <span className="text-sm text-muted-foreground italic">Nenhuma região adicionada ainda.</span>
-              )}
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {availableRegions.map(region => (
+              <label key={region.id} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-muted/50 transition-colors">
+                <input
+                  type="checkbox"
+                  className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+                  checked={regionIds.includes(region.id)}
+                  onChange={() => toggleRegion(region.id)}
+                />
+                <span className="text-sm font-medium select-none">{region.name}</span>
+              </label>
+            ))}
+            {availableRegions.length === 0 && (
+              <span className="text-sm text-muted-foreground italic col-span-full">Nenhuma região cadastrada no sistema. Vá em Cadastros &gt; Regiões para adicionar.</span>
+            )}
           </div>
         </div>
 

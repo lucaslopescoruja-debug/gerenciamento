@@ -5,7 +5,8 @@ import {
   Menu, X, Boxes, LayoutDashboard, Truck, Package, ClipboardList, 
   Settings, Users, CheckSquare, Palette, Sun, Moon, Search,
   Clock, History, UserIcon, FileSignature, Box, Building2, Banknote,
-  Megaphone, StickyNote, MapPin, Bell, ShieldCheck, LogOut, Lock
+  Megaphone, StickyNote, MapPin, Bell, ShieldCheck, LogOut, Lock,
+  ChevronDown, Map, Tag, Briefcase
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/contexts/AuthContext'
@@ -21,13 +22,19 @@ const navItems = [
   { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
   { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
   { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
+  { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
+] as const
+
+const crmItems = [
   { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_products' },
   { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
-  { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
+  { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_products' },
+  { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' },
 ] as const
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [crmOpen, setCrmOpen] = useState(false)
   const location = useLocation()
   const { theme, setTheme } = useTheme()
   const { user, company, logout, hasPermission, isMaster } = useAuth()
@@ -230,6 +237,51 @@ export default function AppLayout() {
               </Link>
             )
           })}
+
+          {company && hasPermission('can_manage_products') && (
+            <div className="pt-2 mt-2">
+              <button
+                onClick={() => setCrmOpen(!crmOpen)}
+                className={cn(
+                  "flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  crmOpen ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <Briefcase className="h-4.5 w-4.5" />
+                  CRM & Cadastros
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", crmOpen && "rotate-180")} />
+              </button>
+              
+              {crmOpen && (
+                <div className="mt-1 space-y-1 pl-4 border-l-2 border-muted ml-3">
+                  {crmItems.map((item) => {
+                    if (!hasPermission(item.permission as any)) return null
+                    const isActive = location.pathname.startsWith(item.path)
+                    const isLocked = isFeatureLocked(item.path)
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={(e) => handleNavClick(e, item.path, isLocked)}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                          isActive
+                            ? "text-primary bg-primary/10"
+                            : isLocked ? "opacity-60 grayscale cursor-not-allowed text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                        {isLocked && <Lock className="h-3 w-3 ml-auto opacity-70" />}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Menu SaaS Exclusivo Master */}
           {isMaster && (

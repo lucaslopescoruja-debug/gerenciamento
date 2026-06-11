@@ -100,16 +100,17 @@ export interface Customer {
   phone4: string | null
   email: string | null
   credit_limit: number | null
-  price_table: string | null
-  sales_rep: string | null
+  price_table_id: string | null
   payment_condition: string | null
   allow_unit_price_change: boolean | null
-  region: string | null
+  region_id: string | null
   sales_rep_id: string | null
   created_at: string
   updated_at: string
   equipments?: CustomerEquipment[]
   sales_rep_obj?: SalesRep | null
+  region?: Region | null
+  price_table?: PriceTable | null
 }
 
 export interface SalesRep {
@@ -122,7 +123,25 @@ export interface SalesRep {
   phone: string | null
   city: string | null
   state: string | null
-  regions: string[]
+  created_at: string
+  updated_at: string
+  sales_rep_regions?: { region: Region }[]
+}
+
+export interface Region {
+  id: string
+  company_id: string
+  name: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PriceTable {
+  id: string
+  company_id: string
+  name: string
+  active: boolean
   created_at: string
   updated_at: string
 }
