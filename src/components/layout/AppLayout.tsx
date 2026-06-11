@@ -22,6 +22,7 @@ const navItems = [
   { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
   { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
   { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_products' },
+  { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
   { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
 ] as const
 

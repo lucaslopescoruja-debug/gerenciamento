@@ -65,6 +65,8 @@ import CreateReceipt from './pages/Receipts/CreateReceipt'
 // Master / Customers
 import CustomersList from './pages/Master/Customers/index'
 import CustomerForm from './pages/Master/Customers/Form'
+import SalesRepsList from './pages/Master/SalesReps/index'
+import SalesRepForm from './pages/Master/SalesReps/Form'
 
 import DeliveriesList from './pages/Deliveries/index'
 import CreateDelivery from './pages/Deliveries/CreateDelivery'
@@ -127,6 +129,10 @@ function App() {
             <Route path="cadastros/clientes" element={<CustomersList />} />
             <Route path="cadastros/clientes/novo" element={<CustomerForm />} />
             <Route path="cadastros/clientes/:id/editar" element={<CustomerForm />} />
+
+            <Route path="cadastros/representantes" element={<SalesRepsList />} />
+            <Route path="cadastros/representantes/novo" element={<SalesRepForm />} />
+            <Route path="cadastros/representantes/:id/editar" element={<SalesRepForm />} />
 
 
             {/* SaaS Master Routes */}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Save, Building2, MapPin, Phone, Wallet, Briefcase, Plus, Trash2, Box } from 'lucide-react'
 import { customersApi } from '@/api/customers'
+import { salesRepsApi } from '@/api/salesReps'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
@@ -43,7 +44,13 @@ export default function CustomerForm() {
     payment_condition: '',
     allow_unit_price_change: false,
     region: '',
+    sales_rep_id: '',
     equipments: [] as any[]
+  })
+
+  const { data: salesReps = [] } = useQuery({
+    queryKey: ['salesReps'],
+    queryFn: salesRepsApi.getSalesReps
   })
 
   const { data: customer, isLoading } = useQuery({
@@ -80,6 +87,7 @@ export default function CustomerForm() {
         payment_condition: customer.payment_condition || '',
         allow_unit_price_change: customer.allow_unit_price_change || false,
         region: customer.region || '',
+        sales_rep_id: customer.sales_rep_id || '',
         equipments: customer.equipments || []
       })
     }
@@ -373,10 +381,19 @@ export default function CustomerForm() {
 
             <div className="md:col-span-12">
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Representante / Vendedor</label>
-              <Input 
-                value={formData.sales_rep} 
-                onChange={e => setFormData({...formData, sales_rep: e.target.value})} 
-              />
+              <select 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.sales_rep_id}
+                onChange={e => {
+                  const rep = salesReps.find(r => r.id === e.target.value)
+                  setFormData({...formData, sales_rep_id: e.target.value, sales_rep: rep?.nickname || ''})
+                }}
+              >
+                <option value="">Selecione um representante...</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.nickname} {rep.regions?.length ? `(${rep.regions.join(', ')})` : ''}</option>
+                ))}
+              </select>
             </div>
 
             <div className="md:col-span-4">

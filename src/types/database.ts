@@ -105,9 +105,26 @@ export interface Customer {
   payment_condition: string | null
   allow_unit_price_change: boolean | null
   region: string | null
+  sales_rep_id: string | null
   created_at: string
   updated_at: string
   equipments?: CustomerEquipment[]
+  sales_rep?: SalesRep | null
+}
+
+export interface SalesRep {
+  id: string
+  company_id: string
+  active: boolean
+  nickname: string | null
+  legal_name: string | null
+  document: string | null
+  phone: string | null
+  city: string | null
+  state: string | null
+  regions: string[]
+  created_at: string
+  updated_at: string
 }
 
 export interface CustomerEquipment {
