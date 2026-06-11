@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { 
   FileText, Users, Package, Menu, Search, Filter, Box
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { maxiprodApi } from '@/api/maxiprod'
 
 const navItems = [
   { label: 'Pedidos', icon: FileText, path: '/vendas/pedidos' },
@@ -16,6 +17,13 @@ const navItems = [
 export default function SalesLayout() {
   const location = useLocation()
   const { user } = useAuth()
+
+  useEffect(() => {
+    // Sincroniza em background quando o Vendedor abre o App, se necessário
+    if (user?.company_id) {
+      maxiprodApi.autoSyncStockIfNeeded(10).catch(console.error)
+    }
+  }, [user?.company_id])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">

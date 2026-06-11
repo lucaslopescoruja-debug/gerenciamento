@@ -14,6 +14,7 @@ import SaaSTeam from './pages/Master/Team'
 import SaaSCampanhas from './pages/Master/Campaigns'
 import SaaSNotes from './pages/Master/Notes'
 import SaaSLeads from './pages/Master/Leads'
+import SaaSSettings from './pages/Master/Settings'
 import { ThemeProvider } from './components/ThemeProvider'
 import ChangePassword from './pages/ChangePassword'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -171,6 +172,7 @@ function App() {
             <Route path="/saas/campanhas" element={<SaaSCampanhas />} />
             <Route path="/saas/anotacoes" element={<SaaSNotes />} />
             <Route path="/saas/leads" element={<SaaSLeads />} />
+            <Route path="/saas/configuracoes" element={<SaaSSettings />} />
           </Route>
           
           {/* Sales App (Mobile Force) */}

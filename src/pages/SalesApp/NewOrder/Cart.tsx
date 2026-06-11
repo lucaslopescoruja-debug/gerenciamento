@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesApi } from '@/api/sales'
 import { customersApi } from '@/api/customers'
+import { maxiprodApi } from '@/api/maxiprod'
 import { useSalesCart } from '@/stores/salesCart'
 import { ArrowLeft, CheckCircle2, AlertCircle, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,14 @@ export default function CartReview() {
       }))
       
       await salesApi.addSalesOrderItems(orderItemsToInsert)
+
+      // Tenta enviar para o ERP em background
+      maxiprodApi.sendSalesOrder(createdOrder.id).catch(err => {
+        console.error('Falha ao enviar para o ERP:', err)
+        // Poderiamos disparar um toast aqui se o mutate() retornar o erro, 
+        // mas a regra é salvar localmente de qualquer forma.
+      })
+
       return createdOrder
     },
     onSuccess: () => {
