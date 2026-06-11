@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { deliveriesApi } from '@/api/deliveries'
 import { productsApi } from '@/api/products'
+import { customersApi } from '@/api/customers'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -50,6 +51,12 @@ export default function RouteClients() {
     queryKey: ['products'],
     queryFn: productsApi.getProducts,
     enabled: isManager 
+  })
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: customersApi.getCustomers,
+    enabled: isManager
   })
 
   const importMutation = useMutation({
@@ -184,6 +191,7 @@ export default function RouteClients() {
 
         const clientsMap = new Map<string, any>()
         let notFoundCount = 0
+        let clientsNotFoundInBase = 0
         let currentClientName = ''
         let currentOrderNumber = ''
         let currentClientKey = ''
@@ -206,6 +214,8 @@ export default function RouteClients() {
             if (!clientsMap.has(currentClientKey)) {
               clientsMap.set(currentClientKey, {
                 name: currentClientName,
+                customer_id: null,
+                document: '',
                 address: '',
                 phone: '',
                 notes: '',
@@ -232,6 +242,13 @@ export default function RouteClients() {
                if (nextCell && currentClientKey && clientsMap.has(currentClientKey)) {
                  clientsMap.get(currentClientKey).phone = String(nextCell).trim()
                }
+            }
+          }
+
+          if (typeof firstCell === 'string' && (firstCell.trim().toLowerCase().includes('cnpj:') || firstCell.trim().toLowerCase().includes('cpf:'))) {
+            const doc = firstCell.replace(/cnpj\/cpf:|cnpj:|cpf:/i, '').replace(/[^\d]/g, '').trim()
+            if (doc && currentClientKey && clientsMap.has(currentClientKey)) {
+               clientsMap.get(currentClientKey).document = doc
             }
           }
 
@@ -296,7 +313,23 @@ export default function RouteClients() {
           }
         }
 
-        const clientsData = Array.from(clientsMap.values())
+        const clientsData = Array.from(clientsMap.values()).map((client: any) => {
+          if (client.document) {
+            const found = customers.find(c => (c.document || '').replace(/[^\d]/g, '') === client.document)
+            if (found) {
+              client.customer_id = found.id
+            } else {
+              client.notes = client.notes ? client.notes + '\nObs: Cliente não localizado na base' : 'Obs: Cliente não localizado na base'
+              clientsNotFoundInBase++
+            }
+          } else {
+            // Se nem tinha documento no arquivo para procurar
+            client.notes = client.notes ? client.notes + '\nObs: Cliente não localizado na base (Sem documento)' : 'Obs: Cliente não localizado na base (Sem documento)'
+            clientsNotFoundInBase++
+          }
+          return client
+        })
+
         if (clientsData.length === 0) {
           toast.error('Nenhum dado válido encontrado na planilha.')
           setIsImporting(false)
@@ -305,6 +338,9 @@ export default function RouteClients() {
 
         if (notFoundCount > 0) {
           toast.warning(`${notFoundCount} produtos não foram encontrados no banco de dados.`)
+        }
+        if (clientsNotFoundInBase > 0) {
+          toast.warning(`${clientsNotFoundInBase} clientes não foram localizados na base de dados (Sem vínculo de CPF/CNPJ).`)
         }
 
         importMutation.mutate(clientsData)

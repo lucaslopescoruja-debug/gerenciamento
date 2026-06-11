@@ -362,6 +362,7 @@ export const deliveriesApi = {
         .from('delivery_clients')
         .insert([{
           delivery_route_id: routeId,
+          customer_id: c.customer_id || null,
           name: c.name,
           address: c.address,
           phone: c.phone,

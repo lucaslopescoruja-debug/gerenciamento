@@ -369,6 +369,7 @@ export interface DeliveryClient {
   id: string
   company_id: string
   delivery_route_id: string
+  customer_id?: string | null
   name: string
   order_number?: string
   address?: string
