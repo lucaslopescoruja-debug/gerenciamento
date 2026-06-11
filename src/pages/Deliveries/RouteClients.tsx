@@ -208,14 +208,22 @@ export default function RouteClients() {
 
           const firstCell = row.find(c => c)
           if (typeof firstCell === 'string' && firstCell.trim().startsWith('À ')) {
-            currentClientName = firstCell.replace('À ', '').trim()
+            let clientFullName = firstCell.replace('À ', '').trim()
+            let doc = ''
+            const docMatch = clientFullName.match(/[-–]\s*([\d.\-\/]+)$/)
+            if (docMatch) {
+               doc = docMatch[1].replace(/[^\d]/g, '')
+               clientFullName = clientFullName.replace(docMatch[0], '').trim()
+            }
+
+            currentClientName = clientFullName
             currentClientKey = currentOrderNumber ? `${currentClientName}_${currentOrderNumber}` : currentClientName
             
             if (!clientsMap.has(currentClientKey)) {
               clientsMap.set(currentClientKey, {
                 name: currentClientName,
                 customer_id: null,
-                document: '',
+                document: doc,
                 address: '',
                 phone: '',
                 notes: '',
