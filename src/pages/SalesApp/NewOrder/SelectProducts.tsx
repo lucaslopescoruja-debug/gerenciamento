@@ -1,0 +1,197 @@
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { productsApi } from '@/api/products'
+import { priceTablesApi } from '@/api/priceTables'
+import { useSalesCart, CartItem } from '@/stores/salesCart'
+import { Search, ArrowLeft, ShoppingCart, Info } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { formatCurrency } from '@/utils/formatters'
+
+export default function SelectProducts() {
+  const navigate = useNavigate()
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  const { customer_id, price_table_id, items, addItem, updateQuantity, getItemsCount, getTotal } = useSalesCart()
+
+  // Redirect if no customer selected
+  if (!customer_id) {
+    navigate('/vendas/novo-pedido/clientes')
+    return null
+  }
+
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ['products'],
+    queryFn: productsApi.getProducts,
+  })
+
+  const { data: priceTableItems = [] } = useQuery({
+    queryKey: ['price_table_items', price_table_id],
+    queryFn: () => priceTablesApi.getPriceTableItems(price_table_id!),
+    enabled: !!price_table_id,
+  })
+
+  const cartMap = useMemo(() => {
+    const map = new Map<string, number>()
+    items.forEach(item => map.set(item.product_id, item.quantity))
+    return map
+  }, [items])
+
+  const productsWithPrices = useMemo(() => {
+    return products.map(product => {
+      let finalPrice = product.price || 0
+      
+      if (price_table_id) {
+        const tableItem = priceTableItems.find(pti => pti.product_id === product.id)
+        if (tableItem) {
+          finalPrice = tableItem.price
+        }
+      }
+
+      return {
+        ...product,
+        finalPrice,
+        cartQuantity: cartMap.get(product.id) || 0
+      }
+    })
+  }, [products, priceTableItems, price_table_id, cartMap])
+
+  const filteredProducts = productsWithPrices.filter(p => {
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      return p.name.toLowerCase().includes(term) || p.code?.toLowerCase().includes(term)
+    }
+    return true
+  })
+
+  const handleAdd = (product: any) => {
+    if (product.cartQuantity === 0) {
+      addItem({
+        product_id: product.id,
+        name: product.name,
+        code: product.code || '',
+        price: product.finalPrice,
+        quantity: 1,
+        stock: product.current_stock || 0
+      })
+    } else {
+      updateQuantity(product.id, product.cartQuantity + 1)
+    }
+  }
+
+  const handleRemove = (product: any) => {
+    if (product.cartQuantity > 0) {
+      updateQuantity(product.id, product.cartQuantity - 1)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50 pb-[140px]"> {/* Extra padding for the bottom bar */}
+      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0 -ml-2">
+            <ArrowLeft className="h-6 w-6 text-gray-700" />
+          </Button>
+          <h1 className="font-bold text-lg text-gray-900">Adicionar Produtos</h1>
+        </div>
+      </header>
+
+      <div className="bg-white p-4 shadow-sm sticky top-[60px] z-10">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input 
+            placeholder="Buscar por nome ou código" 
+            className="pl-10 h-12 bg-gray-100 border-none text-base rounded-xl"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-2">
+        {loadingProducts ? (
+          <div className="p-8 text-center text-gray-500">Carregando produtos...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="p-8 text-center text-gray-400">Nenhum produto encontrado.</div>
+        ) : (
+          <div className="space-y-2">
+            {filteredProducts.map(product => {
+              const isOutOfStock = (product.current_stock || 0) <= 0
+              
+              return (
+                <div key={product.id} className={`bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between gap-3 ${product.cartQuantity > 0 ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}>
+                  <div className="flex-1 min-w-0 py-1">
+                    <p className="text-xs text-gray-500 font-mono mb-0.5">{product.code}</p>
+                    <h3 className="font-bold text-sm text-gray-900 leading-tight mb-1">{product.name}</h3>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="font-bold text-emerald-600">{formatCurrency(product.finalPrice)}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                        Estoque: {product.current_stock || 0}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="shrink-0 flex flex-col items-end">
+                    {product.cartQuantity === 0 ? (
+                      <button 
+                        onClick={() => handleAdd(product)}
+                        disabled={isOutOfStock}
+                        className={`h-10 w-24 rounded-lg font-bold text-sm transition-colors ${
+                          isOutOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary/10 text-primary active:bg-primary/20'
+                        }`}
+                      >
+                        Adicionar
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                        <button 
+                          onClick={() => handleRemove(product)}
+                          className="h-8 w-8 rounded flex items-center justify-center bg-gray-50 text-gray-600 active:bg-gray-200"
+                        >
+                          -
+                        </button>
+                        <span className="w-6 text-center font-bold text-gray-900">{product.cartQuantity}</span>
+                        <button 
+                          onClick={() => handleAdd(product)}
+                          className="h-8 w-8 rounded flex items-center justify-center bg-primary/10 text-primary active:bg-primary/20"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Floating Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-gray-600">
+            <ShoppingCart className="h-5 w-5" />
+            <span className="font-medium text-sm">{getItemsCount()} itens selecionados</span>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 uppercase font-bold">Total do Pedido</p>
+            <p className="font-bold text-xl text-emerald-600">{formatCurrency(getTotal())}</p>
+          </div>
+        </div>
+        <Button 
+          className="w-full h-12 text-base font-bold rounded-xl"
+          disabled={getItemsCount() === 0}
+          onClick={() => navigate('/vendas/novo-pedido/carrinho')}
+        >
+          Avançar para o Carrinho
+        </Button>
+      </div>
+      
+      <style>{`
+        .pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+      `}</style>
+    </div>
+  )
+}
