@@ -28,8 +28,7 @@ const navGroups = [
     title: 'OPERAÇÕES',
     items: [
       { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
-      { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' },
-      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' }
+      { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' }
     ]
   },
   {
@@ -43,7 +42,8 @@ const navGroups = [
     title: 'ESTOQUE',
     items: [
       { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_do_conference' },
-      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' }
+      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' },
+      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' }
     ]
   },
   {
@@ -66,6 +66,12 @@ const navGroups = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [crmOpen, setCrmOpen] = useState(false)
+  const [closedGroups, setClosedGroups] = useState<string[]>([])
+
+  const toggleGroup = (title: string) => {
+    setClosedGroups(prev => prev.includes(title) ? prev.filter(g => g !== title) : [...prev, title])
+  }
+
   const location = useLocation()
   const { theme, setTheme } = useTheme()
   const { user, company, logout, hasPermission, isMaster } = useAuth()
@@ -250,12 +256,26 @@ export default function AppLayout() {
             const hasVisibleItems = group.items.some(item => hasPermission(item.permission as any));
             if (!hasVisibleItems) return null;
 
+            const isClosed = closedGroups.includes(group.title);
+
             return (
               <div key={gIdx} className="mb-4">
-                <div className="px-3 pb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  {group.title}
-                </div>
-                <div className="space-y-0.5">
+                {group.title ? (
+                  <button 
+                    onClick={() => toggleGroup(group.title)}
+                    className="w-full flex items-center justify-between px-3 pb-2 cursor-pointer group/header hover:opacity-80 transition-opacity"
+                  >
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider group-hover/header:text-foreground transition-colors">
+                      {group.title}
+                    </span>
+                    <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform duration-200", isClosed && "-rotate-90")} />
+                  </button>
+                ) : null}
+                
+                <div className={cn(
+                  "space-y-0.5 overflow-hidden transition-all duration-200 ease-in-out origin-top",
+                  isClosed ? "max-h-0 opacity-0 scale-y-95 mt-0" : "max-h-[500px] opacity-100 scale-y-100"
+                )}>
                   {group.items.map((item) => {
                     if (!hasPermission(item.permission as any)) return null;
                     const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
