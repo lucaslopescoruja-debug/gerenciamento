@@ -120,10 +120,17 @@ export default function CustomersList() {
     })
   }
 
-  const applyFilter = (value: string, filterValue: string, type: string) => {
+  const applyFilter = (value: string, filterValue: string, type: string, isDocument: boolean = false) => {
     if (!filterValue) return true
-    const v = (value || '').toLowerCase()
-    const f = filterValue.toLowerCase()
+    
+    let v = (value || '').toLowerCase()
+    let f = filterValue.toLowerCase()
+
+    if (isDocument) {
+      v = v.replace(/[^\d]/g, '')
+      f = f.replace(/[^\d]/g, '')
+    }
+
     if (type === 'contains') return v.includes(f)
     if (type === 'startsWith') return v.startsWith(f)
     if (type === 'equals') return v === f
@@ -139,7 +146,7 @@ export default function CustomersList() {
       const matchRazao = applyFilter(c.legal_name || '', filters.razaoSocial, filters.razaoSocialType)
       
       // Documento
-      const matchDoc = applyFilter(c.document || '', filters.documento, filters.documentoType)
+      const matchDoc = applyFilter(c.document || '', filters.documento, filters.documentoType, true)
       
       // Status
       const matchStatus = filters.status === 'Todos' ? true :
