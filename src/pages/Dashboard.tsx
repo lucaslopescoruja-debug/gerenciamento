@@ -10,9 +10,9 @@ import {
   AlertTriangle,
   ChevronRight,
   PackageX,
-  PackageMinus
+  PackageMinus,
+  BarChart3
 } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
 
 const mockChartData = [
@@ -196,33 +196,10 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-foreground mb-6">Resumo das Operações (Hoje)</h2>
         <div className="flex flex-col lg:flex-row gap-8">
           
-          <div className="flex-1 h-[250px] min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/50" />
-                <XAxis 
-                  dataKey="time" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 12, fill: 'currentColor' }}
-                  className="text-muted-foreground"
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 12, fill: 'currentColor' }}
-                  className="text-muted-foreground"
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '8px' }}
-                  itemStyle={{ color: 'var(--foreground)' }}
-                />
-                <Line type="monotone" dataKey="total" name="Total de Cargas" stroke="var(--primary)" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="rota" name="Em Rota" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} />
-                <Line type="monotone" dataKey="finalizadas" name="Finalizadas" stroke="#10b981" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 h-[250px] min-w-0 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-center">
+             <p className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" /> Gráfico indisponível temporariamente
+             </p>
           </div>
 
           {/* Chart Legend Summary */}
