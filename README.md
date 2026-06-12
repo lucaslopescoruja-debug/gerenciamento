@@ -1,88 +1,93 @@
-# Coletor IA - Sistema de Logística Inteligente & SaaS 📦
+# Estoque Fácil (Coletor IA) - Plataforma de Gestão Completa 📦
 
-O **Coletor IA** (ou Estoque Fácil) é um sistema completo tipo ERP / WMS focado na operação em Centros de Distribuição (CD), e que agora atua como uma plataforma **SaaS (Software as a Service) Multitenant**. 
+O **Estoque Fácil** (antigo Coletor IA) evoluiu para uma plataforma unificada que conecta as pontas soltas da logística e da operação comercial de empresas distribuidoras. Trata-se de um sistema **SaaS (Software as a Service) Multitenant**, ou seja, atende várias empresas isolando os dados de cada cliente dentro da mesma infraestrutura.
 
-O sistema provê:
-1. **Painel Master (SaaS):** Gestão de clientes (empresas), finanças (mensalidades dinâmicas com planos Bronze, Prata e Ouro), equipe interna e avisos globais.
-2. **Dashboard de Gestão (Desktop):** Controle em tempo real das rotas, estoque, usuários e aprovações para gestores das empresas clientes.
-3. **App do Operador (Mobile-first):** Interface ultrarrápida de bipagem voltada para coletores de dados e smartphones (Android/iOS) na operação física.
+O sistema provê três grandes pilares:
+1. **Painel Master (SaaS):** A gestão do "Dono do Software", para faturamento e gestão das empresas clientes.
+2. **Logística (ERP/WMS):** Toda a operação de centro de distribuição, contagem, conferência e rotas de entrega.
+3. **Força de Vendas (CRM/Vendas):** O módulo focado nos vendedores e representantes comerciais, unificando a cadeia (venda → separação → entrega).
 
 ---
 
-## 🏢 Arquitetura Multitenant e Painel Master (SaaS)
+## 🏢 1. Arquitetura Multitenant e Painel Master (SaaS)
 
-A plataforma utiliza um modelo "Multitenant", onde uma única base de dados hospeda diversas empresas (clientes). O isolamento de dados é garantido na camada de aplicação através da vinculação obrigatória de `company_id`.
+A plataforma utiliza um modelo "Multitenant" na camada de aplicação. Todo registro de cliente possui um `company_id`.
 
 ### Permissões do Master (`is_super_admin: true`)
-Existe um nível global e supremo acima dos administradores das empresas. A equipe "Master" não pertence a nenhuma empresa cliente.
+Existe um nível global supremo. A equipe "Master" enxerga os dados do SaaS, mas as empresas clientes nunca enxergam as outras.
 
-#### Funcionalidades Exclusivas do Painel Master (`/saas`):
-- **Gestão de Empresas:** Cadastro de clientes vinculando o CNPJ automaticamente como identificador único (Slug), definição de limite máximo de usuários (`max_users`) e botão de Sair/Acessar o painel daquela empresa diretamente (Impersonate).
-- **Planos Dinâmicos e Financeiro:** O sistema é balizado por três planos escaláveis (Bronze, Prata e Ouro).
-  - Tabela dinâmica de preços padrão (`saas_plans`) no estilo "Planilha Excel" para reajustar mensalidade base e valores de usuários extras.
-  - Lançamento de cobranças. Se um pagamento atrasar por mais de 5 dias corridos do vencimento (`due_date`), o sistema bloqueia automaticamente o acesso da empresa inativando-a.
-- **Acessos (Equipe SaaS):** Gestão da equipe interna do SaaS com controle granular.
-- **Anotações:** Mural de recados / bloco de notas global compartilhado entre a equipe Master.
+#### Funcionalidades Exclusivas do Master (`/saas`):
+- **Gestão de Empresas:** Cadastro de clientes vinculando o CNPJ automaticamente como Slug, definição de limite máximo de usuários (`max_users`) e botão "Impersonate" para acessar o painel do cliente sem pedir senha.
+- **Planos Dinâmicos e Financeiro:** A plataforma possui planos escaláveis (Bronze, Prata e Ouro). Há uma tabela dinâmica de preços (`saas_plans`) e geração de faturas. Pagamentos em atraso geram bloqueio automático da empresa no 6º dia de atraso.
+- **Equipe SaaS e Anotações:** Gestão da equipe interna do SaaS e um mural de recados/bloco de notas global.
 
 ---
 
-## ⚙️ Funcionalidades Logísticas (Tenant / Empresa Cliente)
+## ⚙️ 2. Funcionalidades Logísticas e Cadastros (Empresa Cliente)
 
 ### Bloqueio por Planos (Feature Toggling)
 Os recursos são destravados conforme a assinatura do cliente:
 - **[Bronze]**: Focado no estoque interno. Libera apenas Dashboard, Produtos, Contagens e Recebimento.
 - **[Prata]**: Focado em Expedição. Libera montagem de Cargas/Rotas e Conferência de doca.
-- **[Ouro]**: Focado em Last-Mile. Libera App do Motorista, Assinatura na tela, Tracking e Histórico.
+- **[Ouro]**: Focado em Last-Mile. Libera App do Motorista, Assinatura na tela, Tracking e Histórico de clientes.
 
-### 1. 🏭 Recebimentos (Inbound de Fábrica)
-- O gestor cadastra a expectativa de recebimento manualmente ou importando uma planilha.
-- **Bipagem às Cegas:** No fluxo de recebimento, o conferente tem autorização para ignorar bloqueios.
+### Operação Logística
+- **Recebimentos:** Bipagem para confirmar chegada de material de fornecedores.
+- **Cargas e Entregas (Outbound):** Montagem visual de rotas.
+- **App do Motorista & Comprovantes (POD):** O motorista visualiza no celular a rota. Ele coleta assinaturas na tela do smartphone e as envia como prova de entrega.
+- **Liberações Remotas (Alçadas):** Se o operador bipar um item divergente, o app pede liberação online. O Gestor ou Admin verá um alerta na tela do Desktop e aprovará ou rejeitará o erro de longe.
 
-### 2. 🚛 Cargas e Entregas (Outbound)
-- **Conferência de Expedição:** Existem **Travas Duras**. O conferente não consegue carregar itens não listados ou em quantidade superior ao pedido sem autorização.
-- **Painel do Motorista:** O motorista visualiza a lista de entregas ordenada no celular.
-- **Prova de Entrega (POD):** Coleta de assinatura digital na tela e motivo justificado para recusas.
-
-### 3. 🚨 Liberações Remotas (Alçadas de Gestão)
-- Se o operador tenta despachar divergências, o app emite um pedido de liberação.
-- O Gestor visualizará um alerta na sala administrativa e pode "Aprovar" ou "Rejeitar" à distância.
-
-### 4. 👥 Controle de Acessos da Empresa (RBAC)
-Cada funcionário do cliente possui um "Perfil" (Role) e "Permissões Granulares":
-- **Perfis Base:** Administrador (Admin), Gestor, Conferente, Motorista.
+### CRM & Cadastros Base
+O sistema agora possui um núcleo base robusto para faturamento e pedidos:
+- Gestão completa de **Clientes**.
+- Gestão de **Representantes** e **Vendedores** (com criação automática de login).
+- Gestão de **Regiões**, **Tabelas de Preços** e **Condições de Pagamento**.
+- Configurações de API Key para integrações ERP (ex: Maxiprod).
 
 ---
 
-## 🎨 Engine de Temas e UI Dupla
+## 💼 3. Força de Vendas (Sales App)
 
-O sistema possui uma renderização dupla focada em Performance vs Estética.
-**Modo Moderno (Padrão):**
-- Blur, Transparências, Glassmorphism, Cores por Planos (Bronze-Laranja, Prata-Cinza, Ouro-Amarelo).
-**Modo Tradicional (Windows 2000):**
-- Foco em rodar leve em coletores e celulares antigos desativando todo o processamento de animações.
+O mais recente e poderoso módulo do Estoque Fácil, desenhado para fechar o ciclo desde a ponta comercial.
+
+### Gestão Comercial
+- **Visualização de Pedidos e Orçamentos:** Tela Desktop ultrarrápida, desenhada aos moldes do Mercos, com visão em funil.
+- **Painel de Acompanhamento:** Rascunhos de pedidos geram alertas para os vendedores concluírem o funil.
+- **Pedidos Via Inteligência Artificial (Em breve):** Preparação da infraestrutura para o vendedor criar pedidos conversando no WhatsApp.
+- **Filtros e Relatórios:** Rastreabilidade se o pedido foi faturado, cancelado ou está em rota, pois a força de vendas conversa com o módulo Logístico de forma nativa.
 
 ---
 
-## 🗄️ Estrutura do Banco de Dados (Supabase)
+## 🎨 UI/UX e Frontend
+
+O sistema foi desenhado para causar o famoso "Efeito Uau", fugindo dos ERPs cinzas tradicionais.
+
+### Dupla Identidade Visual (Temas)
+- **Modo Moderno (Padrão):**
+  - Blur, Transparências, Glassmorphism. Dashboard interativo, notificações inteligentes e esquema de cores baseados em semântica nativa da marca.
+  - Tela de login revolucionária estilo "Split Screen" (marketing de um lado, acesso do outro).
+- **Modo Tradicional (Windows 2000):**
+  - Foco em rodar leve em coletores de rádiofrequência (Zebra, Honeywell) e celulares antigos. Corta transparências e processamento visual para zero lag de bipagem.
+
+---
+
+## 🗄️ Arquitetura do Banco de Dados (Supabase / Postgres)
 
 ### Camada Global (SaaS)
-- **`companies`**: `id`, `name`, `slug` (CNPJ auto-gerado), `cnpj`, `max_users`, `plan`, `active`.
-- **`saas_plans`**: `id`, `name`, `base_price`, `base_users`, `extra_user_price`.
-- **`company_payments`**: `company_id`, `amount`, `status`.
+- **`companies`**: `id`, `name`, `cnpj` (usado como slug), `max_users`, `plan`, `active`.
+- **`saas_plans`**: Tabela de preços base do Software.
+- **`company_payments`**: Controle financeiro para as assinaturas das empresas clientes.
 
 ### Camada Local (Tenant)
-Tabelas abaixo contém `company_id` referenciando `companies(id)` para isolamento.
-- **`users`**: RBAC dos operadores + flag `is_super_admin`. (O sistema possui um roadmap congelado para transicionar a chave de autenticação de `username` para `email`).
-- **`products`**: Tabela mestra de mercadorias.
-- **`operations`**: `LOAD`, `RECEIPT`, `INVENTORY`.
-- **`operation_items`**: Itens atrelados à operação.
+Tabelas que operam isoladas por `company_id`.
+- **`users`**: RBAC (Roles: Administrador, Gestor, Conferente, Motorista, Vendedor).
+- **`products`** e **`price_tables`**: Base para formação de preços do Força de Vendas.
+- **`operations`**, **`operation_items`**: O coração das rotas, inventários e recebimentos.
 - **`delivery_routes`** & **`delivery_clients`** & **`delivery_items`**.
 
 ---
 
-## 🚀 Scripts e Inicialização
-
-O repositório já contém configuração completa.
+## 🚀 Como Rodar o Projeto
 
 1. **Instalar Dependências:**
 ```bash
@@ -99,4 +104,4 @@ npm run dev
 npm run build
 ```
 
-O ambiente já está conectado diretamente à API Key e URL no Supabase. Todos os `push` na branch `main` ativam o deploy automatizado via Vercel. 
+*(Todos os commits para a branch `main` ativam deploy automatizado na Vercel).*
