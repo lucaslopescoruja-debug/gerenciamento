@@ -98,8 +98,9 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/saiba-mais" element={<Landing />} />
+        <Route path="/login" element={<Navigate to="/" replace />} />
         
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
