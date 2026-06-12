@@ -19,7 +19,7 @@ import { toast } from '@/components/ui/toaster'
 
 const navGroups = [
   {
-    title: 'VISÃO GERAL',
+    title: '',
     items: [
       { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' }
     ]
@@ -66,9 +66,12 @@ const navGroups = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [crmOpen, setCrmOpen] = useState(false)
-  const [closedGroups, setClosedGroups] = useState<string[]>([])
+  const [closedGroups, setClosedGroups] = useState<string[]>(
+    navGroups.map(g => g.title).filter(Boolean)
+  )
 
   const toggleGroup = (title: string) => {
+    if (!title) return;
     setClosedGroups(prev => prev.includes(title) ? prev.filter(g => g !== title) : [...prev, title])
   }
 
