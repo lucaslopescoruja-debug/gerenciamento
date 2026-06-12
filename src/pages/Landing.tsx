@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  Boxes, Truck, Package, CheckCircle2, ArrowRight, ShieldCheck,
-  BarChart3, Phone, Mail, MapPin, Menu, X, ExternalLink, ArrowUpRight
+  Package, Truck, Smartphone, Briefcase, Play, ArrowRight,
+  CheckCircle2, Box, ShieldCheck, Zap, Database,
+  Settings, Phone, Check, ChevronRight, Menu, X, ArrowDown
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { saasApi } from '@/api/saas'
@@ -15,288 +16,212 @@ export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  // Form State for Leads
-  const [leadName, setLeadName] = useState('')
-  const [leadEmail, setLeadEmail] = useState('')
-  const [leadPhone, setLeadPhone] = useState('')
-  const [leadMessage, setLeadMessage] = useState('')
-  const [isSubmittingLead, setIsSubmittingLead] = useState(false)
-  const [leadSubmitted, setLeadSubmitted] = useState(false)
-
   // Efeito para adicionar fundo no cabeçalho ao rolar a página
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setScrolled(true)
-      } else {
-        setScrolled(false)
-      }
+      setScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Se o usuário clicar para ir para a Área do Cliente e já estiver logado, redireciona direto
   const handleClientAreaClick = () => {
     if (user) {
       navigate('/dashboard')
     } else {
-      navigate('/login')
+      navigate('/') // The new split screen login is at root
     }
   }
 
-  const handleSubmitLead = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!leadName || !leadEmail || !leadPhone) {
-      toast.error('Preencha todos os campos obrigatórios (Nome, E-mail e Telefone).')
-      return
-    }
-
-    setIsSubmittingLead(true)
-    try {
-      await saasApi.createLead({
-        name: leadName,
-        email: leadEmail,
-        phone: leadPhone,
-        message: leadMessage
-      })
-      toast.success('Solicitação enviada com sucesso! Em breve entraremos em contato.')
-      setLeadName('')
-      setLeadEmail('')
-      setLeadPhone('')
-      setLeadMessage('')
-      setLeadSubmitted(true)
-    } catch (err: any) {
-      toast.error('Erro ao registrar solicitação: ' + err.message)
-    } finally {
-      setIsSubmittingLead(false)
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+      setMobileMenuOpen(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-indigo-500 selection:text-white">
-      {/* Background radial glow */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-200/30 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-[800px] right-1/4 w-[600px] h-[600px] bg-purple-200/30 rounded-full blur-[150px] pointer-events-none" />
+    <div className="min-h-screen bg-[#0F172A] text-slate-50 font-sans antialiased selection:bg-blue-600 selection:text-white overflow-x-hidden">
+      
+      {/* Background Glows */}
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[150px] pointer-events-none" />
+      <div className="absolute top-[800px] right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Header / Navbar */}
+      {/* Header */}
       <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-          ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm py-4'
+          ? 'bg-[#0F172A]/80 backdrop-blur-md border-b border-white/10 py-4 shadow-lg'
           : 'bg-transparent py-6'
         }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <div className="h-12 w-12 flex items-center justify-center">
-                <img src="/logo.png" alt="Estoque Fácil Logo" className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition-transform" />
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Box className="text-white h-6 w-6" />
               </div>
-              <div>
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                  Estoque Fácil
-                </span>
-                <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider -mt-1">
-                  Estoque Inteligente
-                </span>
-              </div>
+              <span className="font-bold text-xl tracking-tight text-white">
+                Estoque Fácil
+              </span>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#inicio" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Início</a>
-              <a href="#funcionalidades" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Funcionalidades</a>
-              <a href="#beneficios" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Vantagens</a>
-              <a href="#contato" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Contato</a>
+            {/* Desktop Nav */}
+            <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+              <button onClick={() => scrollToSection('problema')} className="hover:text-white transition-colors">Problema</button>
+              <button onClick={() => scrollToSection('solucao')} className="hover:text-white transition-colors">Solução</button>
+              <button onClick={() => scrollToSection('planos')} className="hover:text-white transition-colors">Planos</button>
+              <button onClick={() => scrollToSection('tecnologia')} className="hover:text-white transition-colors">Tecnologia</button>
             </nav>
 
-            {/* Client Area Button */}
+            {/* CTA */}
             <div className="hidden md:flex items-center gap-4">
-              <Button
-                onClick={handleClientAreaClick}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-100 flex items-center gap-2 transition-all hover:-translate-y-0.5 cursor-pointer"
-              >
-                Área do Cliente
-                <ArrowUpRight className="h-4 w-4" />
+              <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5" onClick={handleClientAreaClick}>
+                Acessar Sistema
+              </Button>
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 rounded-full px-6">
+                Solicitar Demonstração
               </Button>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Toggle */}
             <div className="md:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-              >
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-slate-300 hover:text-white p-2">
                 {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 py-4 px-6 space-y-4 shadow-lg slide-in">
-            <a
-              href="#inicio"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
-            >
-              Início
-            </a>
-            <a
-              href="#funcionalidades"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
-            >
-              Funcionalidades
-            </a>
-            <a
-              href="#beneficios"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
-            >
-              Vantagens
-            </a>
-            <a
-              href="#contato"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-base font-semibold text-slate-700 hover:text-indigo-600 py-2"
-            >
-              Contato
-            </a>
-            <div className="pt-4 border-t border-slate-100">
-              <Button
-                onClick={() => { setMobileMenuOpen(false); handleClientAreaClick(); }}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2"
-              >
-                Área do Cliente
-                <ArrowUpRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="md:hidden absolute top-full left-0 w-full bg-[#0F172A] border-b border-white/10 shadow-xl py-4 px-4 flex flex-col gap-4">
+            <button onClick={() => scrollToSection('problema')} className="text-left py-2 text-slate-300">Problema</button>
+            <button onClick={() => scrollToSection('solucao')} className="text-left py-2 text-slate-300">Solução</button>
+            <button onClick={() => scrollToSection('planos')} className="text-left py-2 text-slate-300">Planos</button>
+            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">Solicitar Demonstração</Button>
+            <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/5" onClick={handleClientAreaClick}>Acessar Sistema</Button>
           </div>
         )}
       </header>
 
-      {/* Hero Section */}
-      <section id="inicio" className="pt-32 pb-20 md:pt-40 md:pb-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Text Content */}
-            <div className="lg:col-span-7 text-center lg:text-left space-y-6">
-              <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
-                <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
-                Tecnologia Logística para sua Empresa
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                Gestão de Cargas, Estoque e Entregas{' '}
-                <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                  Sem Erros
-                </span>
-              </h1>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto lg:mx-0">
-                O Estoque Fácil é uma plataforma WMS e de conferência móvel projetada para eliminar erros de expedição, otimizar rotas de entrega e garantir 100% de acurácia no inventário. Tudo na palma da sua mão.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <a href="#contato">
-                  <Button className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold text-base px-8 py-6 rounded-2xl shadow-xl shadow-indigo-200 hover:shadow-indigo-300 transition-all hover:-translate-y-0.5 cursor-pointer">
-                    Solicitar Demonstração
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </a>
-                <a href="#funcionalidades">
-                  <Button variant="outline" className="w-full sm:w-auto border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold text-base px-8 py-6 rounded-2xl cursor-pointer">
-                    Ver Recursos
-                  </Button>
-                </a>
-              </div>
+      {/* HERO SECTION */}
+      <section className="relative pt-40 pb-20 lg:pt-48 lg:pb-32 px-4">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          
+          <div className="space-y-8 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium">
+              <Zap className="h-4 w-4" />
+              <span>Sistema Completo para Logística e Força de Vendas</span>
+            </div>
+            
+            <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+              Controle sua operação do <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">estoque</span> até a <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500">entrega.</span>
+            </h1>
+            
+            <p className="text-lg lg:text-xl text-slate-400 max-w-xl leading-relaxed">
+              O Estoque Fácil conecta estoque, expedição, entregas e força de vendas em uma única plataforma integrada.
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Button className="h-14 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:-translate-y-1 transition-all">
+                Solicitar Demonstração
+              </Button>
+              <Button variant="outline" className="h-14 px-8 text-lg font-bold border-white/20 text-white hover:bg-white/5 rounded-full hover:-translate-y-1 transition-all bg-transparent">
+                <Play className="mr-2 h-5 w-5" /> Ver Funcionalidades
+              </Button>
+            </div>
 
-              {/* Trust Indicators */}
-              <div className="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200 max-w-lg mx-auto lg:mx-0">
-                <div>
-                  <p className="text-3xl font-extrabold text-indigo-600">99.8%</p>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Acurácia de Conferência</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-8 border-t border-white/10">
+              {['Controle de estoque', 'Conferência por bipagem', 'App do motorista', 'Assinatura digital', 'Gestão comercial', 'Multiempresa SaaS'].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm text-slate-300 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+                  <span>{item}</span>
                 </div>
-                <div>
-                  <p className="text-3xl font-extrabold text-indigo-600">3x</p>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Mais Velocidade na Carga</p>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative z-10 lg:ml-10 perspective-1000">
+            {/* Dashboard Mockup Animado */}
+            <div className="relative rounded-2xl border border-white/10 bg-[#1E293B]/80 backdrop-blur-xl shadow-2xl overflow-hidden transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-700 ease-out">
+              <div className="h-8 bg-[#0F172A]/50 border-b border-white/10 flex items-center px-4 gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+              </div>
+              <div className="p-6">
+                <div className="flex gap-4 mb-6">
+                  <div className="flex-1 bg-white/5 rounded-lg p-4 border border-white/5">
+                    <div className="h-2 w-1/2 bg-slate-600 rounded mb-4" />
+                    <div className="h-8 w-3/4 bg-blue-500/20 rounded" />
+                  </div>
+                  <div className="flex-1 bg-white/5 rounded-lg p-4 border border-white/5">
+                    <div className="h-2 w-1/2 bg-slate-600 rounded mb-4" />
+                    <div className="h-8 w-3/4 bg-cyan-500/20 rounded" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-3xl font-extrabold text-indigo-600">Zero</p>
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Papelada de Comprovante</p>
+                <div className="h-40 bg-white/5 rounded-lg border border-white/5 p-4 flex items-end gap-2">
+                  {[40, 70, 45, 90, 65, 85, 120].map((h, i) => (
+                    <div key={i} className="flex-1 bg-gradient-to-t from-blue-600/50 to-cyan-400/50 rounded-t-sm" style={{ height: `${h}%` }} />
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Visual/Image Mockup (Sleek CSS Illustration) */}
-            <div className="lg:col-span-5 relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-3xl blur-[30px] opacity-10" />
-              <div className="relative bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl space-y-6 max-w-md mx-auto">
-                {/* Simulated App Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-indigo-600/10 flex items-center justify-center">
-                      <Truck className="h-4.5 w-4.5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">Carga VZ-0412</p>
-                      <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Em Transito
-                      </p>
-                    </div>
+            {/* Floating Elements */}
+            <div className="absolute -bottom-10 -left-10 bg-[#1E293B] border border-white/10 p-4 rounded-xl shadow-2xl flex items-center gap-4 animate-bounce-slow">
+              <div className="h-12 w-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <Check className="h-6 w-6 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm">Entrega #10293</p>
+                <p className="text-emerald-400 text-xs">Confirmada com assinatura</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 2 - PROBLEMA */}
+      <section id="problema" className="py-24 bg-[#0B1120] relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Sua operação ainda depende de processos manuais?</h2>
+            <p className="text-slate-400 text-lg">Empresas perdem tempo e dinheiro diariamente com falhas de comunicação e retrabalho.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-4">
+              {[
+                'Erros de separação constantes',
+                'Estoque físico divergente do sistema',
+                'Falta de rastreabilidade na rua',
+                'Conferência manual demorada',
+                'Falta de comunicação entre vendas e logística',
+                'Rotas sem controle de trajeto',
+                'Falta de comprovante de entrega (canhoto perdido)'
+              ].map((text, i) => (
+                <div key={i} className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-xl">
+                  <div className="h-8 w-8 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                    <X className="h-4 w-4 text-red-400" />
                   </div>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded">
-                    5/8 Clientes
-                  </span>
+                  <span className="text-slate-300 font-medium">{text}</span>
                 </div>
+              ))}
+            </div>
 
-                {/* Simulated Delivery Status List */}
-                <div className="space-y-3">
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-700 truncate">Supermercado Ponto Certo</p>
-                      <p className="text-[10px] text-slate-500">Rua das Flores, 140</p>
-                    </div>
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-600 font-bold px-2 py-0.5 rounded border border-emerald-500/20">
-                      Entregue
-                    </span>
-                  </div>
-
-                  <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between ring-1 ring-indigo-500/20">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate">Mercantil Alvorada Ltda</p>
-                      <p className="text-[10px] text-slate-500">Av. Brasil, 2500</p>
-                    </div>
-                    <span className="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded animate-pulse">
-                      Separando
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between opacity-60">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-700 truncate">Distribuidora Vale do Rio</p>
-                      <p className="text-[10px] text-slate-500">Rodovia BR-101, Km 45</p>
-                    </div>
-                    <span className="text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded">
-                      Pendente
-                    </span>
-                  </div>
-                </div>
-
-                {/* Interactive Feature Preview Card */}
-                <div className="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-4 text-white space-y-3 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-300">Conferência Inteligente</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">100% OK</span>
-                  </div>
-                  <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                    "O bipador móvel de código de barras identificou e registrou 24 volumes de detergente sem nenhuma divergência."
-                  </p>
-                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full w-full bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full" />
-                  </div>
+            <div className="bg-gradient-to-br from-blue-900/50 to-cyan-900/50 p-8 rounded-3xl border border-blue-500/20 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay" />
+              <div className="relative z-10">
+                <h3 className="text-2xl font-bold text-white mb-8">A Solução Definitiva</h3>
+                <div className="flex flex-col gap-4 items-center font-bold text-lg text-blue-300">
+                  <div className="bg-white/10 w-full py-4 rounded-lg border border-white/10">Venda</div>
+                  <ArrowDown className="text-cyan-400" />
+                  <div className="bg-white/10 w-full py-4 rounded-lg border border-white/10">Separação</div>
+                  <ArrowDown className="text-cyan-400" />
+                  <div className="bg-white/10 w-full py-4 rounded-lg border border-white/10">Entrega</div>
+                  <ArrowDown className="text-cyan-400" />
+                  <div className="bg-blue-600 text-white w-full py-4 rounded-lg shadow-lg shadow-blue-600/30">Confirmação em tempo real</div>
                 </div>
               </div>
             </div>
@@ -304,357 +229,279 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="funcionalidades" className="py-20 bg-white border-y border-slate-200">
+      {/* SECTION 3 - SOLUÇÃO */}
+      <section id="solucao" className="py-32 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600">Recursos e Módulos</h2>
-            <p className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-              Tudo o que sua Logística precisa em um só lugar
-            </p>
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              Desenvolvemos ferramentas robustas de coleta de dados para otimizar toda a jornada de expedição e transporte da sua mercadoria.
-            </p>
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Uma plataforma completa para sua operação</h2>
+            <p className="text-slate-400 text-lg">O Estoque Fácil centraliza toda a gestão operacional da empresa em um único ambiente conectado.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 - Conferência */}
-            <div className="border border-slate-100 hover:border-indigo-100 rounded-3xl p-8 hover:bg-slate-50/50 transition-all duration-300 hover:shadow-xl hover:shadow-slate-100/50 group relative overflow-hidden">
-              <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors">
-                <CheckCircle2 className="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1 */}
+            <div className="bg-[#1E293B]/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-[#1E293B] transition-colors group">
+              <div className="h-14 w-14 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Package className="h-7 w-7 text-blue-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Conferência & Recebimento</h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Faça a bipagem de códigos de barras (EAN-13, DUN-14) diretamente pela câmera do celular ou leitores acoplados. O sistema valida quantidades esperadas e bloqueia erros em tempo real.
-              </p>
-              <ul className="space-y-2.5 pt-2">
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Bipe de volumes e caixas fechadas
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Alerta visual e sonoro de divergências
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Validação de lotes e datas de validade
-                </li>
+              <h3 className="text-xl font-bold text-white mb-4">Estoque e Inventário</h3>
+              <ul className="space-y-3">
+                {['Contagem por bipagem', 'Inventários rápidos', 'Divergências online', 'Recebimento ágil'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-400">
+                    <Check className="h-4 w-4 text-blue-400" /> {item}
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Feature 2 - Entregas */}
-            <div className="border border-slate-100 hover:border-indigo-100 rounded-3xl p-8 hover:bg-slate-50/50 transition-all duration-300 hover:shadow-xl hover:shadow-slate-100/50 group relative overflow-hidden">
-              <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors">
-                <Truck className="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" />
+            {/* Card 2 */}
+            <div className="bg-[#1E293B]/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-[#1E293B] transition-colors group">
+              <div className="h-14 w-14 bg-cyan-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Truck className="h-7 w-7 text-cyan-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Controle de Entregas & PDF</h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Gerencie rotas de entrega para motoristas. Colete comprovantes de entrega digitais não editáveis contendo a assinatura na tela do celular, nome, documento do recebedor e geolocalização.
-              </p>
-              <ul className="space-y-2.5 pt-2">
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Coleta de assinatura digital na tela
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Exportação de PDF no WhatsApp ou Email
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Compartilhamento móvel nativo integrado
-                </li>
+              <h3 className="text-xl font-bold text-white mb-4">Expedição e Rotas</h3>
+              <ul className="space-y-3">
+                {['Montagem de cargas', 'Conferência de doca', 'Separação de pedidos', 'Controle de entregas'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-400">
+                    <Check className="h-4 w-4 text-cyan-400" /> {item}
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Feature 3 - Estoque */}
-            <div className="border border-slate-100 hover:border-indigo-100 rounded-3xl p-8 hover:bg-slate-50/50 transition-all duration-300 hover:shadow-xl hover:shadow-slate-100/50 group relative overflow-hidden">
-              <div className="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors">
-                <Package className="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" />
+            {/* Card 3 */}
+            <div className="bg-[#1E293B]/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-[#1E293B] transition-colors group">
+              <div className="h-14 w-14 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Smartphone className="h-7 w-7 text-indigo-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Estoque & Inventário</h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                Audite posições de estoque e faça contagens de inventário rotativas (avulsas ou planejadas) de forma rápida. O sistema gera relatórios automáticos de auditoria e ajuste de saldo.
-              </p>
-              <ul className="space-y-2.5 pt-2">
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Contagem rotativa ou total por coletor
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Ordenação e filtros avançados no estoque
-                </li>
-                <li className="flex items-center gap-2 text-xs text-slate-700 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-600 dark:text-emerald-400" />
-                  Histórico detalhado de movimentações e logs
-                </li>
+              <h3 className="text-xl font-bold text-white mb-4">App do Motorista</h3>
+              <ul className="space-y-3">
+                {['Rotas no celular', 'Assinatura digital', 'Histórico de entregas', 'Comprovante online'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-400">
+                    <Check className="h-4 w-4 text-indigo-400" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-[#1E293B]/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-[#1E293B] transition-colors group">
+              <div className="h-14 w-14 bg-violet-500/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Briefcase className="h-7 w-7 text-violet-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-4">Força de Vendas</h3>
+              <ul className="space-y-3">
+                {['Pedidos e orçamentos', 'Gestão de clientes', 'Tabelas de preço', 'Funil de vendas'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-slate-400">
+                    <Check className="h-4 w-4 text-violet-400" /> {item}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section id="beneficios" className="py-20 bg-slate-50">
+      {/* SECTION 4 - DIFERENCIAIS */}
+      <section className="py-24 bg-[#0B1120] border-y border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Visual element / Image */}
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="bg-indigo-900 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden space-y-6">
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl" />
-
-                <h4 className="font-extrabold text-2xl">Resultados Reais</h4>
-                <p className="text-slate-200 text-sm leading-relaxed">
-                  Distribuidoras e parceiros logísticos que implantaram o Estoque Fácil reduziram custos operacionais e aumentaram a velocidade das entregas.
-                </p>
-
-                <div className="space-y-4 border-t border-indigo-800/80 pt-6">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0 text-sm font-bold">✓</span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-200">Redução de Reclamações</p>
-                      <p className="text-[11px] text-slate-400">Eliminação de faltas e mercadorias trocadas nas cargas.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0 text-sm font-bold">✓</span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-200">Digitalização Completa</p>
-                      <p className="text-[11px] text-slate-400">Fim do arquivamento físico de canhotos de notas fiscais.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0 text-sm font-bold">✓</span>
-                    <div>
-                      <p className="text-xs font-bold text-slate-200">Aprovador de Divergências</p>
-                      <p className="text-[11px] text-slate-400">Liberações de estoque controladas por senha gerencial.</p>
-                    </div>
-                  </div>
-                </div>
+          <h2 className="text-3xl font-bold text-center text-white mb-16">Desenvolvido para operações reais</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {[
+              'Multiempresa SaaS', 'Controle por permissões', 'Liberação remota',
+              'Dashboard operacional', 'Mobile First', 'Integração ERP',
+              'Feature toggling', 'Rastreabilidade total', 'Estrutura escalável', 'Deploy em nuvem'
+            ].map((diff, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-lg flex items-center gap-3 hover:bg-white/10 transition-colors">
+                <Zap className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-sm font-medium text-slate-300">{diff}</span>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5 - COMO FUNCIONA */}
+      <section className="py-32">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Fluxo operacional completo</h2>
+            <p className="text-slate-400 text-lg">Do clique do vendedor até a assinatura do cliente, sem papel.</p>
+          </div>
+
+          <div className="relative">
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-blue-500/50 via-cyan-500/50 to-transparent hidden md:block" />
+            
+            {[
+              { title: 'Passo 1', desc: 'Pedido realizado pelo vendedor no Força de Vendas.', icon: Briefcase },
+              { title: 'Passo 2', desc: 'Separação e conferência por bipagem no estoque.', icon: Box },
+              { title: 'Passo 3', desc: 'Montagem da rota de entrega e romaneio.', icon: Truck },
+              { title: 'Passo 4', desc: 'Motorista realiza a entrega utilizando o App.', icon: Smartphone },
+              { title: 'Passo 5', desc: 'Cliente assina na tela e a entrega é finalizada no ERP.', icon: CheckCircle2 }
+            ].map((step, i) => (
+              <div key={i} className={`flex flex-col md:flex-row items-center gap-8 mb-12 ${i % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
+                <div className={`flex-1 text-center ${i % 2 === 0 ? 'md:text-left' : 'md:text-right'}`}>
+                  <h3 className="text-blue-400 font-bold text-sm uppercase tracking-wider mb-2">{step.title}</h3>
+                  <p className="text-xl font-medium text-white">{step.desc}</p>
+                </div>
+                <div className="h-16 w-16 rounded-full bg-[#0F172A] border-4 border-blue-500 flex items-center justify-center z-10 shrink-0 shadow-lg shadow-blue-500/20">
+                  <step.icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1 hidden md:block" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6 - PLANOS */}
+      <section id="planos" className="py-32 bg-[#0B1120]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Escolha o plano ideal para sua operação</h2>
+            <p className="text-slate-400 text-lg">Pague apenas pelo que utilizar e adicione módulos conforme cresce.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Bronze */}
+            <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-8 flex flex-col">
+              <h3 className="text-2xl font-bold text-orange-400 mb-2">Bronze</h3>
+              <p className="text-slate-400 text-sm mb-6">Ideal para controle interno</p>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['Dashboard', 'Produtos', 'Inventários', 'Recebimentos'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <Check className="h-5 w-5 text-orange-400" /> {item}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Bronze</Button>
             </div>
 
-            {/* Text Content */}
-            <div className="lg:col-span-7 order-1 lg:order-2 space-y-6">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600">Por que escolher o Estoque Fácil?</h2>
-              <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-                Acelere o fluxo de trabalho da sua equipe de expedição
-              </p>
-              <p className="text-slate-600">
-                Nosso sistema foi feito para funcionar em cenários reais de galpões e estradas. A interface é rápida, intuitiva e pensada para quem trabalha em pé carregando caixas.
-              </p>
+            {/* Prata */}
+            <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-8 flex flex-col">
+              <h3 className="text-2xl font-bold text-slate-300 mb-2">Prata</h3>
+              <p className="text-slate-400 text-sm mb-6">Ideal para expedição</p>
+              <div className="text-sm font-semibold text-white mb-4 pb-4 border-b border-white/10">Tudo do Bronze +</div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['Rotas', 'Cargas', 'Conferência de doca'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <Check className="h-5 w-5 text-slate-300" /> {item}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Prata</Button>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
-                <div className="flex gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Operação Híbrida/Offline</h4>
-                    <p className="text-xs text-slate-500 mt-1">Conferência contínua mesmo em locais com pouca internet.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                    <BarChart3 className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Relatórios e Painéis</h4>
-                    <p className="text-xs text-slate-500 mt-1">Veja a velocidade de separação de cada operador em tempo real.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                    <Boxes className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Suporte e Treinamento</h4>
-                    <p className="text-xs text-slate-500 mt-1">Equipe de suporte pronta para auxiliar na implantação rápida.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                    <Truck className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Aplicativo Móvel Nativo</h4>
-                    <p className="text-xs text-slate-500 mt-1">Compatível com Android e iOS, pronto para download rápido.</p>
-                  </div>
-                </div>
-              </div>
+            {/* Ouro */}
+            <div className="bg-gradient-to-b from-blue-900/50 to-[#1E293B] border border-blue-500 rounded-2xl p-8 flex flex-col relative transform lg:-translate-y-4 shadow-2xl shadow-blue-900/50">
+              <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">MAIS POPULAR</div>
+              <h3 className="text-2xl font-bold text-yellow-400 mb-2">Ouro</h3>
+              <p className="text-slate-300 text-sm mb-6">Operação de Last-Mile</p>
+              <div className="text-sm font-semibold text-white mb-4 pb-4 border-b border-white/10">Tudo do Prata +</div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['App do motorista', 'Tracking', 'Assinatura digital', 'Histórico de clientes'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white font-medium">
+                    <Check className="h-5 w-5 text-blue-400" /> {item}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white shadow-lg">Assinar Ouro</Button>
+            </div>
+
+            {/* Platina */}
+            <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-8 flex flex-col">
+              <h3 className="text-2xl font-bold text-cyan-400 mb-2">Platina</h3>
+              <p className="text-slate-400 text-sm mb-6">Operação ponta a ponta</p>
+              <div className="text-sm font-semibold text-white mb-4 pb-4 border-b border-white/10">Tudo do Ouro +</div>
+              <ul className="space-y-4 mb-8 flex-1">
+                {['Sistema Força de Vendas', 'Gestão de vendedores', 'Integração completa ERP', 'Painel B2B'].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-300">
+                    <Check className="h-5 w-5 text-cyan-400" /> {item}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Platina</Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA / Contact Section */}
-      <section id="contato" className="py-20 bg-white border-t border-slate-200 relative overflow-hidden">
-        {/* Decorative grids */}
-               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-
-            {/* Contact Info */}
-            <div className="space-y-6">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600">Contato Comercial</h2>
-              <p className="text-3xl font-extrabold text-slate-900">
-                Pronto para transformar sua gestão de estoque?
-              </p>
-              <p className="text-slate-600">
-                Fale com um de nossos consultores de vendas, tire dúvidas ou agende uma demonstração personalizada do sistema para a sua distribuidora.
-              </p>
-
-              <div className="space-y-4 pt-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                    <Phone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Telefone / WhatsApp</p>
-                    <p className="text-sm font-semibold text-slate-800 hover:text-indigo-600 transition-colors">
-                      <a href="https://wa.me/5531986230171" target="_blank" rel="noreferrer">
-                        (31) 98623-0171
-                      </a>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">E-mail</p>
-                    <p className="text-sm font-semibold text-slate-800">rhprojetoia@gmail.com</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                    <MapPin className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Localização</p>
-                    <p className="text-sm font-semibold text-slate-800">Brasil</p>
-                  </div>
-                </div>
+      {/* SECTION 7 - TECNOLOGIA */}
+      <section id="tecnologia" className="py-24 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl font-bold text-white mb-12">Tecnologia moderna, robusta e escalável</h2>
+          <div className="flex flex-wrap justify-center gap-8 opacity-70">
+            {['React', 'TypeScript', 'Supabase', 'PostgreSQL', 'Vercel', 'PWA', 'REST APIs'].map((tech, i) => (
+              <div key={i} className="px-6 py-3 rounded-full border border-white/20 text-lg font-semibold text-slate-300">
+                {tech}
               </div>
-            </div>
+            ))}
+          </div>
+          <p className="text-slate-400 mt-8 max-w-2xl mx-auto">
+            Nossa arquitetura é preparada para hipercrescimento, operando no modelo SaaS multiempresa com alta disponibilidade e performance.
+          </p>
+        </div>
+      </section>
 
-            {/* Contact Form / Success State */}
-            {leadSubmitted ? (
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-xl shadow-slate-100/50 flex flex-col items-center justify-center text-center py-12">
-                <div className="h-16 w-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                  <CheckCircle2 className="h-10 w-10 animate-bounce" />
-                </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-2">Solicitação Enviada!</h3>
-                <p className="text-slate-600 text-sm max-w-sm mb-6">
-                  Recebemos o seu contato com sucesso. Um de nossos consultores de vendas entrará em contato o mais rápido possível no e-mail ou telefone informado.
-                </p>
-                <Button
-                  variant="outline"
-                  className="rounded-xl px-6 py-2 text-sm font-semibold border-slate-200 hover:bg-slate-50 cursor-pointer"
-                  onClick={() => setLeadSubmitted(false)}
-                >
-                  Enviar outra solicitação
-                </Button>
+      {/* SECTION 8 - FUTURO / IA */}
+      <section className="py-24 bg-gradient-to-r from-blue-900/20 to-cyan-900/20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center justify-center p-3 bg-blue-500/10 rounded-full mb-6">
+            <Zap className="h-8 w-8 text-cyan-400" />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-6">O Futuro: Inteligência Artificial Integrada</h2>
+          <p className="text-slate-300 text-lg mb-12 max-w-2xl mx-auto">Estamos preparando novos recursos autônomos para elevar a sua operação a um nível jamais visto no mercado logístico.</p>
+          
+          <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto text-left">
+            {[
+              'Pedidos via Chatbot e WhatsApp',
+              'Assistente operacional IA para Gestores',
+              'Sugestão automática de reposição de estoque',
+              'Monitoramento preditivo de atrasos em rotas'
+            ].map((feature, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 p-6 rounded-xl flex items-start gap-4">
+                <CheckCircle2 className="h-6 w-6 text-cyan-400 shrink-0" />
+                <span className="text-white font-medium">{feature}</span>
               </div>
-            ) : (
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-8 shadow-xl shadow-slate-100/50">
-                <h3 className="text-xl font-bold text-slate-900 mb-6">Envie uma mensagem</h3>
-                <form className="space-y-4" onSubmit={handleSubmitLead}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Nome Completo *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ex: João Silva"
-                        value={leadName}
-                        onChange={e => setLeadName(e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Telefone *</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="Ex: (31) 98623-0171"
-                        value={leadPhone}
-                        onChange={e => setLeadPhone(e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">E-mail Corporativo *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="Ex: joao@suaempresa.com"
-                      value={leadEmail}
-                      onChange={e => setLeadEmail(e.target.value)}
-                      className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Mensagem / Observação</label>
-                    <textarea
-                      rows={4}
-                      placeholder="Conte-nos um pouco sobre a sua operação logística..."
-                      value={leadMessage}
-                      onChange={e => setLeadMessage(e.target.value)}
-                      className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm resize-none"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmittingLead}
-                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-100 cursor-pointer"
-                  >
-                    {isSubmittingLead ? 'Enviando...' : 'Enviar Solicitação'}
-                  </Button>
-                </form>
-              </div>
-            )}
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-800">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="h-10 w-10 flex items-center justify-center">
-                <img src="/logo.png" alt="Estoque Fácil Logo" className="w-full h-full object-contain" />
-              </div>
-              <span className="font-bold text-lg text-white">Estoque Fácil</span>
-            </div>
+      {/* SECTION 9 - CTA FINAL */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-600/20" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8">Pronto para profissionalizar sua operação?</h2>
+          <p className="text-xl text-blue-200 mb-12">Automatize estoque, expedição, entregas e vendas em uma única plataforma.</p>
+          <Button className="h-16 px-12 text-xl font-bold bg-white text-blue-600 hover:bg-slate-100 rounded-full shadow-2xl hover:-translate-y-1 transition-all">
+            Solicitar Demonstração Gratuita
+          </Button>
+        </div>
+      </section>
 
-            {/* Links */}
-            <div className="flex flex-wrap justify-center gap-6 text-sm">
-              <a href="#inicio" className="hover:text-white transition-colors">Início</a>
-              <a href="#funcionalidades" className="hover:text-white transition-colors">Funcionalidades</a>
-              <a href="#beneficios" className="hover:text-white transition-colors">Vantagens</a>
-              <a href="#contato" className="hover:text-white transition-colors">Contato</a>
-              <button onClick={handleClientAreaClick} className="hover:text-white transition-colors cursor-pointer">
-                Área do Cliente
-              </button>
-            </div>
+      {/* FOOTER */}
+      <footer className="bg-[#0B1120] py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <Box className="h-6 w-6 text-blue-500" />
+            <span className="text-white font-bold text-lg">Estoque Fácil</span>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs">
-            <p>© {new Date().getFullYear()} Estoque Fácil WMS. Todos os direitos reservados.</p>
-            <p className="flex items-center gap-1">
-              Desenvolvido com tecnologia de ponta para coletores móveis.
-            </p>
+          <p className="text-slate-500 text-sm">
+            © 2026 Estoque Fácil. Sistema completo para logística e força de vendas.
+          </p>
+          <div className="flex gap-4">
+            {/* Social links placeholder */}
+            <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">in</div>
+            <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors">ig</div>
           </div>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Button */}
+      <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 h-14 w-14 bg-green-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 hover:scale-110 transition-all z-50">
+        <Phone className="h-6 w-6" />
+      </a>
+      
     </div>
   )
 }
