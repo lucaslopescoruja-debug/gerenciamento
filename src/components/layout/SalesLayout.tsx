@@ -53,30 +53,10 @@ export default function SalesLayout() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-16">
+      <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-between px-2 pb-safe z-40">
-        {navItems.map((item) => {
-          const isActive = location.pathname.startsWith(item.path)
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex flex-col items-center justify-center w-full py-2 gap-1 transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <item.icon className={cn("h-6 w-6", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={cn("text-[10px] font-medium", isActive && "font-bold")}>{item.label}</span>
-            </Link>
-          )
-        })}
-      </nav>
-      
       {/* CSS For Safe Area (iOS notch support) */}
       <style>{`
         .pb-safe {
