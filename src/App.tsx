@@ -37,14 +37,14 @@ function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  // Se for super admin e não tiver empresa selecionada, força ir pro Painel SaaS
-  if (!company && isMaster && !location.pathname.startsWith('/saas')) {
-    return <Navigate to="/saas" replace />;
-  }
-
   // Se o usuário estiver com a senha padrão e não estiver na tela de troca de senha, redireciona
   if (user.password_hash === DEFAULT_PASSWORD_HASH && location.pathname !== '/trocar-senha') {
     return <Navigate to="/trocar-senha" replace />;
+  }
+
+  // Se for super admin e não tiver empresa selecionada, força ir pro Painel SaaS
+  if (!company && isMaster && !location.pathname.startsWith('/saas') && location.pathname !== '/trocar-senha') {
+    return <Navigate to="/saas" replace />;
   }
   
   // Se ele já trocou a senha e tenta acessar a tela de troca, joga pro dashboard

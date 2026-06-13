@@ -99,7 +99,7 @@ export default function SaaSTeam() {
     const baseData: Partial<User> = {
       name,
       username,
-      role: 'admin',
+      role: 'master',
       permissions: {
         can_view_dashboard: true,
         can_manage_loads: true,
