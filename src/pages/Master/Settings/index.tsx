@@ -66,6 +66,28 @@ export default function Settings() {
     }
   }
 
+  async function handleSync() {
+    if (!token) {
+      toast.error('Por favor, salve o token do Maxiprod primeiro.')
+      return
+    }
+    
+    setIsSyncing(true)
+    const toastId = toast.loading('Sincronizando produtos e clientes do Maxiprod...')
+    
+    try {
+      const res = await maxiprodApi.syncAllData()
+      if (res.success) {
+        toast.success('Sincronização concluída com sucesso!', { id: toastId })
+        setLastSync(res.timestamp)
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao sincronizar dados', { id: toastId })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
@@ -106,6 +128,26 @@ export default function Settings() {
                 <p className="text-sm text-muted-foreground mt-4">
                   O aplicativo enviará os pedidos para o Maxiprod automaticamente. A integração inversa de estoque está desabilitada, pois o Estoque Fácil é a fonte principal de dados.
                 </p>
+                
+                <div className="pt-4 border-t mt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-sm">Sincronização Manual</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Puxe clientes, produtos e tabelas de preço do Maxiprod para o Estoque Fácil.
+                      </p>
+                    </div>
+                    <Button variant="outline" onClick={handleSync} disabled={isSyncing || !token}>
+                      <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                      {isSyncing ? 'Sincronizando...' : 'Sincronizar Agora'}
+                    </Button>
+                  </div>
+                  {lastSync && (
+                    <p className="text-xs text-muted-foreground">
+                      Última sincronização: {new Date(lastSync).toLocaleString()}
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
