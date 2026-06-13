@@ -15,7 +15,7 @@ export default function PriceTablesList() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: priceTables = [], isLoading } = useQuery({

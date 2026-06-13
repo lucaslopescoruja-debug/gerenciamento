@@ -38,7 +38,7 @@ export default function ReceiptsList() {
   const [filter, setFilter] = useState(initialFilter)
   const [search, setSearch] = useState('')
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
 
   const { data: allOperations = [], isLoading } = useQuery({
     queryKey: ['operations'],

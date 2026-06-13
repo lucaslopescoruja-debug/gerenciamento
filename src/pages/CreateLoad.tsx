@@ -28,7 +28,7 @@ export default function CreateLoad() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [loadNumber, setLoadNumber] = useState('')
   const [driverName, setDriverName] = useState('')
   const [vehiclePlate, setVehiclePlate] = useState('')

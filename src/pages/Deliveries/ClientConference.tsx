@@ -16,7 +16,7 @@ export default function ClientConference() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user, company } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   
   const [searchInput, setSearchInput] = useState('')
   const [scannedCode, setScannedCode] = useState('')

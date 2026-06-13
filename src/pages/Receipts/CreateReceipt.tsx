@@ -26,7 +26,7 @@ export default function CreateReceipt() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   
   const [loadNumber, setLoadNumber] = useState('') // Nota Fiscal / Identificador
   const [clientName, setClientName] = useState('') // Fornecedor

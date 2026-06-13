@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function CustomersList() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [isImporting, setIsImporting] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 

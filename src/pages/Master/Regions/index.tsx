@@ -12,7 +12,7 @@ export default function RegionsList() {
   const [searchTerm, setSearchTerm] = useState('')
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
 
   const { data: regions = [], isLoading } = useQuery({
     queryKey: ['regions'],

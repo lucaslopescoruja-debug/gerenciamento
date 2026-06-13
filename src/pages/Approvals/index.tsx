@@ -29,7 +29,7 @@ function getRelativeTime(dateStr: string) {
 export default function ApprovalsPage() {
   const queryClient = useQueryClient()
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [activeTab, setActiveTab] = useState('stock_adjustments')
 
   const { data: approvals = [], isLoading: isLoadingApprovals } = useQuery({

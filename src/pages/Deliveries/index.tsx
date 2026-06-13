@@ -35,7 +35,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
 
 export default function DeliveriesList() {
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const queryClient = useQueryClient()
 
   const [editingRoute, setEditingRoute] = useState<DeliveryRoute | null>(null)

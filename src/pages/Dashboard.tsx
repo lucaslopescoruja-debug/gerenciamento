@@ -30,7 +30,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
 export default function Dashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const isDriverOrHelper = user?.role === 'motorista' || user?.role === 'ajudante'
   const isConferente = user?.role === 'conferente'
 

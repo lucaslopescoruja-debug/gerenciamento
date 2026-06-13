@@ -14,7 +14,7 @@ import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
 
 export default function AdhocCountPage() {
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeCountId, setActiveCountId] = useState<string | null>(null)

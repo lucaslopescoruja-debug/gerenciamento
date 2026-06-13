@@ -44,7 +44,7 @@ export default function AllLoads() {
   const [filter, setFilter] = useState(initialFilter)
   const [search, setSearch] = useState('')
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const navigate = useNavigate()
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false)
   const [selectedRouteId, setSelectedRouteId] = useState('')

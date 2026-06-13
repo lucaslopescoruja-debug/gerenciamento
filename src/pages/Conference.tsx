@@ -24,7 +24,7 @@ export default function Conference() {
   const queryClient = useQueryClient()
   const scanRef = useRef<HTMLInputElement>(null)
   const { user } = useAuth()
-  const isManager = user?.role === 'admin' || user?.role === 'gestor'
+  const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   
   const [scanInput, setScanInput] = useState('')
   const [manualQty, setManualQty] = useState<number | ''>(1)
