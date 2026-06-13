@@ -50,7 +50,9 @@ const navGroups = [
     title: 'COMODATOS',
     items: [
       { label: 'Equipamentos', icon: Box, path: '/comodatos', permission: 'can_manage_equipments' },
-      { label: 'Ordens de Serviço', icon: ClipboardList, path: '/comodatos/os', permission: 'can_manage_equipments' }
+      { label: 'Ordens de Serviço', icon: ClipboardList, path: '/comodatos/os', permission: 'can_manage_equipments' },
+      { label: 'Insumos / Peças', icon: Package, path: '/comodatos/insumos', permission: 'can_manage_equipments' },
+      { label: 'Solicitar Peças', icon: Tag, path: '/comodatos/solicitacoes', permission: 'can_manage_equipments' }
     ]
   },
   {

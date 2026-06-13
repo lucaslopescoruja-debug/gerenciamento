@@ -24,6 +24,8 @@ import Landing from './pages/Landing'
 import HelpAndSupport from './pages/HelpAndSupport'
 import EquipmentsList from './pages/Comodatos/EquipmentsList'
 import EquipmentOrdersList from './pages/Comodatos/EquipmentOrdersList'
+import SuppliesList from './pages/Comodatos/SuppliesList'
+import SupplyRequests from './pages/Comodatos/SupplyRequests'
 
 // Protected Route Wrapper
 function ProtectedRoute() {
@@ -143,6 +145,8 @@ function App() {
             {/* Comodatos Routes */}
             <Route path="/comodatos" element={<PlanGuard requiredPlan="ouro"><EquipmentsList /></PlanGuard>} />
             <Route path="/comodatos/os" element={<PlanGuard requiredPlan="ouro"><EquipmentOrdersList /></PlanGuard>} />
+            <Route path="/comodatos/insumos" element={<PlanGuard requiredPlan="ouro"><SuppliesList /></PlanGuard>} />
+            <Route path="/comodatos/solicitacoes" element={<PlanGuard requiredPlan="ouro"><SupplyRequests /></PlanGuard>} />
             
             {/* Sales Management */}
             <Route path="/vendas/gestao" element={<SalesManagement />} />
