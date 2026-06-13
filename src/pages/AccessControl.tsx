@@ -258,7 +258,7 @@ export default function AccessControl() {
                 </select>
               </div>
 
-            {role !== 'admin' && (
+            {(role !== 'admin' && role !== 'gestor' && role !== 'master') && (
               <div className="pt-4 border-t border-border mt-4">
                 <Label className="mb-3 block font-bold text-primary">Permissões Específicas (Baseadas no Menu Lateral)</Label>
                 
