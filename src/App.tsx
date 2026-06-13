@@ -22,7 +22,8 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { DEFAULT_PASSWORD_HASH } from './utils/crypto'
 import Landing from './pages/Landing'
 import HelpAndSupport from './pages/HelpAndSupport'
-
+import EquipmentsList from './pages/Comodatos/EquipmentsList'
+import EquipmentOrdersList from './pages/Comodatos/EquipmentOrdersList'
 
 // Protected Route Wrapper
 function ProtectedRoute() {
@@ -139,6 +140,10 @@ function App() {
             <Route path="/liberacoes" element={<ApprovalsPage />} />
             <Route path="/historico" element={<PlanGuard requiredPlan="ouro"><ClientHistory /></PlanGuard>} />
 
+            {/* Comodatos Routes */}
+            <Route path="/comodatos" element={<PlanGuard requiredPlan="ouro"><EquipmentsList /></PlanGuard>} />
+            <Route path="/comodatos/os" element={<PlanGuard requiredPlan="ouro"><EquipmentOrdersList /></PlanGuard>} />
+            
             {/* Sales Management */}
             <Route path="/vendas/gestao" element={<SalesManagement />} />
 

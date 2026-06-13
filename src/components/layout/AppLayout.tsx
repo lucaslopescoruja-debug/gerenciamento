@@ -47,6 +47,13 @@ const navGroups = [
     ]
   },
   {
+    title: 'COMODATOS',
+    items: [
+      { label: 'Equipamentos', icon: Box, path: '/comodatos', permission: 'can_manage_equipments' },
+      { label: 'Ordens de Serviço', icon: ClipboardList, path: '/comodatos/os', permission: 'can_manage_equipments' }
+    ]
+  },
+  {
     title: 'CRM & CADASTROS',
     items: [
       { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_customers' },

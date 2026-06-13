@@ -177,6 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user.role === 'motorista' || user.role === 'ajudante') {
       return ['can_view_dashboard', 'can_do_delivery'].includes(permission);
     }
+    if (user.role === 'mecanico') {
+      return ['can_view_dashboard', 'can_manage_equipments'].includes(permission);
+    }
 
     return false;
   };

@@ -7,10 +7,12 @@ import { salesRepsApi } from '@/api/salesReps'
 import { regionsApi } from '@/api/regions'
 import { priceTablesApi } from '@/api/priceTables'
 import { salesApi } from '@/api/sales'
+import { equipmentsApi } from '@/api/equipments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/toaster'
 import { useAuth } from '@/contexts/AuthContext'
+import { Link } from 'react-router-dom'
 
 export default function CustomerForm() {
   const { id } = useParams()
@@ -79,6 +81,12 @@ export default function CustomerForm() {
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
     queryFn: () => customersApi.getCustomer(id!),
+    enabled: isEditing
+  })
+
+  const { data: currentEquipments = [] } = useQuery({
+    queryKey: ['customer_equipments', id],
+    queryFn: () => equipmentsApi.getCustomerEquipments(id!),
     enabled: isEditing
   })
 
@@ -481,76 +489,46 @@ export default function CustomerForm() {
         </div>
 
         {/* Comodatos / Equipamentos */}
-        <div className="glass-card p-6 border-t-4 border-t-orange-500">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-lg font-bold text-foreground">
-              <Box className="h-5 w-5 text-orange-500" />
-              Equipamentos em Comodato
-            </div>
-            <Button type="button" size="sm" variant="outline" onClick={addEquipment} className="shadow-sm hover:shadow-md transition-shadow">
-              <Plus className="h-4 w-4 mr-2" /> Adicionar Equipamento
-            </Button>
-          </div>
-          
-          <div className="space-y-4">
-            {formData.equipments.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border/50">
-                Nenhum equipamento em comodato registrado para este cliente.
+        {isEditing && (
+          <div className="glass-card p-6 border-t-4 border-t-orange-500">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <Box className="h-5 w-5 text-orange-500" />
+                Equipamentos em Comodato
               </div>
-            ) : (
-              formData.equipments.map((eq, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-background/50 border border-border/50 rounded-xl relative group">
-                  <div className="md:col-span-4">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Equipamento / Descrição *</label>
-                    <Input 
-                      required
-                      value={eq.description} 
-                      onChange={e => updateEquipment(index, 'description', e.target.value)} 
-                      placeholder="Ex: Freezer 2 Portas"
-                    />
-                  </div>
-                  <div className="md:col-span-3">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Nº de Série</label>
-                    <Input 
-                      value={eq.serial_number || ''} 
-                      onChange={e => updateEquipment(index, 'serial_number', e.target.value)} 
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Data de Entrega</label>
-                    <Input 
-                      type="date"
-                      value={eq.delivered_at || ''} 
-                      onChange={e => updateEquipment(index, 'delivered_at', e.target.value)} 
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Status</label>
-                    <select 
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      value={eq.status}
-                      onChange={e => updateEquipment(index, 'status', e.target.value)}
-                    >
-                      <option value="active">Com o Cliente</option>
-                      <option value="returned">Devolvido</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-1 flex items-end pb-1 justify-end">
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => removeEquipment(index)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+              <Link to={`/comodatos?cliente=${id}`}>
+                <Button type="button" size="sm" variant="outline" className="shadow-sm hover:shadow-md transition-shadow">
+                  Ver Histórico de OS
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="space-y-4">
+              {currentEquipments.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border/50">
+                  Nenhum equipamento em comodato registrado para este cliente.
                 </div>
-              ))
-            )}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentEquipments.map((eq: any) => (
+                    <div key={eq.id} className="p-4 bg-background/50 border border-border/50 rounded-xl relative group">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs text-muted-foreground font-mono">{eq.patrimony}</div>
+                          <div className="font-bold">{eq.type} {eq.model}</div>
+                          {eq.size && <div className="text-sm text-muted-foreground">{eq.size}</div>}
+                        </div>
+                        <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700`}>
+                          Com o Cliente
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex justify-end gap-3 sticky bottom-4 z-10 bg-background/80 p-4 backdrop-blur-md rounded-xl border border-border/50 shadow-lg">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>Cancelar</Button>

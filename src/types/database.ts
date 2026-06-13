@@ -5,7 +5,7 @@
 export type OperationType = 'LOAD' | 'INVENTORY' | 'BLIND_RECEIPT' | 'RECEIPT' | 'RETURN'
 export type OperationStatus = 'pending' | 'in_progress' | 'dispatched' | 'completed' | 'cancelled'
 export type ItemStatus = 'pending' | 'ok' | 'divergent'
-export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista' | 'ajudante' | 'vendedor' | 'representante' | 'operador' | 'master'
+export type UserRole = 'admin' | 'gestor' | 'conferente' | 'motorista' | 'ajudante' | 'vendedor' | 'representante' | 'operador' | 'mecanico' | 'master'
 
 export interface UserPermissions {
   can_view_dashboard: boolean
@@ -24,6 +24,7 @@ export interface UserPermissions {
   can_manage_reps?: boolean
   can_manage_regions?: boolean
   can_manage_integrations?: boolean
+  can_manage_equipments?: boolean
 
   // SaaS Master Permissions
   can_manage_saas_finance?: boolean
@@ -465,4 +466,53 @@ export interface DeliveryItem {
   requested_qty?: number
   return_reason?: string
   created_at: string
+}
+
+export interface Equipment {
+  id: string
+  company_id: string
+  patrimony: string
+  type: string
+  model: string
+  size: string | null
+  status: 'Teste' | 'Disponível' | 'Em Manutenção' | 'Danificado' | 'No Cliente'
+  current_customer_id: string | null
+  created_at: string
+  updated_at: string
+  customer?: Customer
+}
+
+export interface EquipmentOrder {
+  id: string
+  company_id: string
+  customer_id: string
+  equipment_id: string
+  type: 'entrega' | 'recolha' | 'troca' | 'manutencao'
+  status: 'pendente' | 'em_rota' | 'concluido' | 'cancelado'
+  driver_id: string | null
+  scheduled_date: string | null
+  completed_at: string | null
+  signature_data: string | null
+  term_pdf_url: string | null
+  receiver_name: string | null
+  receiver_doc: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  customer?: Customer
+  equipment?: Equipment
+  driver?: User
+}
+
+export interface EquipmentHistory {
+  id: string
+  company_id: string
+  equipment_id: string
+  customer_id: string | null
+  action: string
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  customer?: Customer
+  user?: User
 }

@@ -13,19 +13,19 @@ import { toast } from '@/components/ui/toaster'
 import { ShieldCheck, Plus, Pencil, Trash2, UserCircle, KeyRound, AlertTriangle } from 'lucide-react'
 import { hashPassword, DEFAULT_PASSWORD_HASH } from '@/utils/crypto'
 
-const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor', conferente: 'Conferente', motorista: 'Motorista', ajudante: 'Ajudante', vendedor: 'Vendedor', representante: 'Representante', operador: 'Operador', master: 'Master' }
-const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive', ajudante: 'destructive', vendedor: 'default', representante: 'default', operador: 'warning', master: 'default' }
+const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor', conferente: 'Conferente', motorista: 'Motorista', ajudante: 'Ajudante', vendedor: 'Vendedor', representante: 'Representante', operador: 'Operador', mecanico: 'Mecânico', master: 'Master' }
+const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive', ajudante: 'destructive', vendedor: 'default', representante: 'default', operador: 'warning', mecanico: 'warning', master: 'default' }
 
 const baseFalsePermissions: Partial<UserPermissions> = {
   can_use_sales_app: false, can_manage_sales: false, can_manage_price_tables: false,
   can_manage_payment_conditions: false, can_manage_customers: false, can_manage_reps: false,
-  can_manage_regions: false, can_manage_integrations: false
+  can_manage_regions: false, can_manage_integrations: false, can_manage_equipments: false
 };
 
 const allTruePermissions: Partial<UserPermissions> = {
   can_use_sales_app: true, can_manage_sales: true, can_manage_price_tables: true,
   can_manage_payment_conditions: true, can_manage_customers: true, can_manage_reps: true,
-  can_manage_regions: true, can_manage_integrations: true
+  can_manage_regions: true, can_manage_integrations: true, can_manage_equipments: true
 };
 
 const defaultPermissions: Record<UserRole, UserPermissions> = {
@@ -37,6 +37,7 @@ const defaultPermissions: Record<UserRole, UserPermissions> = {
   vendedor: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
   representante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
   operador: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions },
+  mecanico: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_manage_equipments: true },
   master: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true, ...allTruePermissions }
 }
 
@@ -254,6 +255,7 @@ export default function AccessControl() {
                   <option value="conferente">Conferente</option>
                   {(company?.plan === 'ouro' || company?.plan === 'platina') && <option value="motorista">Motorista</option>}
                   {(company?.plan === 'ouro' || company?.plan === 'platina') && <option value="ajudante">Ajudante</option>}
+                  {(company?.plan === 'ouro' || company?.plan === 'platina') && <option value="mecanico">Mecânico</option>}
                   {company?.plan === 'platina' && <option value="vendedor">Vendedor</option>}
                 </select>
               </div>
@@ -336,6 +338,15 @@ export default function AccessControl() {
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_regions} onChange={() => togglePerm('can_manage_regions')} className="w-4 h-4 accent-primary" />
                       <span className="text-sm">Cadastro de Regiões</span>
+                    </label>
+                  </div>
+
+                  {/* Gestão de Comodatos */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Gestão de Comodatos</Label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_equipments} onChange={() => togglePerm('can_manage_equipments')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Gestão de Equipamentos / OS</span>
                     </label>
                   </div>
 
