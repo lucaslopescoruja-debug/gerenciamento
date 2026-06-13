@@ -160,7 +160,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Admin and Master have all permissions implicitly
     if (user?.role === 'admin' || user?.role === 'master' || user?.is_super_admin) return true;
     if (user?.role === 'gestor') {
-      return ['can_view_dashboard', 'can_manage_loads', 'can_manage_products', 'can_manage_users'].includes(permission);
+      return [
+        'can_view_dashboard', 'can_manage_loads', 'can_manage_products', 'can_manage_users',
+        'can_use_sales_app', 'can_manage_sales', 'can_manage_price_tables', 
+        'can_manage_payment_conditions', 'can_manage_customers', 'can_manage_reps', 
+        'can_manage_regions', 'can_manage_integrations'
+      ].includes(permission);
     }
     if (user?.role === 'vendedor' || user?.role === 'representante') {
       return ['can_view_dashboard', 'can_manage_products'].includes(permission);

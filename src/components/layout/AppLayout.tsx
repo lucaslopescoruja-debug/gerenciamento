@@ -34,31 +34,31 @@ const navGroups = [
   {
     title: 'VENDAS',
     items: [
-      { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_manage_products' },
-      { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_products' }
+      { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_use_sales_app' },
+      { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_sales' }
     ]
   },
   {
     title: 'ESTOQUE',
     items: [
-      { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_do_conference' },
-      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_products' },
-      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_products' }
+      { label: 'Estoque', icon: Package, path: '/produtos', permission: 'can_manage_products' },
+      { label: 'Tabelas de Preço', icon: Tag, path: '/cadastros/tabelas-de-preco', permission: 'can_manage_price_tables' },
+      { label: 'Condições de Pagamento', icon: Banknote, path: '/cadastros/condicoes-pagamento', permission: 'can_manage_payment_conditions' }
     ]
   },
   {
     title: 'CRM & CADASTROS',
     items: [
-      { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_products' },
-      { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_products' },
-      { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_products' }
+      { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_customers' },
+      { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_reps' },
+      { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_regions' }
     ]
   },
   {
     title: 'SISTEMA',
     items: [
       { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
-      { label: 'Integração ERP', icon: Settings, path: '/cadastros/configuracoes-erp', permission: 'can_manage_products' }
+      { label: 'Integração ERP', icon: Settings, path: '/cadastros/configuracoes-erp', permission: 'can_manage_integrations' }
     ]
   }
 ]

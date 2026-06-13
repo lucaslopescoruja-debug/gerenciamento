@@ -16,16 +16,28 @@ import { hashPassword, DEFAULT_PASSWORD_HASH } from '@/utils/crypto'
 const roleLabels: Record<UserRole, string> = { admin: 'Admin', gestor: 'Gestor', conferente: 'Conferente', motorista: 'Motorista', ajudante: 'Ajudante', vendedor: 'Vendedor', representante: 'Representante', operador: 'Operador', master: 'Master' }
 const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destructive'> = { admin: 'default', gestor: 'success', conferente: 'warning', motorista: 'destructive', ajudante: 'destructive', vendedor: 'default', representante: 'default', operador: 'warning', master: 'default' }
 
+const baseFalsePermissions: Partial<UserPermissions> = {
+  can_use_sales_app: false, can_manage_sales: false, can_manage_price_tables: false,
+  can_manage_payment_conditions: false, can_manage_customers: false, can_manage_reps: false,
+  can_manage_regions: false, can_manage_integrations: false
+};
+
+const allTruePermissions: Partial<UserPermissions> = {
+  can_use_sales_app: true, can_manage_sales: true, can_manage_price_tables: true,
+  can_manage_payment_conditions: true, can_manage_customers: true, can_manage_reps: true,
+  can_manage_regions: true, can_manage_integrations: true
+};
+
 const defaultPermissions: Record<UserRole, UserPermissions> = {
-  admin: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
-  gestor: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true },
-  conferente: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
-  motorista: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true },
-  ajudante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true },
-  vendedor: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
-  representante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
-  operador: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false },
-  master: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true }
+  admin: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true, ...allTruePermissions },
+  gestor: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true, ...allTruePermissions },
+  conferente: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions },
+  motorista: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true, ...baseFalsePermissions },
+  ajudante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: true, ...baseFalsePermissions },
+  vendedor: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
+  representante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
+  operador: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions },
+  master: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true, ...allTruePermissions }
 }
 
 export default function AccessControl() {
@@ -248,36 +260,97 @@ export default function AccessControl() {
 
             {role !== 'admin' && (
               <div className="pt-4 border-t border-border mt-4">
-                <Label className="mb-3 block font-bold text-primary">Permissões Específicas</Label>
-                <div className="space-y-3">
+                <Label className="mb-3 block font-bold text-primary">Permissões Específicas (Baseadas no Menu Lateral)</Label>
+                
+                <div className="space-y-4">
+                  {/* Visão Geral */}
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={perms.can_view_dashboard} onChange={() => togglePerm('can_view_dashboard')} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm">Visão Geral (Dashboard)</span>
+                    <span className="text-sm font-semibold">Dashboard (Visão Geral)</span>
                   </label>
-                  {(!company?.plan || company.plan !== 'bronze') && (
+
+                  {/* Operações */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Operações Logísticas</Label>
+                    {(!company?.plan || company.plan !== 'bronze') && (
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_manage_loads} onChange={() => togglePerm('can_manage_loads')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm">Gerenciar Cargas/Rotas</span>
+                      </label>
+                    )}
+                    {(company?.plan === 'ouro' || company?.plan === 'platina') && (
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm">Realizar Entregas (App Mobile)</span>
+                      </label>
+                    )}
                     <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={perms.can_manage_loads} onChange={() => togglePerm('can_manage_loads')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Gerenciar Cargas/Rotas</span>
+                      <input type="checkbox" checked={perms.can_do_conference} onChange={() => togglePerm('can_do_conference')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Operar Conferência (Bipar itens/Estoque)</span>
                     </label>
+                  </div>
+
+                  {/* Vendas */}
+                  {company?.plan === 'platina' && (
+                    <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                      <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Força de Vendas</Label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_use_sales_app} onChange={() => togglePerm('can_use_sales_app')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm">Acessar App Força de Vendas</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_manage_sales} onChange={() => togglePerm('can_manage_sales')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm">Gestão de Vendas (Painel Web)</span>
+                      </label>
+                    </div>
                   )}
-                  {(company?.plan === 'ouro' || company?.plan === 'platina') && (
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="rounded" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} />
-                      <span className="text-sm">Realizar Entregas (Mobile)</span>
+
+                  {/* Estoque e Precificação */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Estoque e Precificação</Label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_products} onChange={() => togglePerm('can_manage_products')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Cadastro e Gestão de Estoque</span>
                     </label>
-                  )}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={perms.can_do_conference} onChange={() => togglePerm('can_do_conference')} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm">Operar Conferência (Bipar itens)</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={perms.can_manage_products} onChange={() => togglePerm('can_manage_products')} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm">Cadastro de Produtos</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={perms.can_manage_users} onChange={() => togglePerm('can_manage_users')} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm">Gestão de Usuários (Acessos)</span>
-                  </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_price_tables} onChange={() => togglePerm('can_manage_price_tables')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Tabelas de Preço</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_payment_conditions} onChange={() => togglePerm('can_manage_payment_conditions')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Condições de Pagamento</span>
+                    </label>
+                  </div>
+
+                  {/* CRM e Cadastros */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">CRM e Cadastros Principais</Label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_customers} onChange={() => togglePerm('can_manage_customers')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Cadastro de Clientes</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_reps} onChange={() => togglePerm('can_manage_reps')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Cadastro de Representantes</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_regions} onChange={() => togglePerm('can_manage_regions')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Cadastro de Regiões</span>
+                    </label>
+                  </div>
+
+                  {/* Administração */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Administração</Label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_users} onChange={() => togglePerm('can_manage_users')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Controle de Acessos (Usuários)</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_integrations} onChange={() => togglePerm('can_manage_integrations')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Integração ERP</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}

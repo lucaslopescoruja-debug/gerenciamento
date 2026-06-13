@@ -15,6 +15,16 @@ export interface UserPermissions {
   can_manage_users: boolean
   can_do_delivery: boolean
   
+  // Novas permissões
+  can_use_sales_app?: boolean
+  can_manage_sales?: boolean
+  can_manage_price_tables?: boolean
+  can_manage_payment_conditions?: boolean
+  can_manage_customers?: boolean
+  can_manage_reps?: boolean
+  can_manage_regions?: boolean
+  can_manage_integrations?: boolean
+
   // SaaS Master Permissions
   can_manage_saas_finance?: boolean
   can_manage_saas_clients?: boolean
