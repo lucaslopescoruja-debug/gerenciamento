@@ -38,6 +38,7 @@ export default function CreateLoad() {
   const [codeSearch, setCodeSearch] = useState('')
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [selectedHelperId, setSelectedHelperId] = useState('')
+  const [scheduledDate, setScheduledDate] = useState('')
   const [importedClients, setImportedClients] = useState<any[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
@@ -121,10 +122,10 @@ export default function CreateLoad() {
   }, [existingItems])
 
   const createMutation = useMutation({
-    mutationFn: async (data: { op: any, items: any, driverId?: string, helperId?: string, clients?: any[] }) => {
+    mutationFn: async (data: { op: any, items: any, clients?: any[], scheduledDate?: string }) => {
       const op = await operationsApi.createOperation(data.op, data.items)
-      if (data.clients && data.clients.length > 0 && data.driverId) {
-        const route = await deliveriesApi.createDeliveryRoute(op.id, data.driverId, data.helperId)
+      if (data.clients && data.clients.length > 0) {
+        const route = await deliveriesApi.createDeliveryRoute(op.id, null, null, data.scheduledDate)
         await deliveriesApi.importDeliveryClients(route.id, data.clients)
       }
       return op
@@ -641,9 +642,8 @@ export default function CreateLoad() {
       createMutation.mutate({ 
         op: opData, 
         items: itemsData,
-        driverId: selectedDriverId || undefined,
-        helperId: selectedHelperId || undefined,
-        clients: importedClients.length > 0 ? importedClients : undefined
+        clients: importedClients.length > 0 ? importedClients : undefined,
+        scheduledDate: scheduledDate || undefined
       })
     }
   }
@@ -669,36 +669,8 @@ export default function CreateLoad() {
               </div>
 
               <div className="space-y-2">
-                <Label>Motorista Responsável {importedClients.length > 0 && '*'}</Label>
-                <select 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedDriverId}
-                  onChange={e => setSelectedDriverId(e.target.value)}
-                  required={importedClients.length > 0}
-                >
-                  <option value="">Selecione o motorista...</option>
-                  {drivers.map(driver => (
-                    <option key={driver.id} value={driver.id}>
-                      {driver.name} ({driver.username})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Ajudante (Opcional)</Label>
-                <select 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedHelperId}
-                  onChange={e => setSelectedHelperId(e.target.value)}
-                >
-                  <option value="">Selecione o ajudante...</option>
-                  {helpers.map(helper => (
-                    <option key={helper.id} value={helper.id}>
-                      {helper.name} ({helper.username})
-                    </option>
-                  ))}
-                </select>
+                <Label>Data Prevista de Entrega</Label>
+                <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} required={importedClients.length > 0} />
               </div>
             </div>
 
@@ -706,7 +678,7 @@ export default function CreateLoad() {
               <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 slide-up mt-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>
-                  <strong>✨ Planilha com {importedClients.length} clientes vinculada!</strong> Ao salvar esta carga, o sistema criará automaticamente a carga e a rota de entrega correspondente vinculada ao motorista selecionado.
+                  <strong>✨ Planilha com {importedClients.length} clientes vinculada!</strong> Ao salvar esta carga, o sistema criará automaticamente a carga e a rota de entrega correspondente. Você poderá designar o motorista depois.
                 </span>
               </div>
             )}

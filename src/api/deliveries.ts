@@ -48,10 +48,12 @@ export const deliveriesApi = {
     return data
   },
 
-  async createDeliveryRoute(operationId: string, driverId: string, helperId?: string) {
+  async createDeliveryRoute(operationId: string, driverId?: string | null, helperId?: string | null, scheduledDate?: string) {
     if (!currentCompanyId) throw new Error('No company context')
-    const payload: any = { operation_id: operationId, driver_id: driverId, company_id: currentCompanyId }
+    const payload: any = { operation_id: operationId, company_id: currentCompanyId }
+    if (driverId) payload.driver_id = driverId
     if (helperId) payload.helper_id = helperId
+    if (scheduledDate) payload.scheduled_date = scheduledDate
 
     const { data, error } = await supabase
       .from('delivery_routes')
