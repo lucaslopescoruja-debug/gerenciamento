@@ -27,6 +27,12 @@ export default function EquipmentsList() {
   const [model, setModel] = useState('')
   const [size, setSize] = useState('')
   const [status, setStatus] = useState<'Teste' | 'Disponível' | 'Em Manutenção' | 'Danificado' | 'No Cliente'>('Disponível')
+  const [currentCustomerId, setCurrentCustomerId] = useState('')
+
+  const { data: customersList = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: customersApi.getCustomers
+  })
 
   const { data: equipments = [], isLoading } = useQuery({
     queryKey: ['equipments'],
@@ -61,9 +67,9 @@ export default function EquipmentsList() {
     }
 
     if (editing) {
-      updateMutation.mutate({ patrimony, type, model, size, status })
+      updateMutation.mutate({ patrimony, type, model, size, status, current_customer_id: status === 'No Cliente' ? currentCustomerId : null })
     } else {
-      createMutation.mutate({ patrimony, type, model, size, status })
+      createMutation.mutate({ patrimony, type, model, size, status, current_customer_id: status === 'No Cliente' ? currentCustomerId : null })
     }
   }
 
@@ -84,6 +90,7 @@ export default function EquipmentsList() {
     setModel(eq.model)
     setSize(eq.size || '')
     setStatus(eq.status as any)
+    setCurrentCustomerId(eq.current_customer_id || '')
     setIsModalOpen(true)
   }
 
@@ -211,9 +218,26 @@ export default function EquipmentsList() {
                 <option value="Em Manutenção">Em Manutenção</option>
                 <option value="Teste">Em Teste</option>
                 <option value="Danificado">Danificado / Sucata</option>
-                <option value="No Cliente" disabled>No Cliente (Automático)</option>
+                <option value="No Cliente">No Cliente</option>
               </select>
             </div>
+
+            {status === 'No Cliente' && (
+              <div className="space-y-2 col-span-2">
+                <Label>Cliente Atual (Vínculo Manual)</Label>
+                <select 
+                  value={currentCustomerId} 
+                  onChange={e => setCurrentCustomerId(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">Selecione o cliente...</option>
+                  {customersList.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.fantasy_name || c.legal_name} ({c.document})</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
