@@ -132,7 +132,7 @@ export default function Landing() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-8 border-t border-white/10">
-              {['Controle de estoque', 'Conferência por bipagem', 'App do motorista', 'Assinatura digital', 'Gestão comercial', 'Multiempresa SaaS'].map((item, i) => (
+              {['Controle de estoque', 'Conferência por bipagem', 'App do motorista', 'Assinatura digital', 'Gestão comercial', 'Suporte Especializado'].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm text-slate-300 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
                   <span>{item}</span>
@@ -307,9 +307,9 @@ export default function Landing() {
           <h2 className="text-3xl font-bold text-center text-white mb-16">Desenvolvido para operações reais</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {[
-              'Multiempresa SaaS', 'Controle por permissões', 'Liberação remota',
+              'Suporte Rápido', 'Controle por permissões', 'Liberação remota',
               'Dashboard operacional', 'Mobile First', 'Integração ERP',
-              'Feature toggling', 'Rastreabilidade total', 'Estrutura escalável', 'Deploy em nuvem'
+              'Auditoria', 'Rastreabilidade total', 'Estrutura escalável', 'Deploy em nuvem'
             ].map((diff, i) => (
               <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-lg flex items-center gap-3 hover:bg-white/10 transition-colors">
                 <Zap className="h-4 w-4 text-cyan-400 shrink-0" />
@@ -425,22 +425,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* SECTION 7 - TECNOLOGIA */}
-      <section id="tecnologia" className="py-24 border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-12">Tecnologia moderna, robusta e escalável</h2>
-          <div className="flex flex-wrap justify-center gap-8 opacity-70">
-            {['React', 'TypeScript', 'Supabase', 'PostgreSQL', 'Vercel', 'PWA', 'REST APIs'].map((tech, i) => (
-              <div key={i} className="px-6 py-3 rounded-full border border-white/20 text-lg font-semibold text-slate-300">
-                {tech}
-              </div>
-            ))}
-          </div>
-          <p className="text-slate-400 mt-8 max-w-2xl mx-auto">
-            Nossa arquitetura é preparada para hipercrescimento, operando no modelo SaaS multiempresa com alta disponibilidade e performance.
-          </p>
-        </div>
-      </section>
 
       {/* SECTION 8 - FUTURO / IA */}
       <section className="py-24 bg-gradient-to-r from-blue-900/20 to-cyan-900/20">
