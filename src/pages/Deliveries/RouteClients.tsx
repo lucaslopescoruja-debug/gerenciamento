@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered } from 'lucide-react'
+import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered, Menu } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import * as XLSX from 'xlsx'
 import { geocodeAddress, optimizeRoute } from '@/api/routing'
@@ -37,6 +37,7 @@ export default function RouteClients() {
   const [sortBy, setSortBy] = useState<'sequence' | 'alphabetical' | 'neighborhood' | 'status'>('sequence')
   const [isGroupedByCity, setIsGroupedByCity] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showMenu, setShowMenu] = useState(false)
 
   const { data: route, isLoading: isLoadingRoute } = useQuery({
     queryKey: ['delivery_route', id],
@@ -604,31 +605,46 @@ export default function RouteClients() {
             </select>
 
             {isManager && (
-              <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative">
                 <input type="file" accept=".csv,.txt,.xls,.xlsx" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
                 <Button 
                   variant="outline"
-                  className="gap-2 flex-1 sm:flex-none border-primary text-primary hover:bg-primary/10"
-                  onClick={() => navigate(`/entregas/${id}/novo-cliente`)}
+                  className="gap-2"
+                  onClick={() => setShowMenu(!showMenu)}
                 >
-                  <Plus className="h-5 w-5" /> Novo Cliente
+                  <Menu className="h-5 w-5" /> Menu
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="gap-2 flex-1 sm:flex-none border-green-600 text-green-600 hover:bg-green-50"
-                  onClick={() => optimizeMutation.mutate()}
-                  disabled={isOptimizing || isImporting || clients.length < 2}
-                >
-                  <MapIcon className="h-5 w-5" /> 
-                  {isOptimizing ? 'Otimizando...' : 'Otimizar Rota'}
-                </Button>
-                <Button 
-                  className="gap-2 flex-1 sm:flex-none bg-amber-600 hover:bg-amber-700 text-white"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting}
-                >
-                  {isImporting ? 'Importando...' : <><FileSpreadsheet className="h-5 w-5" /> Importar XLRS</>}
-                </Button>
+
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-background border rounded-md shadow-lg z-50 flex flex-col p-1 overflow-hidden">
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 w-full text-left"
+                        onClick={() => { setShowMenu(false); navigate(`/entregas/${id}/novo-cliente`); }}
+                      >
+                        <Plus className="h-4 w-4" /> Novo Cliente
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 w-full text-left text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={() => { setShowMenu(false); optimizeMutation.mutate(); }}
+                        disabled={isOptimizing || isImporting || clients.length < 2}
+                      >
+                        <MapIcon className="h-4 w-4" /> {isOptimizing ? 'Otimizando...' : 'Otimizar Rota'}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start gap-3 w-full text-left text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                        onClick={() => { setShowMenu(false); fileInputRef.current?.click(); }}
+                        disabled={isImporting}
+                      >
+                        <FileSpreadsheet className="h-4 w-4" /> {isImporting ? 'Importando...' : 'Importar Planilha'}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
