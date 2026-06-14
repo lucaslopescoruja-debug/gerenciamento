@@ -109,8 +109,8 @@ export default function RouteClients() {
         
         let garageCoord: {lat: number, lng: number} | null = null;
         if (company.garage_lat && company.garage_lng) {
-           const glat = typeof company.garage_lat === 'string' ? Number(company.garage_lat.replace(',', '.')) : Number(company.garage_lat);
-           const glng = typeof company.garage_lng === 'string' ? Number(company.garage_lng.replace(',', '.')) : Number(company.garage_lng);
+           const glat = Number(String(company.garage_lat).replace(',', '.'));
+           const glng = Number(String(company.garage_lng).replace(',', '.'));
            if (!isNaN(glat) && !isNaN(glng)) {
              garageCoord = { lat: glat, lng: glng };
            }
@@ -144,8 +144,8 @@ export default function RouteClients() {
           }
 
           if (lat && lng) {
-            const numLat = typeof lat === 'string' ? Number(lat.replace(',', '.')) : Number(lat);
-            const numLng = typeof lng === 'string' ? Number(lng.replace(',', '.')) : Number(lng);
+            const numLat = Number(String(lat).replace(',', '.'));
+            const numLng = Number(String(lng).replace(',', '.'));
             if (!isNaN(numLat) && !isNaN(numLng)) {
               clientsWithCoords.push({ id: c.id, coord: { lat: numLat, lng: numLng } })
             }
