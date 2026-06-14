@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { Plus, Search, Box, Edit2, History, AlertCircle, Trash2 } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Plus, Search, Box, Edit2, History, AlertCircle, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Equipment } from '@/types/database'
 
 export default function EquipmentsList() {
@@ -23,6 +24,9 @@ export default function EquipmentsList() {
 
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [historyEquipment, setHistoryEquipment] = useState<Equipment | null>(null)
+
+  const [sortField, setSortField] = useState<'patrimony' | 'model' | 'status' | 'customer'>('patrimony')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   // Form
   const [patrimony, setPatrimony] = useState('')
@@ -123,11 +127,52 @@ export default function EquipmentsList() {
     setIsModalOpen(true)
   }
 
-  const filtered = equipments.filter(eq => 
-    eq.patrimony.toLowerCase().includes(search.toLowerCase()) ||
-    eq.model.toLowerCase().includes(search.toLowerCase()) ||
-    (eq.customer?.fantasy_name?.toLowerCase().includes(search.toLowerCase()))
-  )
+  const handleSort = (field: 'patrimony' | 'model' | 'status' | 'customer') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortOrder('asc')
+    }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return null
+    return sortOrder === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />
+  }
+
+  const filtered = equipments
+    .filter(eq => 
+      eq.patrimony.toLowerCase().includes(search.toLowerCase()) ||
+      eq.model.toLowerCase().includes(search.toLowerCase()) ||
+      eq.customer?.fantasy_name?.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      let aVal = ''
+      let bVal = ''
+      
+      if (sortField === 'patrimony') {
+        aVal = a.patrimony
+        bVal = b.patrimony
+      } else if (sortField === 'model') {
+        aVal = `${a.type} ${a.model}`
+        bVal = `${b.type} ${b.model}`
+      } else if (sortField === 'status') {
+        aVal = a.status
+        bVal = b.status
+      } else if (sortField === 'customer') {
+        aVal = a.customer?.fantasy_name || a.customer?.legal_name || ''
+        bVal = b.customer?.fantasy_name || b.customer?.legal_name || ''
+      }
+
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+
+  if (!canManage) {
+    return <div className="p-8 text-center text-muted-foreground">Você não tem permissão para acessar esta página.</div>
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto slide-in">
@@ -156,49 +201,78 @@ export default function EquipmentsList() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(eq => (
-          <Card key={eq.id}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-xs text-muted-foreground font-mono">{eq.patrimony}</div>
-                  <div className="font-bold">{eq.type} {eq.model}</div>
-                  {eq.size && <div className="text-sm text-muted-foreground">{eq.size}</div>}
-                </div>
-                <div className={`px-2 py-1 rounded text-xs font-bold ${
-                  eq.status === 'Disponível' ? 'bg-green-100 text-green-700' :
-                  eq.status === 'No Cliente' ? 'bg-blue-100 text-blue-700' :
-                  'bg-amber-100 text-amber-700'
-                }`}>
-                  {eq.status}
-                </div>
-              </div>
-
-              {eq.customer && (
-                <div className="text-sm bg-muted/50 p-2 rounded">
-                  <span className="text-muted-foreground text-xs block">Cliente Atual:</span>
-                  <span className="font-medium">{eq.customer.fantasy_name || eq.customer.legal_name}</span>
-                </div>
+      <Card>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="cursor-pointer whitespace-nowrap" onClick={() => handleSort('patrimony')}>
+                  Nº Série / Patrimônio <SortIcon field="patrimony" />
+                </TableHead>
+                <TableHead className="cursor-pointer whitespace-nowrap" onClick={() => handleSort('model')}>
+                  Marca / Modelo <SortIcon field="model" />
+                </TableHead>
+                <TableHead className="cursor-pointer whitespace-nowrap" onClick={() => handleSort('status')}>
+                  Situação <SortIcon field="status" />
+                </TableHead>
+                <TableHead className="cursor-pointer whitespace-nowrap" onClick={() => handleSort('customer')}>
+                  Cliente Atual <SortIcon field="customer" />
+                </TableHead>
+                {canManage && <TableHead className="text-right">Ações</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(eq => (
+                <TableRow key={eq.id}>
+                  <TableCell className="font-mono text-xs">{eq.patrimony}</TableCell>
+                  <TableCell>
+                    <div className="font-bold">{eq.type} {eq.model}</div>
+                    {eq.size && <div className="text-xs text-muted-foreground">{eq.size}</div>}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
+                      eq.status === 'Disponível' ? 'bg-green-100 text-green-700' :
+                      eq.status === 'No Cliente' ? 'bg-blue-100 text-blue-700' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {eq.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    {eq.customer ? (
+                      <span className="font-medium text-sm">{eq.customer.fantasy_name || eq.customer.legal_name}</span>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                  </TableCell>
+                  {canManage && (
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" size="sm" onClick={() => openEdit(eq)} title="Editar">
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openHistory(eq)} title="Histórico">
+                          <History className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(eq.id)} title="Excluir">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={canManage ? 5 : 4} className="h-24 text-center text-muted-foreground">
+                    Nenhum equipamento encontrado.
+                  </TableCell>
+                </TableRow>
               )}
-
-              {canManage && (
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(eq)}>
-                    <Edit2 className="h-4 w-4 mr-2" /> Editar
-                  </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openHistory(eq)}>
-                    <History className="h-4 w-4 mr-2" /> Histórico
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(eq.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
