@@ -21,6 +21,9 @@ export default function EquipmentsList() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editing, setEditing] = useState<Equipment | null>(null)
 
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+  const [historyEquipment, setHistoryEquipment] = useState<Equipment | null>(null)
+
   // Form
   const [patrimony, setPatrimony] = useState('')
   const [type, setType] = useState('Freezer')
@@ -58,6 +61,17 @@ export default function EquipmentsList() {
     },
     onError: (err: any) => toast.error(err.message)
   })
+
+  const { data: equipmentHistory = [], isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['equipment_history', historyEquipment?.id],
+    queryFn: () => equipmentsApi.getEquipmentHistory(historyEquipment!.id),
+    enabled: !!historyEquipment && isHistoryModalOpen
+  })
+
+  const openHistory = (eq: Equipment) => {
+    setHistoryEquipment(eq)
+    setIsHistoryModalOpen(true)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -158,7 +172,7 @@ export default function EquipmentsList() {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(eq)}>
                     <Edit2 className="h-4 w-4 mr-2" /> Editar
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openHistory(eq)}>
                     <History className="h-4 w-4 mr-2" /> Histórico
                   </Button>
                 </div>
@@ -245,6 +259,35 @@ export default function EquipmentsList() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isHistoryModalOpen} onOpenChange={setIsHistoryModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Histórico do Equipamento: {historyEquipment?.patrimony}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isLoadingHistory ? (
+              <p className="text-center py-4">Carregando histórico...</p>
+            ) : equipmentHistory.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">Nenhum histórico encontrado para este equipamento.</p>
+            ) : (
+              equipmentHistory.map(h => (
+                <div key={h.id} className="border p-3 rounded bg-muted/30">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold text-sm">{h.action}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                  {h.customer && <div className="text-sm bg-background p-2 rounded mb-2 border">Cliente: <span className="font-medium">{h.customer.fantasy_name || h.customer.legal_name}</span></div>}
+                  {h.notes && <div className="text-sm mt-2 text-muted-foreground">{h.notes}</div>}
+                  <div className="text-xs mt-2 text-primary font-medium">Por: {h.user?.name || 'Sistema'}</div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsHistoryModalOpen(false)}>Fechar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
