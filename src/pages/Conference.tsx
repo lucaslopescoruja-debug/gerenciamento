@@ -745,15 +745,25 @@ export default function Conference() {
             </Button>
           )}
           {isManager && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 shrink-0" 
-              onClick={handleDeleteOp} 
-              disabled={deleteOpMutation.isPending}
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
+            <div className="flex gap-2 shrink-0">
+              <Button 
+                variant="outline"
+                className="gap-2 border-blue-600 text-blue-600 hover:bg-blue-50 h-10 px-3"
+                onClick={handleExportExcel}
+                disabled={items.length === 0}
+              >
+                <Download className="h-4 w-4" /> Romaneio (Excel)
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-10 w-10" 
+                onClick={handleDeleteOp} 
+                disabled={deleteOpMutation.isPending}
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </div>
           )}
         </div>
         <Card>

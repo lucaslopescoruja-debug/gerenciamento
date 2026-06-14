@@ -629,14 +629,6 @@ export default function RouteClients() {
                 >
                   {isImporting ? 'Importando...' : <><FileSpreadsheet className="h-5 w-5" /> Importar XLRS</>}
                 </Button>
-                <Button 
-                  variant="outline"
-                  className="gap-2 flex-1 sm:flex-none border-blue-600 text-blue-600 hover:bg-blue-50"
-                  onClick={handleExportMerchandise}
-                  disabled={!clients || clients.length === 0}
-                >
-                  <ListOrdered className="h-5 w-5" /> Romaneio (Excel)
-                </Button>
               </div>
             )}
           </div>
