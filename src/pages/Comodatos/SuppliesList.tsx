@@ -183,7 +183,7 @@ export default function SuppliesList() {
                 >
                   <option value="un">Unidade (un)</option>
                   <option value="cx">Caixa (cx)</option>
-                  <option value="kg">Quilograma (kg)</option>
+                  <option value="g">Grama (g)</option>
                   <option value="m">Metro (m)</option>
                   <option value="l">Litro (l)</option>
                 </select>
