@@ -41,8 +41,8 @@ export async function optimizeRoute(garageCoord: Coordinate, clients: { id: stri
   try {
     // A API do OSRM usa o formato lng,lat
     const coordsStr = [
-      `${garageCoord.lng},${garageCoord.lat}`,
-      ...clients.map(c => `${c.coord.lng},${c.coord.lat}`)
+      `${garageCoord.lng.toFixed(6)},${garageCoord.lat.toFixed(6)}`,
+      ...clients.map(c => `${c.coord.lng.toFixed(6)},${c.coord.lat.toFixed(6)}`)
     ].join(';');
 
     // roundtrip=true e source=first garante que a rota começa na garagem, passa por todos, e volta pra garagem
@@ -51,8 +51,8 @@ export async function optimizeRoute(garageCoord: Coordinate, clients: { id: stri
     const response = await fetch(url);
     if (!response.ok) {
         const errText = await response.text();
-        console.error('OSRM Erro HTTP:', response.status, errText);
-        throw new Error(`OSRM HTTP ${response.status}: ${errText.substring(0, 50)}...`);
+        console.error('OSRM Erro HTTP:', response.status, errText, 'URL:', url);
+        throw new Error(`OSRM 400: ${errText.substring(0, 60)} | Coords: ${coordsStr.substring(0, 100)}`);
     }
 
     const data = await response.json();
