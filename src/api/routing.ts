@@ -49,10 +49,17 @@ export async function optimizeRoute(garageCoord: Coordinate, clients: { id: stri
     const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?roundtrip=true&source=first`;
 
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Falha ao comunicar com serviço de roteamento (OSRM)');
+    if (!response.ok) {
+        const errText = await response.text();
+        console.error('OSRM Erro HTTP:', response.status, errText);
+        throw new Error(`Falha no serviço de roteamento (OSRM). Tente novamente.`);
+    }
 
     const data = await response.json();
-    if (data.code !== 'Ok') throw new Error(`OSRM Error: ${data.code}`);
+    if (data.code !== 'Ok') {
+        console.error('OSRM Erro Code:', data);
+        throw new Error(`Erro do OSRM: ${data.code}`);
+    }
 
     // data.waypoints contém a ordem original e o 'waypoint_index' indica a ordem otimizada
     // O index 0 é a garagem (source=first). Os clientes são index 1..N.

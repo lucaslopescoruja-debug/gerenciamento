@@ -109,8 +109,14 @@ export default function RouteClients() {
         
         let garageCoord: {lat: number, lng: number} | null = null;
         if (company.garage_lat && company.garage_lng) {
-           garageCoord = { lat: Number(company.garage_lat), lng: Number(company.garage_lng) };
-        } else if (company.garage_address) {
+           const glat = typeof company.garage_lat === 'string' ? Number(company.garage_lat.replace(',', '.')) : Number(company.garage_lat);
+           const glng = typeof company.garage_lng === 'string' ? Number(company.garage_lng.replace(',', '.')) : Number(company.garage_lng);
+           if (!isNaN(glat) && !isNaN(glng)) {
+             garageCoord = { lat: glat, lng: glng };
+           }
+        }
+        
+        if (!garageCoord && company.garage_address) {
            setOptimizationStatus('Geocodificando garagem...')
            garageCoord = await geocodeAddress(company.garage_address)
         }
@@ -123,7 +129,6 @@ export default function RouteClients() {
           let lat = c.latitude || c.customer?.latitude;
           let lng = c.longitude || c.customer?.longitude;
           
-          // Se ainda não tem lat/lng, tenta achar o cliente no cadastro geral pelo nome ou documento
           if (!lat || !lng) {
              const docStr = c.customer?.document ? c.customer.document.replace(/[^\d]/g, '') : null;
              const foundCustomer = customers.find((cust: any) => 
@@ -139,15 +144,16 @@ export default function RouteClients() {
           }
 
           if (lat && lng) {
-            // Already has coords saved locally or in customer registry
-            clientsWithCoords.push({ id: c.id, coord: { lat: Number(lat), lng: Number(lng) } })
+            const numLat = typeof lat === 'string' ? Number(lat.replace(',', '.')) : Number(lat);
+            const numLng = typeof lng === 'string' ? Number(lng.replace(',', '.')) : Number(lng);
+            if (!isNaN(numLat) && !isNaN(numLng)) {
+              clientsWithCoords.push({ id: c.id, coord: { lat: numLat, lng: numLng } })
+            }
           } else if (c.address) {
-            // Needs geocoding
             setOptimizationStatus(`Buscando coordenadas ${idx}/${clients.length}...`)
             const coord = await geocodeAddress(c.address)
-            if (coord) {
+            if (coord && !isNaN(coord.lat) && !isNaN(coord.lng)) {
               clientsWithCoords.push({ id: c.id, coord })
-              // Poderíamos salvar no banco aqui também, mas vamos focar em otimizar
             }
           }
           idx++
