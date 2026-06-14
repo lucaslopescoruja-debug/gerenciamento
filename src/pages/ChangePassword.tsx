@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { hashPassword, DEFAULT_PASSWORD_HASH } from '@/utils/crypto';
+import { supabase } from '@/lib/supabase';
 import { usersApi } from '@/api/users';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,20 +34,19 @@ export default function ChangePassword() {
 
     setIsLoading(true);
     try {
-      const hashed = await hashPassword(newPassword);
-      if (hashed === DEFAULT_PASSWORD_HASH) {
-        toast.error('Você não pode usar a senha padrão.');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast.error('Erro ao atualizar a senha no provedor de autenticação.');
         setIsLoading(false);
         return;
       }
 
-      await usersApi.updateUser(user.id, { password_hash: hashed });
+      await usersApi.updateUser(user.id, { must_change_password: false });
       
-      // Refresh local auth context user
-      await login(user.username, hashed);
+      // Força a re-leitura do perfil na AuthContext (via onAuthStateChange ou recarregando a página)
+      window.location.href = '/dashboard';
       
       toast.success('Senha atualizada com sucesso!');
-      navigate('/dashboard');
     } catch (error) {
       toast.error('Erro ao atualizar a senha.');
     } finally {

@@ -85,14 +85,16 @@ export interface SystemNote {
 
 export interface User {
   id: string
+  auth_user_id?: string
   company_id: string
   is_super_admin?: boolean
   name: string
   username: string
-  password_hash: string
+  email?: string
   role: UserRole
   active: boolean
   reset_requested?: boolean
+  must_change_password?: boolean
   permissions: UserPermissions
   created_at: string
 }

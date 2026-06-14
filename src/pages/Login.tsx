@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { hashPassword } from '@/utils/crypto';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,7 @@ import { LogIn, Box, Smartphone, CheckCircle2, Lock, Eye, EyeOff, User, ArrowRig
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,21 +24,20 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) {
-      toast.error('Preencha o usuário e a senha.');
+    if (!email || !password) {
+      toast.error('Preencha o e-mail e a senha.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const hashed = await hashPassword(password);
-      const success = await login(username.trim(), hashed);
+      const success = await login(email.trim(), password);
       
       if (success) {
         toast.success('Login realizado com sucesso!');
         navigate('/dashboard');
       } else {
-        toast.error('Usuário ou senha incorretos, ou usuário inativo.');
+        // O Supabase Auth vai emitir o toast no AuthContext em caso de erro
         setShowForgotPassword(true);
       }
     } catch (error) {
@@ -50,27 +48,24 @@ export default function Login() {
   };
 
   const handleForgotPassword = async () => {
-    if (!username) {
-      toast.error('Preencha seu usuário para solicitar o reset.');
+    if (!email) {
+      toast.error('Preencha seu e-mail para solicitar o reset.');
       return;
     }
     
     setIsLoading(true);
     try {
-      const { usersApi } = await import('@/api/users');
-      const users = await usersApi.getUsers();
-      const userFound = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
+      const { supabase } = await import('@/lib/supabase');
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/trocar-senha`,
+      });
       
-      if (!userFound) {
-        toast.error('Usuário não encontrado no sistema.');
-        return;
-      }
+      if (error) throw error;
       
-      await usersApi.updateUser(userFound.id, { reset_requested: true });
-      toast.success('Solicitação enviada! Avise seu gestor para liberar seu acesso.');
+      toast.success('Se este e-mail estiver cadastrado, você receberá um link de redefinição.');
       setShowForgotPassword(false);
     } catch (e) {
-      toast.error('Erro ao solicitar reset.');
+      toast.error('Erro ao solicitar reset de senha.');
     } finally {
       setIsLoading(false);
     }
@@ -176,16 +171,16 @@ export default function Login() {
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-1.5">
-                <Label htmlFor="username" className="text-xs font-semibold text-[#64748B] ml-0.5">E-mail ou usuário</Label>
+                <Label htmlFor="email" className="text-xs font-semibold text-[#64748B] ml-0.5">E-mail</Label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94A3B8]" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#94A3B8]" />
                   <Input 
-                    id="username"
-                    type="text" 
-                    placeholder="Digite seu e-mail ou usuário" 
+                    id="email"
+                    type="email" 
+                    placeholder="Digite seu e-mail" 
                     className="h-12 pl-11 rounded-xl border-[#E2E8F0] focus-visible:ring-[#6231E2] focus-visible:border-[#6231E2] text-sm shadow-sm"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                     autoFocus
                   />
                 </div>

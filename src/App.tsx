@@ -19,7 +19,7 @@ import { ThemeProvider } from './components/ThemeProvider'
 import ChangePassword from './pages/ChangePassword'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { DEFAULT_PASSWORD_HASH } from './utils/crypto'
+
 import Landing from './pages/Landing'
 import HelpAndSupport from './pages/HelpAndSupport'
 import EquipmentsList from './pages/Comodatos/EquipmentsList'
@@ -40,8 +40,8 @@ function ProtectedRoute() {
     return <Navigate to="/login" replace />;
   }
 
-  // Se o usuário estiver com a senha padrão e não estiver na tela de troca de senha, redireciona
-  if (user.password_hash === DEFAULT_PASSWORD_HASH && location.pathname !== '/trocar-senha') {
+  // Se o usuário estiver com a senha temporária e não estiver na tela de troca de senha, redireciona
+  if (user.must_change_password && location.pathname !== '/trocar-senha') {
     return <Navigate to="/trocar-senha" replace />;
   }
 
@@ -51,7 +51,7 @@ function ProtectedRoute() {
   }
   
   // Se ele já trocou a senha e tenta acessar a tela de troca, joga pro dashboard
-  if (user.password_hash !== DEFAULT_PASSWORD_HASH && location.pathname === '/trocar-senha') {
+  if (!user.must_change_password && location.pathname === '/trocar-senha') {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -1,18 +1,16 @@
 import { supabase } from '@/lib/supabase'
 import type { PaymentCondition, CustomerPaymentCondition, SalesOrder, SalesOrderItem } from '@/types/database'
-import { currentCompanyId } from '@/contexts/AuthContext'
 
 export const salesApi = {
   // ============================================
   // Payment Conditions
   // ============================================
   async getPaymentConditions() {
-    if (!currentCompanyId) return []
-
+    
     const { data, error } = await supabase
       .from('payment_conditions')
       .select('*')
-      .eq('company_id', currentCompanyId)
+      
       .order('name')
 
     if (error) throw error
@@ -20,11 +18,10 @@ export const salesApi = {
   },
 
   async createPaymentCondition(condition: Omit<PaymentCondition, 'id' | 'company_id' | 'created_at' | 'updated_at'>) {
-    if (!currentCompanyId) throw new Error('Empresa não selecionada')
-
+    
     const { data, error } = await supabase
       .from('payment_conditions')
-      .insert({ ...condition, company_id: currentCompanyId })
+      .insert({ ...condition})
       .select()
       .single()
 
@@ -90,8 +87,7 @@ export const salesApi = {
   // Sales Orders
   // ============================================
   async getSalesOrders() {
-    if (!currentCompanyId) return []
-
+    
     const { data, error } = await supabase
       .from('sales_orders')
       .select(`
@@ -101,7 +97,7 @@ export const salesApi = {
         payment_condition:payment_conditions(*),
         price_table:price_tables(*)
       `)
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -130,11 +126,10 @@ export const salesApi = {
   },
 
   async createSalesOrder(order: Omit<SalesOrder, 'id' | 'company_id' | 'created_at' | 'updated_at' | 'customer' | 'sales_rep' | 'payment_condition' | 'price_table' | 'items'>) {
-    if (!currentCompanyId) throw new Error('Empresa não selecionada')
-
+    
     const { data, error } = await supabase
       .from('sales_orders')
-      .insert({ ...order, company_id: currentCompanyId })
+      .insert({ ...order})
       .select()
       .single()
 

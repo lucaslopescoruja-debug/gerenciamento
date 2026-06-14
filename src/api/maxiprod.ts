@@ -1,16 +1,14 @@
 import { supabase } from '@/lib/supabase'
-import { currentCompanyId } from '@/contexts/AuthContext'
 
 const MAXIPROD_API_URL = 'https://api.maxiprod.com.br/api/v3'
 
 // Helper to get company maxiprod token
 async function getCompanyToken(): Promise<string> {
-  if (!currentCompanyId) throw new Error('Empresa não selecionada')
-
+  
   const { data, error } = await supabase
     .from('companies')
     .select('maxiprod_api_token')
-    .eq('id', currentCompanyId)
+    .limit(1)
     .single()
 
   if (error || !data?.maxiprod_api_token) {
@@ -54,8 +52,7 @@ export const maxiprodApi = {
    * Envia um pedido fechado para o Maxiprod
    */
   async sendSalesOrder(orderId: string) {
-    if (!currentCompanyId) throw new Error('Empresa não selecionada')
-    const token = await getCompanyToken()
+        const token = await getCompanyToken()
 
     // 1. Fetch full order with items and customer info
     const { data: order, error } = await supabase
@@ -123,8 +120,7 @@ export const maxiprodApi = {
    * Sincroniza dados pré-definidos (Clientes e Produtos) do Maxiprod para o Estoque Fácil
    */
   async syncAllData() {
-    if (!currentCompanyId) throw new Error('Empresa não selecionada')
-    
+        
     // Simulate API delay for syncing
     await new Promise(resolve => setTimeout(resolve, 2000))
     
@@ -133,10 +129,13 @@ export const maxiprodApi = {
     
     // Update last sync time in company
     const now = new Date().toISOString()
-    await supabase
-      .from('companies')
-      .update({ maxiprod_last_sync: now })
-      .eq('id', currentCompanyId)
+    const { data: comp } = await supabase.from('companies').select('id').limit(1).single();
+    if (comp) {
+      await supabase
+        .from('companies')
+        .update({ maxiprod_last_sync: now })
+        .eq('id', comp.id)
+    }
 
     return { success: true, timestamp: now }
   }

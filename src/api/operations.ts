@@ -1,38 +1,38 @@
 import { supabase } from '@/lib/supabase'
 import type { Operation, OperationItem, OperationAlert } from '@/types/database'
-import { currentCompanyId } from '@/contexts/AuthContext'
+
 
 export const operationsApi = {
   async getOperations() {
-    if (!currentCompanyId) return []
+    
     const { data, error } = await supabase
       .from('operations')
       .select('*')
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
     if (error) throw error
     return data as Operation[]
   },
 
   async getOperation(id: string) {
-    if (!currentCompanyId) return null
+    
     const { data, error } = await supabase
       .from('operations')
       .select('*')
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
       .single()
     if (error) throw error
     return data as Operation
   },
 
   async getOperationItems(operationId: string) {
-    if (!currentCompanyId) return []
+    
     const { data, error } = await supabase
       .from('operation_items')
       .select('*')
       .eq('operation_id', operationId)
-      .eq('company_id', currentCompanyId)
+      
       .order('description')
     if (error) throw error
     return data as OperationItem[]
@@ -46,7 +46,7 @@ export const operationsApi = {
       .from('operations')
       .update(updates)
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -67,7 +67,7 @@ export const operationsApi = {
         ...extraUpdates
       })
       .eq('id', itemId)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -79,7 +79,7 @@ export const operationsApi = {
       .from('operation_items')
       .update({ quantity_expected })
       .eq('id', itemId)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -91,7 +91,7 @@ export const operationsApi = {
       .from('operation_items')
       .delete()
       .eq('id', itemId)
-      .eq('company_id', currentCompanyId)
+      
     if (error) throw error
     return true
   },
@@ -99,7 +99,7 @@ export const operationsApi = {
   async addOperationItem(operationId: string, item: Omit<OperationItem, 'id' | 'operation_id' | 'company_id'>) {
     const { data, error } = await supabase
       .from('operation_items')
-      .insert([{ ...item, operation_id: operationId, company_id: currentCompanyId }])
+      .insert([{ ...item, operation_id: operationId}])
       .select()
       .single()
     if (error) throw error
@@ -107,10 +107,10 @@ export const operationsApi = {
   },
 
   async createOperation(operation: Omit<Operation, 'id' | 'created_at' | 'company_id'>, items: Omit<OperationItem, 'id' | 'operation_id' | 'company_id'>[]) {
-    if (!currentCompanyId) throw new Error('No company context')
+    
     const { data: opData, error: opError } = await supabase
       .from('operations')
-      .insert([{ ...operation, company_id: currentCompanyId }])
+      .insert([{ ...operation}])
       .select()
       .single()
     
@@ -119,9 +119,7 @@ export const operationsApi = {
     if (items.length > 0) {
       const itemsToInsert = items.map(item => ({
         ...item,
-        operation_id: opData.id,
-        company_id: currentCompanyId
-      }))
+        operation_id: opData.id}))
 
       const { error: itemsError } = await supabase
         .from('operation_items')
@@ -138,14 +136,14 @@ export const operationsApi = {
       .from('operations')
       .update(opData)
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
     if (opError) throw opError
 
     const { data: existingItems, error: existingError } = await supabase
       .from('operation_items')
       .select('*')
       .eq('operation_id', id)
-      .eq('company_id', currentCompanyId)
+      
     if (existingError) throw existingError
 
     const existingMap = new Map(existingItems.map(i => [i.product_code, i]))
@@ -154,7 +152,7 @@ export const operationsApi = {
     // Items to delete
     const toDelete = existingItems.filter(i => !newMap.has(i.product_code)).map(i => i.id)
     if (toDelete.length > 0) {
-      await supabase.from('operation_items').delete().in('id', toDelete).eq('company_id', currentCompanyId)
+      await supabase.from('operation_items').delete().in('id', toDelete)
     }
 
     // Items to update and insert
@@ -164,10 +162,10 @@ export const operationsApi = {
       if (existing) {
         // Update expected quantity if changed
         if (existing.quantity_expected !== newItem.quantity_expected) {
-          await supabase.from('operation_items').update({ quantity_expected: newItem.quantity_expected }).eq('id', existing.id).eq('company_id', currentCompanyId)
+          await supabase.from('operation_items').update({ quantity_expected: newItem.quantity_expected }).eq('id', existing.id)
         }
       } else {
-        toInsert.push({ ...newItem, operation_id: id, company_id: currentCompanyId })
+        toInsert.push({ ...newItem, operation_id: id})
       }
     }
 
@@ -197,19 +195,10 @@ export const operationsApi = {
         // 3. Devolver os itens despachados ao estoque
         for (const item of items) {
           if (item.quantity_scanned > 0 && item.product_id) {
-            const { data: product } = await supabase
-              .from('products')
-              .select('stock')
-              .eq('id', item.product_id)
-              .single()
-
-            if (product) {
-              const newStock = (product.stock || 0) + item.quantity_scanned
-              await supabase
-                .from('products')
-                .update({ stock: newStock })
-                .eq('id', item.product_id)
-            }
+            await supabase.rpc('increment_stock', { 
+              p_product_id: item.product_id, 
+              p_delta: item.quantity_scanned 
+            });
           }
         }
       }
@@ -239,19 +228,10 @@ export const operationsApi = {
     // 3. For each item with quantity_scanned > 0, update product stock
     for (const item of items) {
       if (item.quantity_scanned > 0 && item.product_id) {
-        const { data: product } = await supabase
-          .from('products')
-          .select('stock')
-          .eq('id', item.product_id)
-          .single()
-          
-        if (product) {
-          const newStock = (product.stock || 0) + item.quantity_scanned
-          await supabase
-            .from('products')
-            .update({ stock: newStock })
-            .eq('id', item.product_id)
-        }
+        await supabase.rpc('increment_stock', { 
+          p_product_id: item.product_id, 
+          p_delta: item.quantity_scanned 
+        });
       }
     }
     
@@ -259,7 +239,7 @@ export const operationsApi = {
   },
 
   async getPendingStockAdjustments() {
-    if (!currentCompanyId) return []
+    
     const { data, error } = await supabase
       .from('operation_items')
       .select(`
@@ -272,17 +252,16 @@ export const operationsApi = {
       `)
       .eq('physical_divergence_found', true)
       .eq('divergence_resolved', false)
-      .eq('company_id', currentCompanyId)
+      
       .order('description')
     if (error) throw error
     return data
   },
 
   async createOperationAlerts(alerts: Omit<OperationAlert, 'id' | 'created_at' | 'resolved' | 'company_id'>[]) {
-    if (!currentCompanyId) throw new Error('No company context')
+    
     const alertsToInsert = alerts.map(a => ({
       ...a,
-      company_id: currentCompanyId,
       resolved: false
     }))
     const { data, error } = await supabase
@@ -294,7 +273,7 @@ export const operationsApi = {
   },
 
   async getPendingOperationAlerts() {
-    if (!currentCompanyId) return []
+    
     const { data, error } = await supabase
       .from('operation_alerts')
       .select(`
@@ -305,19 +284,19 @@ export const operationsApi = {
         )
       `)
       .eq('resolved', false)
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
     if (error) throw error
     return data
   },
 
   async resolveOperationAlert(alertId: string) {
-    if (!currentCompanyId) throw new Error('No company context')
+    
     const { data, error } = await supabase
       .from('operation_alerts')
       .update({ resolved: true })
       .eq('id', alertId)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -325,26 +304,26 @@ export const operationsApi = {
   },
 
   async resolveAllOperationAlerts() {
-    if (!currentCompanyId) throw new Error('No company context')
+    
     const { data, error } = await supabase
       .from('operation_alerts')
       .update({ resolved: true })
       .eq('resolved', false)
-      .eq('company_id', currentCompanyId)
+      
       .select()
     if (error) throw error
     return data
   },
 
   async createReturnOperationFromRoute(routeId: string) {
-    if (!currentCompanyId) throw new Error('No company context')
+    
     
     // 1. Fetch route details
     const { data: route, error: routeError } = await supabase
       .from('delivery_routes')
       .select('*, driver:users(name), operation:operations(load_number)')
       .eq('id', routeId)
-      .eq('company_id', currentCompanyId)
+      
       .single()
     if (routeError) throw routeError
 
@@ -353,7 +332,7 @@ export const operationsApi = {
       .from('delivery_clients')
       .select('*, delivery_items(*)')
       .eq('delivery_route_id', routeId)
-      .eq('company_id', currentCompanyId)
+      
     if (clientsError) throw clientsError
 
     // 3. Calculate returns
@@ -397,12 +376,11 @@ export const operationsApi = {
       status: 'pending',
       load_number: `RET-${route.operation?.load_number || routeId.substring(0, 5)}`,
       driver_name: route.driver?.name || 'Desconhecido',
-      notes: `Retorno gerado automaticamente da Rota: ${route.operation?.load_number || routeId}`,
-    }
+      notes: `Retorno gerado automaticamente da Rota: ${route.operation?.load_number || routeId}`}
 
     const { data: opCreated, error: opError } = await supabase
       .from('operations')
-      .insert([{ ...opData, company_id: currentCompanyId }])
+      .insert([{ ...opData}])
       .select()
       .single()
     if (opError) throw opError
@@ -413,7 +391,6 @@ export const operationsApi = {
       quantity_scanned: 0,
       status: 'pending',
       operation_id: opCreated.id,
-      company_id: currentCompanyId,
       system_stock_at_load: 0,
       physical_verification: 'pending',
       physical_divergence_found: false,

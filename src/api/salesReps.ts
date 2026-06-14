@@ -1,14 +1,12 @@
 import { supabase } from '@/lib/supabase'
 import type { SalesRep } from '@/types/database'
-import { currentCompanyId } from '@/contexts/AuthContext'
 
 export const salesRepsApi = {
   async getSalesReps() {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('sales_reps')
       .select('*, sales_rep_regions(regions(*))')
-      .eq('company_id', currentCompanyId)
+      
       .order('nickname')
     if (error) throw error
     return data as any[]
@@ -25,10 +23,9 @@ export const salesRepsApi = {
   },
 
   async createSalesRep(salesRep: Omit<SalesRep, 'id' | 'created_at' | 'updated_at' | 'company_id'>, regionIds: string[] = []) {
-    if (!currentCompanyId) throw new Error('No company context')
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('sales_reps')
-      .insert([{ ...salesRep, company_id: currentCompanyId }])
+      .insert([{ ...salesRep}])
       .select()
       .single()
     if (error) throw error
@@ -42,8 +39,7 @@ export const salesRepsApi = {
   },
 
   async updateSalesRep(id: string, updates: Partial<SalesRep>, regionIds: string[] = []) {
-    if (!currentCompanyId) throw new Error('No company context')
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('sales_reps')
       .update(updates)
       .eq('id', id)
@@ -62,8 +58,7 @@ export const salesRepsApi = {
   },
 
   async deleteSalesRep(id: string) {
-    if (!currentCompanyId) throw new Error('No company context')
-    const { error } = await supabase
+        const { error } = await supabase
       .from('sales_reps')
       .delete()
       .eq('id', id)

@@ -1,37 +1,33 @@
 import { supabase } from '@/lib/supabase'
 import type { Equipment, EquipmentOrder, EquipmentHistory } from '@/types/database'
-import { currentCompanyId } from '@/contexts/AuthContext'
 
 export const equipmentsApi = {
   // Equipments
   async getEquipments() {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipments')
       .select('*, customer:customers(legal_name, fantasy_name)')
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
     if (error) throw error
     return data as Equipment[]
   },
 
   async getEquipment(id: string) {
-    if (!currentCompanyId) return null
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipments')
       .select('*, customer:customers(legal_name, fantasy_name)')
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
       .single()
     if (error) throw error
     return data as Equipment
   },
 
   async createEquipment(equipmentData: Partial<Equipment>) {
-    if (!currentCompanyId) throw new Error('No company context')
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipments')
-      .insert([{ ...equipmentData, company_id: currentCompanyId }])
+      .insert([{ ...equipmentData}])
       .select()
       .single()
     if (error) throw error
@@ -46,7 +42,7 @@ export const equipmentsApi = {
       .from('equipments')
       .update(updates)
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -63,29 +59,27 @@ export const equipmentsApi = {
       .from('equipments')
       .delete()
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
     if (error) throw error
     return true
   },
 
   // Orders (OS)
   async getOrders() {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipment_orders')
       .select('*, customer:customers(legal_name, fantasy_name, address, number, neighborhood, city, state), equipment:equipments(patrimony, type, model), driver:users(name)')
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
     if (error) throw error
     return data as EquipmentOrder[]
   },
 
   async getDriverOrders(driverId: string) {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipment_orders')
       .select('*, customer:customers(legal_name, fantasy_name, address, number, neighborhood, city, state), equipment:equipments(patrimony, type, model)')
-      .eq('company_id', currentCompanyId)
+      
       .eq('driver_id', driverId)
       .in('status', ['pendente', 'em_rota'])
       .order('scheduled_date', { ascending: true })
@@ -94,10 +88,9 @@ export const equipmentsApi = {
   },
 
   async createOrder(orderData: Partial<EquipmentOrder>) {
-    if (!currentCompanyId) throw new Error('No company context')
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipment_orders')
-      .insert([{ ...orderData, company_id: currentCompanyId }])
+      .insert([{ ...orderData}])
       .select()
       .single()
     if (error) throw error
@@ -109,7 +102,7 @@ export const equipmentsApi = {
       .from('equipment_orders')
       .update(updates)
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
       .select()
       .single()
     if (error) throw error
@@ -121,18 +114,17 @@ export const equipmentsApi = {
       .from('equipment_orders')
       .delete()
       .eq('id', id)
-      .eq('company_id', currentCompanyId)
+      
     if (error) throw error
     return true
   },
 
   // History
   async createHistory(equipmentId: string, action: string, customerId?: string | null, notes?: string) {
-    if (!currentCompanyId) return
+    
     const { error } = await supabase
       .from('equipment_history')
       .insert([{
-        company_id: currentCompanyId,
         equipment_id: equipmentId,
         customer_id: customerId || null,
         action,
@@ -143,24 +135,22 @@ export const equipmentsApi = {
   },
 
   async getEquipmentHistory(equipmentId: string) {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipment_history')
       .select('*, customer:customers(legal_name, fantasy_name), user:users(name)')
       .eq('equipment_id', equipmentId)
-      .eq('company_id', currentCompanyId)
+      
       .order('created_at', { ascending: false })
     if (error) throw error
     return data as EquipmentHistory[]
   },
 
   async getCustomerEquipments(customerId: string) {
-    if (!currentCompanyId) return []
-    const { data, error } = await supabase
+        const { data, error } = await supabase
       .from('equipments')
       .select('*')
       .eq('current_customer_id', customerId)
-      .eq('company_id', currentCompanyId)
+      
     if (error) throw error
     return data as Equipment[]
   }
