@@ -15,7 +15,6 @@ import SaaSTeam from './pages/Master/Team'
 import SaaSCampanhas from './pages/Master/Campaigns'
 import SaaSNotes from './pages/Master/Notes'
 import SaaSLeads from './pages/Master/Leads'
-import SaaSSettings from './pages/Master/Settings'
 import { ThemeProvider } from './components/ThemeProvider'
 import ChangePassword from './pages/ChangePassword'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -176,7 +175,6 @@ function App() {
             <Route path="cadastros/condicoes-pagamento" element={<PaymentConditionsList />} />
             <Route path="cadastros/condicoes-pagamento/nova" element={<PaymentConditionForm />} />
             <Route path="cadastros/condicoes-pagamento/:id/editar" element={<PaymentConditionForm />} />
-            <Route path="cadastros/configuracoes-erp" element={<SaaSSettings />} />
 
 
             {/* SaaS Master Routes */}
