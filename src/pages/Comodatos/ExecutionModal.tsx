@@ -106,15 +106,15 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
         }, `OS Entrega Finalizada. Entregue para ${order.customer?.fantasy_name || order.customer?.legal_name}`)
       } else if (order.type === 'recolha') {
         await equipmentsApi.updateEquipment(order.equipment_id, {
-          status: 'Disponível',
+          status: 'Em Manutenção',
           current_customer_id: null
-        }, `OS Recolha Finalizada. Retirado do cliente ${order.customer?.fantasy_name || order.customer?.legal_name}`)
+        }, `OS Recolha Finalizada. Retirado do cliente ${order.customer?.fantasy_name || order.customer?.legal_name} e enviado para manutenção.`)
       } else if (order.type === 'troca') {
         // Equipamento antigo é recolhido
         await equipmentsApi.updateEquipment(order.equipment_id, {
-          status: 'Disponível', // ou poderia ser "Em Manutenção" dependendo da regra
+          status: 'Em Manutenção',
           current_customer_id: null
-        }, `Recolhido em OS de Troca. Cliente: ${order.customer?.fantasy_name || order.customer?.legal_name}`)
+        }, `Recolhido em OS de Troca. Cliente: ${order.customer?.fantasy_name || order.customer?.legal_name}. Enviado para manutenção.`)
         
         // Equipamento novo é entregue
         await equipmentsApi.updateEquipment(newEquipmentId, {
