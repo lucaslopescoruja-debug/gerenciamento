@@ -40,13 +40,17 @@ export async function geocodeAddress(address: string): Promise<Coordinate | null
 export async function optimizeRoute(garageCoord: Coordinate, clients: { id: string, coord: Coordinate }[]) {
   try {
     // A API do OSRM usa o formato lng,lat
-    const coordsStr = [
-      `${garageCoord.lng.toFixed(6)},${garageCoord.lat.toFixed(6)}`,
-      ...clients.map(c => `${c.coord.lng.toFixed(6)},${c.coord.lat.toFixed(6)}`)
+    const rawCoordsStr = [
+      String(garageCoord.lng.toFixed(6)) + ',' + String(garageCoord.lat.toFixed(6)),
+      ...clients.map(c => String(c.coord.lng.toFixed(6)) + ',' + String(c.coord.lat.toFixed(6)))
     ].join(';');
 
+    const coordsStr = rawCoordsStr.replace(/[^0-9\.\,\;\-]/g, '');
+
     // roundtrip=true e source=first garante que a rota começa na garagem, passa por todos, e volta pra garagem
-    const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?roundtrip=true&source=first`;
+    const baseUrl = 'https://router.project-osrm.org/trip/v1/driving/';
+    const queryStr = '?roundtrip=true&source=first';
+    const url = baseUrl + coordsStr + queryStr;
 
     const response = await fetch(url);
     if (!response.ok) {
