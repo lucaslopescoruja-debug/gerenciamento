@@ -99,6 +99,45 @@ export default function RouteClients() {
     updateSequenceMutation.mutate({ clientId, seq })
   }
 
+  const handleExportMerchandise = () => {
+    if (!clients || clients.length === 0) {
+      toast.warning('Não há clientes na rota para exportar.')
+      return
+    }
+
+    const productMap = new Map<string, { code: string, desc: string, qty: number }>()
+
+    clients.forEach((client: any) => {
+      if (client.delivery_items) {
+        client.delivery_items.forEach((item: any) => {
+          const key = item.product_code || item.description || 'Desconhecido'
+          if (!productMap.has(key)) {
+            productMap.set(key, {
+              code: item.product_code || '',
+              desc: item.description || '',
+              qty: 0
+            })
+          }
+          const curr = productMap.get(key)!
+          curr.qty += (item.quantity_expected || 0)
+        })
+      }
+    })
+
+    const data = Array.from(productMap.values())
+      .sort((a, b) => a.desc.localeCompare(b.desc))
+      .map(p => ({
+        'CÓDIGO': p.code,
+        'DESCRIÇÃO': p.desc,
+        'QTD TOTAL': p.qty
+      }))
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(data)
+    XLSX.utils.book_append_sheet(wb, ws, "Romaneio Carga")
+    XLSX.writeFile(wb, `Romaneio_Rota_${route?.title || route?.operation?.load_number || id}.xlsx`)
+  }
+
   const optimizeMutation = useMutation({
     mutationFn: async () => {
       setIsOptimizing(true)
@@ -589,6 +628,14 @@ export default function RouteClients() {
                   disabled={isImporting}
                 >
                   {isImporting ? 'Importando...' : <><FileSpreadsheet className="h-5 w-5" /> Importar XLRS</>}
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="gap-2 flex-1 sm:flex-none border-blue-600 text-blue-600 hover:bg-blue-50"
+                  onClick={handleExportMerchandise}
+                  disabled={!clients || clients.length === 0}
+                >
+                  <ListOrdered className="h-5 w-5" /> Romaneio (Excel)
                 </Button>
               </div>
             )}
