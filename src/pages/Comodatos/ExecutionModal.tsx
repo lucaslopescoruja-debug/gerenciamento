@@ -26,24 +26,24 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
 
   // Form
   const [defectDesc, setDefectDesc] = useState('')
-  const [actionTaken, setActionTaken] = useState('')
   const [solutionDesc, setSolutionDesc] = useState('')
   const [receiverName, setReceiverName] = useState('')
   const [receiverDoc, setReceiverDoc] = useState('')
   
-  // Supplies
+  // Supplies & Equipment Exchange
   const [selectedSupply, setSelectedSupply] = useState('')
   const [supplyQty, setSupplyQty] = useState('1')
   const [consumedParts, setConsumedParts] = useState<{supply: Supply, quantity: number}[]>([])
+  const [newEquipmentId, setNewEquipmentId] = useState('')
 
   useEffect(() => {
     if (isOpen && order) {
       setDefectDesc(order.defect_description || '')
-      setActionTaken(order.action_taken || '')
       setSolutionDesc(order.solution_description || '')
       setReceiverName(order.receiver_name || '')
       setReceiverDoc(order.receiver_doc || '')
       setConsumedParts([])
+      setNewEquipmentId('')
       if (sigCanvas.current) sigCanvas.current.clear()
     }
   }, [isOpen, order])
@@ -60,16 +60,31 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
     enabled: isOpen
   })
 
+  const { data: equipments = [] } = useQuery({
+    queryKey: ['equipments'],
+    queryFn: equipmentsApi.getEquipments,
+    enabled: isOpen && order?.type === 'troca'
+  })
+
+  const availableEquipments = equipments.filter(e => e.status === 'Disponível')
+
   const executeMutation = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error('Sem OS selecionada')
       
       const sigData = sigCanvas.current?.isEmpty() ? null : sigCanvas.current?.toDataURL()
 
+      let actionTakenText = ''
+      if (order.type === 'troca') {
+        if (!newEquipmentId) throw new Error('Selecione o equipamento que será deixado no cliente para a troca.')
+        const newEq = equipments.find(e => e.id === newEquipmentId)
+        actionTakenText = `Troca efetuada. Equipamento recolhido e deixado o patrimônio ${newEq?.patrimony} (${newEq?.model}).`
+      }
+
       // 1. Update OS with fields and signature
       await equipmentsApi.updateOrder(order.id, {
         defect_description: defectDesc,
-        action_taken: actionTaken,
+        action_taken: actionTakenText || null,
         solution_description: solutionDesc,
         receiver_name: receiverName,
         receiver_doc: receiverDoc,
@@ -94,6 +109,18 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
           status: 'Disponível',
           current_customer_id: null
         }, `OS Recolha Finalizada. Retirado do cliente ${order.customer?.fantasy_name || order.customer?.legal_name}`)
+      } else if (order.type === 'troca') {
+        // Equipamento antigo é recolhido
+        await equipmentsApi.updateEquipment(order.equipment_id, {
+          status: 'Disponível', // ou poderia ser "Em Manutenção" dependendo da regra
+          current_customer_id: null
+        }, `Recolhido em OS de Troca. Cliente: ${order.customer?.fantasy_name || order.customer?.legal_name}`)
+        
+        // Equipamento novo é entregue
+        await equipmentsApi.updateEquipment(newEquipmentId, {
+          status: 'No Cliente',
+          current_customer_id: order.customer_id
+        }, `Entregue em OS de Troca. Cliente: ${order.customer?.fantasy_name || order.customer?.legal_name}`)
       } else {
         await equipmentsApi.createHistory(order.equipment_id, `OS de ${order.type.toUpperCase()} finalizada`, order.customer_id, `Defeito: ${defectDesc}. Solução: ${solutionDesc}`)
       }
@@ -188,15 +215,9 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
             {/* Relato Técnico */}
             <div className="space-y-4 bg-muted/20 p-4 rounded-lg border">
               <h3 className="font-bold flex items-center gap-2"><Wrench className="h-4 w-4" /> Relato Técnico</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>O que foi feito? (Ação tomada)</Label>
-                  <Textarea value={actionTaken} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setActionTaken(e.target.value)} placeholder="Ex: Substituição do compressor..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Descrição do Defeito</Label>
-                  <Textarea value={defectDesc} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDefectDesc(e.target.value)} placeholder="Ex: Equipamento não estava gelando..." />
-                </div>
+              <div className="space-y-2">
+                <Label>Descrição do Defeito</Label>
+                <Textarea value={defectDesc} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDefectDesc(e.target.value)} placeholder="Ex: Equipamento não estava gelando..." />
               </div>
               <div className="space-y-2">
                 <Label>Solução / Observações Finais</Label>
@@ -204,9 +225,28 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
               </div>
             </div>
 
-            {/* Consumo de Peças */}
+            {/* Consumo de Peças / Troca */}
             <div className="space-y-4 bg-muted/20 p-4 rounded-lg border">
-              <h3 className="font-bold flex items-center gap-2"><PackagePlus className="h-4 w-4" /> Consumo de Insumos/Peças</h3>
+              <h3 className="font-bold flex items-center gap-2"><PackagePlus className="h-4 w-4" /> Consumo e Substituições</h3>
+              
+              {order.type === 'troca' && (
+                <div className="space-y-2 pb-4 border-b">
+                  <Label className="text-primary font-bold">Equipamento Novo (Sendo deixado no cliente) *</Label>
+                  <select 
+                    value={newEquipmentId} 
+                    onChange={e => setNewEquipmentId(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Selecione o equipamento disponível...</option>
+                    {availableEquipments.map(eq => (
+                      <option key={eq.id} value={eq.id}>{eq.patrimony} - {eq.model} ({eq.type})</option>
+                    ))}
+                  </select>
+                  {availableEquipments.length === 0 && (
+                    <p className="text-xs text-red-500">Nenhum equipamento disponível no estoque.</p>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 items-end">
                 <div className="flex-1 space-y-2">
                   <Label>Peça / Insumo</Label>
