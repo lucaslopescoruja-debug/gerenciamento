@@ -464,6 +464,12 @@ export default function RouteClients() {
             const found = customers.find(c => (c.document || '').replace(/[^\d]/g, '') === client.document)
             if (found) {
               client.customer_id = found.id
+              // Substitui os dados da planilha pelos do sistema se houver
+              client.name = found.nickname || found.legal_name || client.name
+              if (found.address) {
+                client.address = `${found.address}, ${found.number || ''}, ${found.neighborhood || ''}, ${found.city || ''} - ${found.state || ''}`.replace(/,\s*,/g, ',').trim()
+              }
+              client.phone = found.phone1 || found.phone2 || client.phone
             } else {
               client.notes = client.notes ? client.notes + '\nObs: Cliente não localizado na base' : 'Obs: Cliente não localizado na base'
               clientsNotFoundInBase++
