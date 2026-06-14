@@ -25,3 +25,19 @@ dist-ssr
 
 # Backup and local archives
 *.zip
+
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Dados / planilhas / dumps
+*.csv
+*.xlsx
+*.pdf
+parsed_pdf.txt
+dashboard_old.txt
+dashboard_real_data.txt
+
+# Scripts locais
+/scripts/
