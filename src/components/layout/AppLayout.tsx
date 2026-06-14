@@ -66,6 +66,7 @@ const navGroups = [
   {
     title: 'SISTEMA',
     items: [
+      { label: 'Minha Empresa', icon: Building2, path: '/configuracoes/empresa', permission: 'can_manage_users' },
       { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
       { label: 'Integração ERP', icon: Settings, path: '/cadastros/configuracoes-erp', permission: 'can_manage_integrations' }
     ]

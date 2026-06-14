@@ -42,6 +42,7 @@ export interface Company {
   billing_day?: number
   monthly_fee?: number
   plan?: 'bronze' | 'prata' | 'ouro' | 'platina'
+  garage_address?: string | null
   created_at: string
 }
 

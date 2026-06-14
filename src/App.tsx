@@ -7,6 +7,7 @@ import Conference from './pages/Conference'
 import DeliveryProof from './pages/DeliveryProof'
 import Products from './pages/Products'
 import AccessControl from './pages/AccessControl'
+import CompanySettings from './pages/CompanySettings'
 import Login from './pages/Login'
 import MasterPanel from './pages/Master'
 import SaaSFinance from './pages/Master/Finance'
@@ -151,6 +152,7 @@ function App() {
             {/* Sales Management */}
             <Route path="/vendas/gestao" element={<SalesManagement />} />
 
+            <Route path="/configuracoes/empresa" element={<CompanySettings />} />
             <Route path="/acesso" element={<AccessControl />} />
             <Route path="/ajuda" element={<HelpAndSupport />} />
 

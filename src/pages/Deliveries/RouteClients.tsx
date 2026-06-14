@@ -12,6 +12,7 @@ import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import * as XLSX from 'xlsx'
+import { geocodeAddress, optimizeRoute } from '@/api/routing'
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'warning' | 'success' | 'destructive' }> = {
   pending: { label: 'Pendente', variant: 'warning' },
@@ -26,11 +27,13 @@ export default function RouteClients() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user, hasPermission } = useAuth()
+  const { user, hasPermission, company } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [isImporting, setIsImporting] = useState(false)
+  const [isOptimizing, setIsOptimizing] = useState(false)
+  const [optimizationStatus, setOptimizationStatus] = useState('')
   const [sortBy, setSortBy] = useState<'sequence' | 'alphabetical' | 'neighborhood' | 'status'>('sequence')
   const [isGroupedByCity, setIsGroupedByCity] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -95,6 +98,55 @@ export default function RouteClients() {
     const seq = parseInt(val, 10) || 0
     updateSequenceMutation.mutate({ clientId, seq })
   }
+
+  const optimizeMutation = useMutation({
+    mutationFn: async () => {
+      setIsOptimizing(true)
+      try {
+        if (!company?.garage_address) {
+          throw new Error('Endereço da garagem não configurado. Vá em "Minha Empresa" para configurar.')
+        }
+        
+        setOptimizationStatus('Geocodificando garagem...')
+        const garageCoord = await geocodeAddress(company.garage_address)
+        if (!garageCoord) throw new Error('Não foi possível encontrar as coordenadas da garagem.')
+
+        const clientsWithCoords = []
+        let idx = 1
+        for (const c of clients) {
+          if (!c.address) continue;
+          setOptimizationStatus(`Buscando coordenadas ${idx}/${clients.length}...`)
+          const coord = await geocodeAddress(c.address)
+          if (coord) {
+            clientsWithCoords.push({ id: c.id, coord })
+          }
+          idx++
+        }
+
+        if (clientsWithCoords.length === 0) throw new Error('Nenhum endereço válido encontrado para otimizar.')
+
+        setOptimizationStatus('Calculando melhor rota (OSRM)...')
+        const optimizedSequence = await optimizeRoute(garageCoord, clientsWithCoords)
+
+        setOptimizationStatus('Salvando nova ordem...')
+        // Update all sequences in parallel
+        await Promise.all(
+          optimizedSequence.map(item => 
+            deliveriesApi.updateDeliveryClient(item.clientId, { delivery_sequence: item.sequence })
+          )
+        )
+      } finally {
+        setIsOptimizing(false)
+        setOptimizationStatus('')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_clients', id!] })
+      setSortBy('sequence') // Force sort by sequence to see result
+      toast.success('Rota otimizada com sucesso!')
+    },
+    onError: (error: any) => toast.error(`Erro ao otimizar rota: ${error.message}`)
+  })
 
   const normalizeCode = (s: any) => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
 
@@ -481,6 +533,15 @@ export default function RouteClients() {
                   <Plus className="h-5 w-5" /> Novo Cliente
                 </Button>
                 <Button 
+                  variant="outline"
+                  className="gap-2 flex-1 sm:flex-none border-green-600 text-green-600 hover:bg-green-50"
+                  onClick={() => optimizeMutation.mutate()}
+                  disabled={isOptimizing || isImporting || clients.length < 2}
+                >
+                  <MapIcon className="h-5 w-5" /> 
+                  {isOptimizing ? 'Otimizando...' : 'Otimizar Rota'}
+                </Button>
+                <Button 
                   className="gap-2 flex-1 sm:flex-none bg-amber-600 hover:bg-amber-700 text-white"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting}
@@ -491,6 +552,12 @@ export default function RouteClients() {
             )}
           </div>
         </div>
+        {isOptimizing && (
+          <div className="w-full bg-blue-50 text-blue-700 text-sm p-3 rounded-md flex items-center gap-2 border border-blue-200 mt-2">
+            <div className="animate-spin h-4 w-4 border-2 border-blue-700 border-t-transparent rounded-full" />
+            <strong>Aguarde:</strong> {optimizationStatus}
+          </div>
+        )}
       </div>
 
       <div className="space-y-6">
