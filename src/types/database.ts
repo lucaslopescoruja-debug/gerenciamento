@@ -49,6 +49,8 @@ export interface Company {
   additional_info?: string | null
   garage_lat?: number | null
   garage_lng?: number | null
+  maxiprod_api_token?: string | null
+  maxiprod_last_sync?: string | null
   created_at: string
 }
 
