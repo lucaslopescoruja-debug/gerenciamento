@@ -134,7 +134,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(profile as User);
 
-    const targetCompanyId = profile.company_id || profile.impersonated_company_id;
+    let targetCompanyId = profile.company_id || profile.impersonated_company_id;
+
+    // Se o master está fazendo um login fresco, limpar a empresa logada anteriormente
+    if (isLoggingIn && profile.is_super_admin) {
+      try {
+        await supabase.from('users').update({ impersonated_company_id: null }).eq('id', profile.id);
+        profile.impersonated_company_id = null;
+        targetCompanyId = profile.company_id; // que para master costuma ser null
+      } catch (e) {
+        console.error('Erro ao limpar impersonated_company_id do master no login', e);
+      }
+    }
 
     if (targetCompanyId) {
       const comp = await companiesApi.getCompany(targetCompanyId);
