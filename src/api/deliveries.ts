@@ -567,8 +567,8 @@ export const deliveriesApi = {
     return data as DeliveryItem
   },
 
-  async getPendingApprovals() {
-        const { data, error } = await supabase
+  async getPendingApprovals(company_id?: string) {
+    let query = supabase
       .from('delivery_items')
       .select(`
         *,
@@ -580,9 +580,13 @@ export const deliveriesApi = {
           )
         )
       `)
-      .eq('approval_status', 'pending')
+      .eq('approval_status', 'pending');
       
-      .order('created_at', { ascending: false })
+    if (company_id) {
+      query = query.eq('company_id', company_id);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
     if (error) throw error
     return data
   },

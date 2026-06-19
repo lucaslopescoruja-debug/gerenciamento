@@ -28,26 +28,29 @@ function getRelativeTime(dateStr: string) {
 
 export default function ApprovalsPage() {
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, company } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [activeTab, setActiveTab] = useState('stock_adjustments')
 
   const { data: approvals = [], isLoading: isLoadingApprovals } = useQuery({
-    queryKey: ['pending_approvals'],
-    queryFn: deliveriesApi.getPendingApprovals,
-    refetchInterval: 60000 // poll every 60s
+    queryKey: ['pending_approvals', company?.id],
+    queryFn: () => deliveriesApi.getPendingApprovals(company?.id),
+    refetchInterval: 60000, // poll every 60s
+    enabled: !!company?.id
   })
 
   const { data: stockAdjustments = [], isLoading: isLoadingStock } = useQuery({
-    queryKey: ['pending_stock_adjustments'],
-    queryFn: () => operationsApi.getPendingStockAdjustments(),
-    refetchInterval: 60000 // poll every 60s
+    queryKey: ['pending_stock_adjustments', company?.id],
+    queryFn: () => operationsApi.getPendingStockAdjustments(company?.id),
+    refetchInterval: 60000, // poll every 60s
+    enabled: !!company?.id
   })
 
   const { data: operationAlerts = [], isLoading: isLoadingAlerts } = useQuery({
-    queryKey: ['pending_operation_alerts'],
-    queryFn: () => operationsApi.getPendingOperationAlerts(),
-    refetchInterval: 60000 // poll every 60s
+    queryKey: ['pending_operation_alerts', company?.id],
+    queryFn: () => operationsApi.getPendingOperationAlerts(company?.id),
+    refetchInterval: 60000, // poll every 60s
+    enabled: !!company?.id
   })
 
   const { data: allProducts = [] } = useQuery({

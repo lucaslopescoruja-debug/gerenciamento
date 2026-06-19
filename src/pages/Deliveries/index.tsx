@@ -51,10 +51,10 @@ export default function DeliveriesList() {
   })
 
   const { data: pendingApprovals = [] } = useQuery({
-    queryKey: ['pending_approvals'],
-    queryFn: deliveriesApi.getPendingApprovals,
+    queryKey: ['pending_approvals', company?.id],
+    queryFn: () => deliveriesApi.getPendingApprovals(company?.id),
     refetchInterval: 60000,
-    enabled: isManager,
+    enabled: isManager && !!company?.id,
   })
 
   const { data: usersList = [] } = useQuery({

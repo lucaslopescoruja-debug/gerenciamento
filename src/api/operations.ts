@@ -238,9 +238,8 @@ export const operationsApi = {
     return true
   },
 
-  async getPendingStockAdjustments() {
-    
-    const { data, error } = await supabase
+  async getPendingStockAdjustments(company_id?: string) {
+    let query = supabase
       .from('operation_items')
       .select(`
         *,
@@ -251,9 +250,13 @@ export const operationsApi = {
         )
       `)
       .eq('physical_divergence_found', true)
-      .eq('divergence_resolved', false)
+      .eq('divergence_resolved', false);
       
-      .order('description')
+    if (company_id) {
+      query = query.eq('company_id', company_id);
+    }
+
+    const { data, error } = await query.order('description')
     if (error) throw error
     return data
   },
@@ -272,9 +275,8 @@ export const operationsApi = {
     return data
   },
 
-  async getPendingOperationAlerts() {
-    
-    const { data, error } = await supabase
+  async getPendingOperationAlerts(company_id?: string) {
+    let query = supabase
       .from('operation_alerts')
       .select(`
         *,
@@ -283,9 +285,13 @@ export const operationsApi = {
           driver_name
         )
       `)
-      .eq('resolved', false)
+      .eq('resolved', false);
       
-      .order('created_at', { ascending: false })
+    if (company_id) {
+      query = query.eq('company_id', company_id);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
     if (error) throw error
     return data
   },

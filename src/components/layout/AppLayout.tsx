@@ -154,10 +154,10 @@ export default function AppLayout() {
   }, [isManager]);
 
   const { data: pendingApprovals = [] } = useQuery({
-    queryKey: ['pending_approvals'],
-    queryFn: deliveriesApi.getPendingApprovals,
+    queryKey: ['pending_approvals', company?.id],
+    queryFn: () => deliveriesApi.getPendingApprovals(company?.id),
     refetchInterval: 60000,
-    enabled: !!user
+    enabled: !!user && !!company?.id
   })
 
   const { data: leads = [] } = useQuery({
@@ -170,17 +170,17 @@ export default function AppLayout() {
   const unreadLeadsCount = leads.filter((lead: any) => !lead.viewed).length
 
   const { data: pendingStockAdjustments = [] } = useQuery({
-    queryKey: ['pending_stock_adjustments'],
-    queryFn: () => operationsApi.getPendingStockAdjustments(),
+    queryKey: ['pending_stock_adjustments', company?.id],
+    queryFn: () => operationsApi.getPendingStockAdjustments(company?.id),
     refetchInterval: 60000,
-    enabled: !!user && isManager
+    enabled: !!user && isManager && !!company?.id
   })
 
   const { data: pendingOperationAlerts = [] } = useQuery({
-    queryKey: ['pending_operation_alerts'],
-    queryFn: () => operationsApi.getPendingOperationAlerts(),
+    queryKey: ['pending_operation_alerts', company?.id],
+    queryFn: () => operationsApi.getPendingOperationAlerts(company?.id),
     refetchInterval: 60000,
-    enabled: !!user && isManager
+    enabled: !!user && isManager && !!company?.id
   })
 
   const totalPendingApprovals = pendingApprovals.length + 
