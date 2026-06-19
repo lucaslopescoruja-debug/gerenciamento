@@ -156,7 +156,7 @@ export const deliveriesApi = {
   },
 
   async getDeliveryClient(clientId: string) {
-    if (!navigator.onLine) {
+    const fallbackToLocal = async () => {
       const client = await db.clients.get(clientId)
       if (client) {
         return {
@@ -172,14 +172,31 @@ export const deliveriesApi = {
       }
       throw new Error('Você está offline e este cliente não está baixado no dispositivo.')
     }
-    const { data, error } = await supabase
-      .from('delivery_clients')
-      .select('*, customer:customers(document)')
-      .eq('id', clientId)
-      
-      .single()
-    if (error) throw error
-    return data as DeliveryClient
+
+    if (!navigator.onLine) {
+      return fallbackToLocal()
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('delivery_clients')
+        .select('*, customer:customers(document)')
+        .eq('id', clientId)
+        .single()
+        
+      if (error) {
+        if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+          return fallbackToLocal()
+        }
+        throw error
+      }
+      return data as DeliveryClient
+    } catch (e: any) {
+      if (e.message?.toLowerCase().includes('fetch') || e.message?.toLowerCase().includes('network')) {
+        return fallbackToLocal()
+      }
+      throw e
+    }
   },
 
   async createDeliveryClient(clientData: Partial<DeliveryClient>) {
@@ -380,17 +397,34 @@ export const deliveriesApi = {
   },
 
   async getDeliveryItems(clientId: string) {
-    if (!navigator.onLine) {
+    const fallbackToLocal = async () => {
       return await db.products.where('client_id').equals(clientId).toArray() as any
     }
-    const { data, error } = await supabase
-      .from('delivery_items')
-      .select('*')
-      .eq('delivery_client_id', clientId)
-      
-      .order('description')
-    if (error) throw error
-    return data as DeliveryItem[]
+
+    if (!navigator.onLine) {
+      return fallbackToLocal()
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('delivery_items')
+        .select('*')
+        .eq('delivery_client_id', clientId)
+        .order('description')
+        
+      if (error) {
+        if (error.message.toLowerCase().includes('fetch') || error.message.toLowerCase().includes('network')) {
+          return fallbackToLocal()
+        }
+        throw error
+      }
+      return data as DeliveryItem[]
+    } catch (e: any) {
+      if (e.message?.toLowerCase().includes('fetch') || e.message?.toLowerCase().includes('network')) {
+        return fallbackToLocal()
+      }
+      throw e
+    }
   },
 
   async updateDeliveryItemQuantity(itemId: string, quantity_scanned: number, status: string, return_reason?: string, requested_by_name?: string) {
