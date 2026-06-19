@@ -35,7 +35,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'warnin
 }
 
 export default function DeliveriesList() {
-  const { user } = useAuth()
+  const { user, company } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const queryClient = useQueryClient()
 

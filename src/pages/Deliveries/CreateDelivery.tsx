@@ -15,7 +15,7 @@ import { Navigate } from 'react-router-dom'
 export default function CreateDelivery() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, company } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
 
   const [operationId, setOperationId] = useState('')
