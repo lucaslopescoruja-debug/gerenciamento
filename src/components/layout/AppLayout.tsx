@@ -106,7 +106,6 @@ export default function AppLayout() {
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master' || isMaster
 
   const isDark = theme.includes('dark');
-  const isClassic = theme.startsWith('classic-');
 
   const { data: pendingApprovals = [] } = useQuery({
     queryKey: ['pending_approvals'],
@@ -142,13 +141,7 @@ export default function AppLayout() {
     (isManager ? (pendingStockAdjustments.length + pendingOperationAlerts.length) : 0)
 
   const toggleDarkLight = () => {
-    const newTheme = (isClassic ? 'classic-' : '') + (isDark ? 'light' : 'dark')
-    setTheme(newTheme as any)
-  }
-
-  const toggleStyle = () => {
-    const newTheme = (isClassic ? '' : 'classic-') + (isDark ? 'dark' : 'light')
-    setTheme(newTheme as any)
+    setTheme(isDark ? 'light' : 'dark')
   }
 
   const getPlanRequirement = (path: string) => {
@@ -222,13 +215,7 @@ export default function AppLayout() {
               )}
             </Link>
           )}
-          <button
-            onClick={toggleStyle}
-            className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
-            title="Alternar tema (Padrão / Clássico)"
-          >
-            <Palette className="h-5 w-5" />
-          </button>
+
           <button
             onClick={toggleDarkLight}
             className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-muted-foreground"
@@ -490,16 +477,7 @@ export default function AppLayout() {
                        <UserIcon className="h-4 w-4" />
                        Meu Perfil
                      </button>
-                     <button 
-                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
-                       onClick={() => {
-                         setShowProfileMenu(false)
-                         toggleStyle()
-                       }}
-                     >
-                       <Palette className="h-4 w-4" />
-                       Tema ({isClassic ? 'Clássico' : 'Padrão'})
-                     </button>
+
                      <button 
                        className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
                        onClick={() => {

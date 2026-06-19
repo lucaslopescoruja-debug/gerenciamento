@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
 
-type Theme = "dark" | "light" | "classic-dark" | "classic-light" | "system"
+type Theme = "dark" | "light" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -26,13 +26,23 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  // Garantir que caso o usuário tenha um tema classic salvo, seja convertido
+  const getInitialTheme = () => {
+    const saved = localStorage.getItem(storageKey) as string;
+    if (saved && saved.startsWith("classic-")) {
+      const newTheme = saved.replace("classic-", "") as Theme;
+      localStorage.setItem(storageKey, newTheme);
+      return newTheme;
+    }
+    return (saved as Theme) || defaultTheme;
+  };
+
+  const [theme, setTheme] = useState<Theme>(getInitialTheme)
 
   useEffect(() => {
     const root = window.document.documentElement
 
+    // Remover a classe classic caso estivesse presente
     root.classList.remove("light", "dark", "classic")
 
     if (theme === "system") {
@@ -45,12 +55,7 @@ export function ThemeProvider({
       return
     }
 
-    if (theme.startsWith("classic-")) {
-      root.classList.add("classic")
-      root.classList.add(theme.replace("classic-", ""))
-    } else {
-      root.classList.add(theme)
-    }
+    root.classList.add(theme)
   }, [theme])
 
   const value = {
