@@ -51,7 +51,13 @@ export default async function handler(req, res) {
     });
 
     if (authError) {
-      return res.status(400).json({ error: authError.message });
+      let msg = authError.message;
+      if (msg.includes('already been registered') || msg.includes('email address')) {
+        msg = 'Já existe um usuário cadastrado com este e-mail no sistema. O e-mail deve ser único.';
+      } else if (msg.includes('Password should be')) {
+        msg = 'A senha informada é muito fraca ou inválida.';
+      }
+      return res.status(400).json({ error: msg });
     }
 
     const authUser = authData.user;
