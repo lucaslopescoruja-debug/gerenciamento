@@ -9,6 +9,8 @@ import { toast } from '@/components/ui/toaster'
 import { Building, MapPin, Save, Phone, Mail, FileText, Info, Link, Key, RefreshCw } from 'lucide-react'
 import { geocodeAddress } from '@/api/routing'
 import { maxiprodApi } from '@/api/maxiprod'
+import { backupApi } from '@/api/backup'
+import { Database, Download, Upload } from 'lucide-react'
 
 export default function CompanySettings() {
   const queryClient = useQueryClient()
@@ -28,6 +30,14 @@ export default function CompanySettings() {
   const [erpLoading, setErpLoading] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSync, setLastSync] = useState<string | null>(null)
+
+  // Backup & Restore
+  const [isBackingUp, setIsBackingUp] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(false)
+  const [restoreProgress, setRestoreProgress] = useState('')
+  const fileInputRef = import('react').then(m => m.useRef<HTMLInputElement>(null))
+  // Resolving useRef synchronously since it's inside component:
+  // Actually, we can just use React.useRef. We already import { useState, useEffect, useRef } from 'react' if we add it.
 
   const [formData, setFormData] = useState({
     name: '',
@@ -156,6 +166,61 @@ export default function CompanySettings() {
       toast.error(e.message || 'Erro ao sincronizar dados')
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  async function handleExportBackup() {
+    if (!company?.id) return
+    setIsBackingUp(true)
+    toast.success('Gerando backup, isso pode levar alguns segundos...', { duration: 5000 })
+    try {
+      const backupData = await backupApi.generateBackup(company.id)
+      
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `backup_${company.slug}_${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      toast.success('Backup gerado e baixado com sucesso!')
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar backup')
+    } finally {
+      setIsBackingUp(false)
+    }
+  }
+
+  async function handleImportBackup(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !company?.id) return
+
+    setIsRestoring(true)
+    setRestoreProgress('Lendo arquivo...')
+    
+    try {
+      const text = await file.text()
+      const backupData = JSON.parse(text)
+      
+      if (!backupData.version || !backupData.companyId || backupData.companyId !== company.id) {
+        throw new Error('Arquivo de backup inválido ou pertence a outra empresa.')
+      }
+
+      await backupApi.restoreBackup(company.id, backupData, (msg) => {
+        setRestoreProgress(msg)
+      })
+
+      toast.success('Backup restaurado com sucesso!')
+      queryClient.invalidateQueries()
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao restaurar backup')
+    } finally {
+      setIsRestoring(false)
+      setRestoreProgress('')
+      if (e.target) e.target.value = '' // reset file input
     }
   }
 
@@ -438,6 +503,59 @@ export default function CompanySettings() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Backup de Dados */}
+        <div className="glass-card p-6 border-t-4 border-t-orange-500">
+          <div className="flex items-center gap-2 mb-4 text-lg font-bold text-foreground">
+            <Database className="h-5 w-5 text-orange-500" />
+            Backup e Restauração de Dados
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Exporte ou importe seus cadastros mestres (Clientes, Produtos, Usuários, etc). O arquivo de backup estará no formato JSON.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button 
+              type="button" 
+              variant="default"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={handleExportBackup} 
+              disabled={isBackingUp || isRestoring}
+            >
+              {isBackingUp ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              {isBackingUp ? 'Gerando Backup...' : 'Exportar Backup'}
+            </Button>
+
+            <div className="relative">
+              <input 
+                type="file" 
+                accept=".json"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                onChange={handleImportBackup}
+                disabled={isBackingUp || isRestoring}
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                disabled={isBackingUp || isRestoring}
+              >
+                {isRestoring ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                {isRestoring ? 'Restaurando...' : 'Importar Backup'}
+              </Button>
+            </div>
+          </div>
+          
+          {isRestoring && restoreProgress && (
+            <p className="text-sm font-medium text-orange-600 mt-4 animate-pulse">
+              {restoreProgress}
+            </p>
+          )}
+          
+          <p className="text-[11px] text-muted-foreground mt-4">
+            Atenção: A restauração fará atualização dos registros (Upsert). Registros com o mesmo identificador serão sobrescritos com as informações do backup para evitar perdas ou duplicações.
+          </p>
         </div>
 
         {/* Floating Finalize Bar */}
