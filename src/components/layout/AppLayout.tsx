@@ -17,9 +17,22 @@ import { saasApi } from '@/api/saas'
 import { toast } from '@/components/ui/toaster'
 import { ProfileModal } from '@/components/ProfileModal'
 import { TesterNotes } from '@/components/TesterNotes'
+import type { LucideIcon } from 'lucide-react'
 
+interface NavItem {
+  label: string;
+  icon: LucideIcon;
+  path: string;
+  permission: string;
+  masterOnly?: boolean;
+}
 
-const navGroups = [
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
     title: '',
     items: [
