@@ -668,7 +668,7 @@ export default function RouteClients() {
               </p>
             </div>
 
-            {isManager && (route?.status === 'completed' || route?.status === 'returned') && (
+            {isManager && (route?.status === 'completed' || route?.status === 'concluido' || route?.status === 'returned') && (
               <Button 
                 variant="outline" 
                 size="sm" 
