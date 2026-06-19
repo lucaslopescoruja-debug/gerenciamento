@@ -66,7 +66,6 @@ export default function SalesRepsList() {
             phone: row['Telefone 1'] || '',
             city: row['Município'] || '',
             state: row['UF'] || '',
-            regions: [],
             active: true
           }))
           
