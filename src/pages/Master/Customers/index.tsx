@@ -121,7 +121,7 @@ export default function CustomersList() {
               email: row['Email'] || '',
               active: true
             }
-          })
+          }).filter((c: any) => c.nickname || c.legal_name || c.document)
           
           if (payload.length === 0) {
             toast.error('O arquivo parece estar vazio ou no formato incorreto.')
