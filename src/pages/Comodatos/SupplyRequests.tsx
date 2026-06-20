@@ -118,12 +118,12 @@ export default function SupplyRequests() {
             {isManager ? 'Aprove ou rejeite requisições de insumos' : 'Acompanhe e solicite novas peças ao gestor'}
           </p>
         </div>
-        {!isManager && (
+        <div>
           <Button onClick={openNew}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Solicitação
           </Button>
-        )}
+        </div>
       </div>
 
       <div className="space-y-4">
