@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Building2, UploadCloud, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Building2, UploadCloud, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, MapPin } from 'lucide-react'
 import Papa from 'papaparse'
 import { customersApi } from '@/api/customers'
 import { regionsApi } from '@/api/regions'
@@ -17,6 +17,8 @@ export default function CustomersList() {
   const { user } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [isImporting, setIsImporting] = useState(false)
+  const [isGeocoding, setIsGeocoding] = useState(false)
+  const [geocodeProgress, setGeocodeProgress] = useState({ current: 0, total: 0 })
   const [showFilters, setShowFilters] = useState(false)
 
   // Advanced Filters State
@@ -95,18 +97,19 @@ export default function CustomersList() {
             const priceTableName = (row['Tabela de Preços'] || row['Tabela de preço'] || '').trim().toLowerCase()
             const priceTableId = priceTables.find(t => (t.name || '').toLowerCase() === priceTableName || (t.code || '').toLowerCase() === priceTableName)?.id || null
 
-            const repName = (row['Representante/ vendedor'] || row['Vendedor'] || '').trim().toLowerCase()
+            const repName = (row['Representante/Vendedor'] || row['Representante/ vendedor'] || row['Vendedor'] || '').trim().toLowerCase()
             const repId = salesReps.find(s => (s.name || '').toLowerCase() === repName)?.id || null
 
             return {
-              nickname: row['Apelido'] || '',
+              nickname: row['Apelido'] || row['Nome fantasia'] || row['Razão social/Nome'] || '',
               fantasy_name: row['Nome fantasia'] || '',
               legal_name: row['Razão social/Nome'] || '',
-              document: row['CNPJ/CPF'] || '',
-              document_type: ((row['CNPJ/CPF'] || '').length > 14 ? 'CNPJ' : 'CPF') as 'CNPJ' | 'CPF',
-              phone1: row['Telefone 1'] || '',
+              document: row['CNPJ_OU_CPF'] || row['CNPJ/CPF'] || '',
+              document_type: ((row['CNPJ_OU_CPF'] || row['CNPJ/CPF'] || '').length > 14 ? 'CNPJ' : 'CPF') as 'CNPJ' | 'CPF',
+              phone1: row['Fone 1'] || row['Telefone 1'] || '',
+              phone2: row['Fone 2'] || row['Telefone 2'] || '',
               address: row['Endereço'] || '',
-              number: row['Núm.'] || '',
+              number: row['Número'] || row['Núm.'] || '',
               complement: row['Complemento'] || '',
               neighborhood: row['Bairro'] || '',
               cep: row['CEP'] || '',
@@ -137,6 +140,59 @@ export default function CustomersList() {
         setIsImporting(false)
       }
     })
+  }
+
+  const startGeocoding = async () => {
+    const customersToGeocode = customers.filter(c => !c.latitude && c.address)
+    
+    if (customersToGeocode.length === 0) {
+      toast.info('Todos os clientes com endereço já possuem coordenadas.')
+      return
+    }
+
+    if (!window.confirm(`Existem ${customersToGeocode.length} clientes sem coordenadas. O processo fará uma busca lenta (aprox. 1,5s por cliente) para não ser bloqueado. Deseja continuar?`)) {
+      return
+    }
+
+    setIsGeocoding(true)
+    setGeocodeProgress({ current: 0, total: customersToGeocode.length })
+
+    let updatedCount = 0
+
+    for (let i = 0; i < customersToGeocode.length; i++) {
+      const c = customersToGeocode[i]
+      const fullAddress = `${c.address}, ${c.number || ''}, ${c.neighborhood || ''}, ${c.city || ''} - ${c.state || ''}`.replace(/,\s*,/g, ',').trim()
+      
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`, {
+          headers: {
+            'Accept-Language': 'pt-BR',
+            'User-Agent': 'EstoqueFacil/1.0'
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat)
+            const lng = parseFloat(data[0].lon)
+            
+            await customersApi.updateCustomer(c.id, { latitude: lat, longitude: lng })
+            updatedCount++
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao geocodificar:', err)
+      }
+      
+      setGeocodeProgress({ current: i + 1, total: customersToGeocode.length })
+      
+      await new Promise(resolve => setTimeout(resolve, 1500))
+    }
+
+    toast.success(`Geocodificação concluída! ${updatedCount} clientes atualizados.`)
+    queryClient.invalidateQueries({ queryKey: ['customers'] })
+    setIsGeocoding(false)
   }
 
   const applyFilter = (value: string, filterValue: string, type: string, isDocument: boolean = false) => {
@@ -243,6 +299,17 @@ export default function CustomersList() {
               disabled={isImporting}
             />
           </label>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full sm:w-auto shadow-sm" 
+            disabled={isGeocoding} 
+            onClick={startGeocoding}
+            title="Atualizar coordenadas de clientes que estão sem Latitude e Longitude"
+          >
+            <MapPin className="mr-2 h-4 w-4" /> 
+            {isGeocoding ? `Atualizando (${geocodeProgress.current}/${geocodeProgress.total})...` : 'Atualizar Lat. Log.'}
+          </Button>
           <Link to="/cadastros/clientes/novo" className="w-full sm:w-auto">
             <Button className="w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95">
               <Plus className="mr-2 h-4 w-4" /> Novo Cliente
