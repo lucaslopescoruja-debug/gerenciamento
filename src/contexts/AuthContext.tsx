@@ -134,14 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(profile as User);
 
-    let targetCompanyId = profile.company_id || profile.impersonated_company_id;
+    let targetCompanyId = profile.is_super_admin ? profile.impersonated_company_id : (profile.company_id || profile.impersonated_company_id);
 
     // Se o master está fazendo um login fresco, limpar a empresa logada anteriormente
     if (isLoggingIn && profile.is_super_admin) {
       try {
         await supabase.from('users').update({ impersonated_company_id: null }).eq('id', profile.id);
         profile.impersonated_company_id = null;
-        targetCompanyId = profile.company_id; // que para master costuma ser null
+        targetCompanyId = null;
       } catch (e) {
         console.error('Erro ao limpar impersonated_company_id do master no login', e);
       }
@@ -239,6 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('users').update({ last_session_id: null }).eq('id', user.id);
     }
     await supabase.auth.signOut();
+    isMasterSessionActive = false;
     localStorage.removeItem('offline_user_profile');
     setUser(null);
     setCompany(null);
