@@ -56,7 +56,20 @@ export const usersApi = {
       .from('users')
       .delete()
       .eq('id', id)
-    if (error) throw error
+      
+    if (error) {
+      // 23503 is the PostgreSQL code for foreign_key_violation
+      if (error.code === '23503') {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ active: false })
+          .eq('id', id);
+          
+        if (updateError) throw updateError;
+        throw new Error('Este usuário possui histórico no sistema (entregas, rotas, etc.) e não pode ser excluído permanentemente. Por segurança, ele foi inativado.');
+      }
+      throw error;
+    }
     return true
   }
 }

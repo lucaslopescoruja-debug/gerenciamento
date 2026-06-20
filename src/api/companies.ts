@@ -40,7 +40,56 @@ export const companiesApi = {
     
     if (error) throw error
     if (!data || data.length === 0) throw new Error('Não foi possível atualizar a empresa. Verifique as permissões.')
+    
+    if (updates.max_users !== undefined) {
+      await this.enforceUserLimit(id, updates.max_users);
+    }
+    
     return data[0] as Company
+  },
+
+  async enforceUserLimit(companyId: string, maxUsers: number) {
+    const { data: activeUsers, error } = await supabase
+      .from('users')
+      .select('id, role, created_at')
+      .eq('company_id', companyId)
+      .eq('active', true);
+      
+    if (error || !activeUsers) return;
+    
+    if (activeUsers.length > maxUsers) {
+      const usersToDeactivateCount = activeUsers.length - maxUsers;
+      
+      const roleWeight = {
+        'vendedor': 1,
+        'representante': 1,
+        'mecanico': 2,
+        'motorista': 3,
+        'ajudante': 4,
+        'conferente': 5,
+        'operador': 5,
+        'gestor': 6,
+        'admin': 7,
+        'master': 8
+      };
+      
+      // Ordenar: menores pesos primeiro. Em caso de empate, os mais recentes (criados por último) saem primeiro
+      activeUsers.sort((a, b) => {
+        const weightA = roleWeight[a.role as keyof typeof roleWeight] || 0;
+        const weightB = roleWeight[b.role as keyof typeof roleWeight] || 0;
+        if (weightA !== weightB) return weightA - weightB;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      const usersToDeactivate = activeUsers.slice(0, usersToDeactivateCount).map(u => u.id);
+      
+      if (usersToDeactivate.length > 0) {
+        await supabase
+          .from('users')
+          .update({ active: false })
+          .in('id', usersToDeactivate);
+      }
+    }
   },
 
   async verifyCompanyFinancialStatus(id: string) {

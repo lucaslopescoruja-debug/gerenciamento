@@ -83,7 +83,16 @@ export default function AccessControl() {
     mutationFn: usersApi.deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.info('Usuário removido')
+      toast.info('Usuário removido com sucesso')
+    },
+    onError: (e: any) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      // Se for a mensagem de fallback de inativação, mostra como info/alerta amigável
+      if (e.message?.includes('inativado')) {
+        toast.info(e.message)
+      } else {
+        toast.error(`Erro ao remover: ${e.message}`)
+      }
     }
   })
 
