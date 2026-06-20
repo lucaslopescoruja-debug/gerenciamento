@@ -30,8 +30,8 @@ export default function CustomersList() {
     documento: '',
     documentoType: 'startsWith',
     status: 'Todos', // Todos, Ativos, Inativos
-    representante: '',
-    regiao: ''
+    representante: [] as string[],
+    regiao: [] as string[]
   })
 
   // Pagination State
@@ -229,10 +229,12 @@ export default function CustomersList() {
                          filters.status === 'Inativos' ? c.active === false : true
                          
       // Representante
-      const matchRep = applyFilter(c.sales_rep_obj?.nickname || '', filters.representante, 'contains')
+      const matchRep = filters.representante.length === 0 || 
+        (c.sales_rep_id && filters.representante.includes(c.sales_rep_id))
       
       // Região
-      const matchReg = applyFilter(c.region?.name || '', filters.regiao, 'contains')
+      const matchReg = filters.regiao.length === 0 || 
+        (c.region_id && filters.regiao.includes(c.region_id))
 
       return matchApelido && matchRazao && matchDoc && matchStatus && matchRep && matchReg
     })
@@ -271,6 +273,82 @@ export default function CustomersList() {
 
   if (!isManager) {
     return <div className="p-8 text-center text-muted-foreground">Acesso restrito a gestores e administradores.</div>
+  }
+
+  // MultiSelect Component
+  const MultiSelect = ({ label, options, selectedIds, onChange, placeholder }: any) => {
+    const [open, setOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredOptions = options.filter((opt: any) => 
+      opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const toggle = (id: string) => {
+      const next = new Set(selectedIds);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      onChange(Array.from(next));
+    };
+
+    const toggleAll = () => {
+      if (selectedIds.length === options.length) {
+        onChange([]); // deselect all
+      } else {
+        onChange(options.map((o: any) => o.id)); // select all
+      }
+    };
+    
+    return (
+      <div className="relative w-full">
+        <div 
+          className="h-9 w-full rounded-md border border-input bg-background px-3 flex items-center justify-between text-sm cursor-pointer select-none"
+          onClick={() => setOpen(!open)}
+        >
+          <span className="truncate text-muted-foreground">
+            {selectedIds.length === 0 ? placeholder : `${selectedIds.length} selecionado(s)`}
+          </span>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </div>
+        {open && (
+          <div className="absolute top-full mt-1 w-full bg-background border border-border rounded-md shadow-lg z-50 p-2">
+            <div className="mb-2">
+              <Input 
+                autoFocus
+                placeholder="Filtrar..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="max-h-48 overflow-auto space-y-1">
+              <label className="flex items-center gap-2 p-1.5 hover:bg-muted/50 cursor-pointer rounded-sm">
+                <input 
+                  type="checkbox" 
+                  className="rounded border-input text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                  checked={selectedIds.length === options.length && options.length > 0} 
+                  onChange={toggleAll} 
+                />
+                <span className="text-xs font-semibold">[Selecionar tudo]</span>
+              </label>
+              
+              {filteredOptions.map((opt: any) => (
+                <label key={opt.id} className="flex items-center gap-2 p-1.5 hover:bg-muted/50 cursor-pointer rounded-sm">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-input text-primary focus:ring-primary w-3.5 h-3.5 cursor-pointer"
+                    checked={selectedIds.includes(opt.id)} 
+                    onChange={() => toggle(opt.id)} 
+                  />
+                  <span className="text-xs truncate">{opt.label}</span>
+                </label>
+              ))}
+              {filteredOptions.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">Nenhuma opção encontrada</div>}
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -419,23 +497,23 @@ export default function CustomersList() {
 
             {/* Representante */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Representante</label>
-              <Input 
-                className="h-9" 
-                placeholder="Nome..."
-                value={filters.representante}
-                onChange={(e) => setFilters(f => ({ ...f, representante: e.target.value }))}
+              <label className="text-xs text-muted-foreground font-medium">Representantes</label>
+              <MultiSelect 
+                placeholder="Todos"
+                options={salesReps.map(r => ({ id: r.id, label: r.nickname || r.name }))}
+                selectedIds={filters.representante}
+                onChange={(vals: string[]) => setFilters(f => ({ ...f, representante: vals }))}
               />
             </div>
 
             {/* Região */}
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Região</label>
-              <Input 
-                className="h-9" 
-                placeholder="Bahia, Porto Seguro..."
-                value={filters.regiao}
-                onChange={(e) => setFilters(f => ({ ...f, regiao: e.target.value }))}
+              <label className="text-xs text-muted-foreground font-medium">Regiões</label>
+              <MultiSelect 
+                placeholder="Todas"
+                options={regions.map(r => ({ id: r.id, label: r.name }))}
+                selectedIds={filters.regiao}
+                onChange={(vals: string[]) => setFilters(f => ({ ...f, regiao: vals }))}
               />
             </div>
 
@@ -447,7 +525,7 @@ export default function CustomersList() {
                   apelido: '', apelidoType: 'contains',
                   razaoSocial: '', razaoSocialType: 'contains',
                   documento: '', documentoType: 'startsWith',
-                  status: 'Todos', representante: '', regiao: ''
+                  status: 'Todos', representante: [], regiao: []
                 })}
               >
                 Limpar Filtros
