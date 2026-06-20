@@ -397,9 +397,9 @@ export default function CustomersList() {
       </div>
 
       {/* Painel de Filtros */}
-      <div className="glass-card overflow-hidden">
+      <div className="glass-card">
         <div 
-          className="flex justify-between items-center p-4 border-b border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
+          className="flex justify-between items-center p-4 border-b border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors rounded-t-xl"
           onClick={() => setShowFilters(!showFilters)}
         >
           <div className="flex items-center gap-2 text-sm font-medium">
