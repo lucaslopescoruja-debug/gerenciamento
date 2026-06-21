@@ -163,6 +163,18 @@ export default function PlannedInventoryManager() {
     }
   })
 
+  const updateAreaNameMutation = useMutation({
+    mutationFn: async ({ areaId, newName }: { areaId: string; newName: string }) => {
+      const { error } = await supabase.from('planned_inventory_areas').update({ name: newName }).eq('id', areaId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planned_inventory_areas', id] })
+      toast.success('Endereço da área atualizado')
+    },
+    onError: (error: any) => toast.error('Erro ao atualizar área: ' + error.message)
+  })
+
   const handleEditSector = (sector: PlannedInventorySector) => {
     const sectorAreas = areas.filter(a => a.sector_id === sector.id)
     const minArea = sectorAreas.length > 0 ? Math.min(...sectorAreas.map(a => a.area_number || 0)) : ''
@@ -485,25 +497,36 @@ export default function PlannedInventoryManager() {
                           #{area.area_number}
                           
                           {/* Tooltip Card */}
-                          <div className="absolute z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-card border border-border rounded-lg shadow-xl text-left pointer-events-none p-4 before:content-[''] before:absolute before:bottom-[100%] before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-b-border dark:before:border-b-border">
-                            <div className="font-bold text-base text-foreground mb-1">
-                              Área #{area.area_number} - {sector.name}
-                            </div>
-                            
-                            <div className="relative mt-3 mb-3">
-                               <div className="absolute -top-2 left-2 px-1 bg-white dark:bg-card text-[10px] text-muted-foreground z-10">Endereço da área (Opcional)</div>
-                               <div className="border border-border rounded p-2 pt-2.5 text-sm text-foreground bg-transparent min-h-[36px]">
-                                 {area.name !== `Área #${area.area_number}` ? area.name : ''}
-                               </div>
-                            </div>
-                            
-                            <div className="space-y-1 text-sm text-muted-foreground flex flex-col">
-                              <div className="flex justify-between"><span>Operador:</span> <span className="text-foreground font-medium">{operators}</span></div>
-                              <div className="flex justify-between"><span>Início:</span> <span className="text-foreground font-medium">{startStr}</span></div>
-                              <div className="flex justify-between"><span>Término:</span> <span className="text-foreground font-medium">{endStr}</span></div>
-                              <div className="flex justify-between"><span>Duração:</span> <span className="text-foreground font-medium">{durationStr}</span></div>
-                              <div className="flex justify-between"><span>Qtd códigos:</span> <span className="text-foreground font-medium">{uniqueCodes}</span></div>
-                              <div className="flex justify-between"><span>Qtd total:</span> <span className="text-foreground font-medium">{totalQty}</span></div>
+                          <div className="absolute z-50 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 top-full pt-2 left-1/2 -translate-x-1/2 w-64 pointer-events-auto">
+                            <div className="bg-white dark:bg-card border border-border rounded-lg shadow-xl text-left p-4 relative before:content-[''] before:absolute before:bottom-[100%] before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-b-border dark:before:border-b-border">
+                              <div className="font-bold text-base text-foreground mb-1">
+                                Área #{area.area_number} - {sector.name}
+                              </div>
+                              
+                              <div className="relative mt-3 mb-3">
+                                 <div className="absolute -top-2 left-2 px-1 bg-white dark:bg-card text-[10px] text-muted-foreground z-10">Endereço da área (Opcional)</div>
+                                 <Input 
+                                   defaultValue={area.name !== `Área #${area.area_number}` ? area.name : ''}
+                                   placeholder="Ex: Prateleira 1"
+                                   className="text-sm h-9"
+                                   onBlur={(e) => {
+                                      const val = e.target.value.trim()
+                                      const newName = val ? val : `Área #${area.area_number}`
+                                      if (newName !== area.name) {
+                                        updateAreaNameMutation.mutate({ areaId: area.id, newName })
+                                      }
+                                   }}
+                                 />
+                              </div>
+                              
+                              <div className="space-y-1 text-sm text-muted-foreground flex flex-col">
+                                <div className="flex justify-between"><span>Operador:</span> <span className="text-foreground font-medium">{operators}</span></div>
+                                <div className="flex justify-between"><span>Início:</span> <span className="text-foreground font-medium">{startStr}</span></div>
+                                <div className="flex justify-between"><span>Término:</span> <span className="text-foreground font-medium">{endStr}</span></div>
+                                <div className="flex justify-between"><span>Duração:</span> <span className="text-foreground font-medium">{durationStr}</span></div>
+                                <div className="flex justify-between"><span>Qtd códigos:</span> <span className="text-foreground font-medium">{uniqueCodes}</span></div>
+                                <div className="flex justify-between"><span>Qtd total:</span> <span className="text-foreground font-medium">{totalQty}</span></div>
+                              </div>
                             </div>
                           </div>
                         </div>
