@@ -419,7 +419,7 @@ export default function PlannedInventoryManager() {
             const pct = sectorAreas.length > 0 ? Math.round((completedInSector / sectorAreas.length) * 100) : 0
 
             return (
-              <Card key={sector.id} className="border-border/40 bg-card overflow-hidden">
+              <Card key={sector.id} className="border-border/40 bg-card">
                 <div className="flex items-center justify-between p-4 border-b border-border/30 bg-muted/20">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
