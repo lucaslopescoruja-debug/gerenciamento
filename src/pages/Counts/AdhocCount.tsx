@@ -290,7 +290,17 @@ function ActiveCountView({ countId, allProducts, onBack, user }: { countId: stri
 
   const addItemMutation = useMutation({
     mutationFn: async ({ product, qty = 1, extra = '' }: { product: Product, qty?: number, extra?: string }) => {
-      const existing = items.find(i => i.product_code === product.code && (i.extra_info || '') === (extra || ''))
+      // Fetch directly from DB to avoid race conditions with React state during rapid scanning
+      const { data: existingItems, error: fetchError } = await supabase
+        .from('adhoc_count_items')
+        .select('*')
+        .eq('count_id', countId)
+        .eq('product_code', product.code)
+
+      if (fetchError) throw fetchError
+
+      const existing = existingItems?.find(i => (i.extra_info || '') === (extra || ''))
+
       if (existing) {
         const { error } = await supabase.from('adhoc_count_items')
           .update({ quantity: existing.quantity + qty, updated_at: new Date().toISOString() })

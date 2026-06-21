@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Banknote, Plus, CheckCircle2, Clock, AlertCircle, Trash2, RefreshCw, Edit2, Shield, Settings2, Users } from 'lucide-react';
+import { Banknote, Plus, CheckCircle2, Clock, AlertCircle, Trash2, RefreshCw, Edit2, Shield, Settings2, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import type { CompanyPayment, SaaSPlan } from '@/types/database';
@@ -43,6 +43,58 @@ export default function SaaSFinance() {
   });
 
   // Edit Plan State
+  type SortFieldType = 'name' | 'base_price' | 'base_users' | 'extra_user_price' | null;
+  const [sortField, setSortField] = useState<SortFieldType>(null);
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(true);
+    }
+  };
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />;
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />;
+  };
+
+  const sortedPlans = React.useMemo(() => {
+    const sorted = [...saasPlans];
+    if (!sortField) return sorted;
+
+    return sorted.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+      
+      switch (sortField) {
+        case 'name': valA = a.name; valB = b.name; break;
+        case 'base_price': valA = a.base_price; valB = b.base_price; break;
+        case 'base_users': valA = a.base_users; valB = b.base_users; break;
+        case 'extra_user_price': valA = a.extra_user_price; valB = b.extra_user_price; break;
+      }
+
+      valA = valA ?? '';
+      valB = valB ?? '';
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' });
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1;
+      if (valA > valB) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }, [saasPlans, sortField, sortAsc]);
+
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SaaSPlan | null>(null);
 
@@ -248,20 +300,28 @@ export default function SaaSFinance() {
             <table className="w-full text-sm text-left border-collapse">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Plano</th>
-                  <th className="px-4 py-3 font-semibold text-right">Mensalidade Base</th>
-                  <th className="px-4 py-3 font-semibold text-center">Usuários Inclusos</th>
-                  <th className="px-4 py-3 font-semibold text-right">Valor Usuário Adicional</th>
+                  <th className="px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
+                    Plano {renderSortIcon('name')}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('base_price')}>
+                    Mensalidade Base {renderSortIcon('base_price')}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('base_users')}>
+                    Usuários Inclusos {renderSortIcon('base_users')}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('extra_user_price')}>
+                    Valor Usuário Adicional {renderSortIcon('extra_user_price')}
+                  </th>
                   <th className="px-4 py-3 font-semibold text-center w-16">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {isLoadingPlans ? (
                   <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Carregando planos...</td></tr>
-                ) : saasPlans.length === 0 ? (
+                ) : sortedPlans.length === 0 ? (
                   <tr><td colSpan={5} className="px-4 py-8 text-center text-amber-600 bg-amber-500/10 font-medium">Nenhum plano encontrado. Verifique se o comando SQL foi executado no Supabase.</td></tr>
                 ) : (
-                  saasPlans.map((plan) => (
+                  sortedPlans.map((plan) => (
                     <tr key={plan.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

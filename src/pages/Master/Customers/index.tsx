@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Building2, UploadCloud, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, MapPin } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Building2, UploadCloud, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, MapPin, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Papa from 'papaparse'
 import { customersApi } from '@/api/customers'
 import { regionsApi } from '@/api/regions'
@@ -268,6 +268,60 @@ export default function CustomersList() {
     })
   }, [customers, filters])
 
+  type SortFieldType = 'active' | 'legal_name' | 'fantasy_name' | 'document' | 'city' | 'region_name' | null
+  const [sortField, setSortField] = useState<SortFieldType>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
+
+  const sortedCustomers = useMemo(() => {
+    const sorted = [...filteredCustomers]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+      
+      switch (sortField) {
+        case 'active': valA = a.active ? 1 : 0; valB = b.active ? 1 : 0; break;
+        case 'legal_name': valA = a.legal_name; valB = b.legal_name; break;
+        case 'fantasy_name': valA = a.fantasy_name; valB = b.fantasy_name; break;
+        case 'document': valA = a.document; valB = b.document; break;
+        case 'city': valA = a.city; valB = b.city; break;
+        case 'region_name': valA = a.region?.name; valB = b.region?.name; break;
+      }
+
+      valA = valA ?? ''
+      valB = valB ?? ''
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [filteredCustomers, sortField, sortAsc])
+
   // Pagination Logic
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage)
   
@@ -278,8 +332,8 @@ export default function CustomersList() {
 
   const paginatedCustomers = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage
-    return filteredCustomers.slice(start, start + itemsPerPage)
-  }, [filteredCustomers, currentPage, itemsPerPage])
+    return sortedCustomers.slice(start, start + itemsPerPage)
+  }, [sortedCustomers, currentPage, itemsPerPage])
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -637,12 +691,24 @@ export default function CustomersList() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Razão Social</th>
-                <th className="px-4 py-3 font-medium">Apelido / Fantasia</th>
-                <th className="px-4 py-3 font-medium whitespace-nowrap">CNPJ/CPF</th>
-                <th className="px-4 py-3 font-medium">Município/UF</th>
-                <th className="px-4 py-3 font-medium">Região</th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('active')}>
+                  Status {renderSortIcon('active')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('legal_name')}>
+                  Razão Social {renderSortIcon('legal_name')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('fantasy_name')}>
+                  Nome Fantasia {renderSortIcon('fantasy_name')}
+                </th>
+                <th className="px-4 py-3 font-medium whitespace-nowrap cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('document')}>
+                  CNPJ/CPF {renderSortIcon('document')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('city')}>
+                  Município/UF {renderSortIcon('city')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('region_name')}>
+                  Região {renderSortIcon('region_name')}
+                </th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
               </tr>
             </thead>

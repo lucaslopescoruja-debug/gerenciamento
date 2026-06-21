@@ -26,6 +26,7 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.14.0",
+    "p-timeout": "^7.0.1",
     "papaparse": "^5.5.3",
     "pg": "^8.21.0",
     "react": "^19.2.5",

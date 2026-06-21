@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Map } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Map, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { regionsApi } from '@/api/regions'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -43,6 +43,56 @@ export default function RegionsList() {
     })
   }, [regions, searchTerm])
 
+  type SortFieldType = 'active' | 'name' | null
+  const [sortField, setSortField] = useState<SortFieldType>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
+
+  const sortedRegions = useMemo(() => {
+    const sorted = [...filteredRegions]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+      
+      switch (sortField) {
+        case 'active': valA = a.active ? 1 : 0; valB = b.active ? 1 : 0; break;
+        case 'name': valA = a.name; valB = b.name; break;
+      }
+
+      valA = valA ?? ''
+      valB = valB ?? ''
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [filteredRegions, sortField, sortAsc])
+
   if (!isManager) {
     return <div className="p-8 text-center text-muted-foreground">Acesso restrito a gestores e administradores.</div>
   }
@@ -82,18 +132,22 @@ export default function RegionsList() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium w-full">Nome da Região</th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('active')}>
+                  Status {renderSortIcon('active')}
+                </th>
+                <th className="px-4 py-3 font-medium w-full cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
+                  Nome da Região {renderSortIcon('name')}
+                </th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Carregando regiões...</td></tr>
-              ) : filteredRegions.length === 0 ? (
+              ) : sortedRegions.length === 0 ? (
                 <tr><td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">Nenhuma região encontrada.</td></tr>
               ) : (
-                filteredRegions.map(region => (
+                sortedRegions.map(region => (
                   <tr key={region.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -132,7 +186,7 @@ export default function RegionsList() {
         </div>
         
         <div className="p-4 border-t border-border/50 text-xs text-muted-foreground flex justify-between items-center bg-muted/20">
-          <span>Total: <strong>{filteredRegions.length}</strong> regiões</span>
+          <span>Total: <strong>{sortedRegions.length}</strong> regiões</span>
         </div>
       </div>
     </div>

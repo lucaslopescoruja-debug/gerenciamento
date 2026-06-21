@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesApi } from '@/api/sales'
 import { Card, CardContent } from '@/components/ui/card'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { FileText, Search, FileSignature, CheckCircle, XCircle } from 'lucide-react'
+import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { SalesOrder } from '@/types/database'
 
 const formatCurrency = (value: number) => {
@@ -46,14 +46,72 @@ export default function SalesManagement() {
     onError: (e: any) => toast.error(`Erro: ${e.message}`)
   })
 
-  const filteredOrders = orders.filter(o => {
-    const searchMatch = 
-      o.customer?.fantasy_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.customer?.legal_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    if (filterStatus !== 'all' && o.status !== filterStatus) return false
-    return searchMatch
-  })
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const searchMatch = 
+        o.customer?.fantasy_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.customer?.legal_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      if (filterStatus !== 'all' && o.status !== filterStatus) return false
+      return searchMatch
+    })
+  }, [orders, searchTerm, filterStatus])
+
+  type SortFieldType = 'created_at' | 'customer_name' | 'sales_rep' | 'net_amount' | 'status' | null
+  const [sortField, setSortField] = useState<SortFieldType>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
+
+  const sortedOrders = useMemo(() => {
+    const sorted = [...filteredOrders]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+      
+      switch (sortField) {
+        case 'created_at': valA = new Date(a.created_at).getTime(); valB = new Date(b.created_at).getTime(); break;
+        case 'customer_name': 
+          valA = a.customer?.legal_name || a.customer?.nickname || a.customer?.fantasy_name || ''; 
+          valB = b.customer?.legal_name || b.customer?.nickname || b.customer?.fantasy_name || ''; 
+          break;
+        case 'sales_rep': valA = a.sales_rep?.nickname || ''; valB = b.sales_rep?.nickname || ''; break;
+        case 'net_amount': valA = a.net_amount; valB = b.net_amount; break;
+        case 'status': valA = a.status; valB = b.status; break;
+      }
+
+      valA = valA ?? ''
+      valB = valB ?? ''
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [filteredOrders, sortField, sortAsc])
 
   const handleUpdateStatus = (id: string, currentStatus: string, newStatus: SalesOrder['status']) => {
     if (window.confirm(`Tem certeza que deseja alterar o status de "${currentStatus}" para "${newStatus}"?`)) {
@@ -111,21 +169,31 @@ export default function SalesManagement() {
           <table className="w-full text-sm text-left">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Vendedor</th>
-                <th className="px-4 py-3 font-medium text-right">Valor Líquido</th>
-                <th className="px-4 py-3 font-medium text-center">Status</th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('created_at')}>
+                  Data {renderSortIcon('created_at')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('customer_name')}>
+                  Cliente {renderSortIcon('customer_name')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('sales_rep')}>
+                  Vendedor {renderSortIcon('sales_rep')}
+                </th>
+                <th className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('net_amount')}>
+                  Valor Líquido {renderSortIcon('net_amount')}
+                </th>
+                <th className="px-4 py-3 font-medium text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('status')}>
+                  Status {renderSortIcon('status')}
+                </th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Carregando pedidos...</td></tr>
-              ) : filteredOrders.length === 0 ? (
+              ) : sortedOrders.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
               ) : (
-                filteredOrders.map(order => (
+                sortedOrders.map(order => (
                   <tr key={order.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3 font-medium">

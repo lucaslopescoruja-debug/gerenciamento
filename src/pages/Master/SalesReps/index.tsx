@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Users, UploadCloud } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Users, UploadCloud, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Papa from 'papaparse'
 import { salesRepsApi } from '@/api/salesReps'
 import { Input } from '@/components/ui/input'
@@ -107,6 +107,63 @@ export default function SalesRepsList() {
     })
   }, [reps, searchTerm])
 
+  type SortFieldType = 'active' | 'nickname' | 'document' | 'city' | 'commission_rate' | 'regions' | null
+  const [sortField, setSortField] = useState<SortFieldType>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
+
+  const sortedReps = useMemo(() => {
+    const sorted = [...filteredReps]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+      
+      switch (sortField) {
+        case 'active': valA = a.active ? 1 : 0; valB = b.active ? 1 : 0; break;
+        case 'nickname': valA = a.nickname || a.legal_name; valB = b.nickname || b.legal_name; break;
+        case 'document': valA = a.document; valB = b.document; break;
+        case 'city': valA = a.city; valB = b.city; break;
+        case 'commission_rate': valA = a.commission_rate || 0; valB = b.commission_rate || 0; break;
+        case 'regions': 
+          valA = a.sales_rep_regions?.map((sr: any) => sr.regions?.name).join(' '); 
+          valB = b.sales_rep_regions?.map((sr: any) => sr.regions?.name).join(' '); 
+          break;
+      }
+
+      valA = valA ?? ''
+      valB = valB ?? ''
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [filteredReps, sortField, sortAsc])
+
   if (!isManager) {
     return <div className="p-8 text-center text-muted-foreground">Acesso restrito a gestores e administradores.</div>
   }
@@ -162,22 +219,34 @@ export default function SalesRepsList() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Apelido / Nome</th>
-                <th className="px-4 py-3 font-medium">Documento</th>
-                <th className="px-4 py-3 font-medium">Município/UF</th>
-                <th className="px-4 py-3 font-medium">Comissão</th>
-                <th className="px-4 py-3 font-medium">Regiões Atendidas</th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('active')}>
+                  Status {renderSortIcon('active')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('nickname')}>
+                  Apelido / Nome {renderSortIcon('nickname')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('document')}>
+                  Documento {renderSortIcon('document')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('city')}>
+                  Município/UF {renderSortIcon('city')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('commission_rate')}>
+                  Comissão {renderSortIcon('commission_rate')}
+                </th>
+                <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('regions')}>
+                  Regiões Atendidas {renderSortIcon('regions')}
+                </th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Carregando representantes...</td></tr>
-              ) : filteredReps.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum representante encontrado.</td></tr>
+              ) : sortedReps.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum representante encontrado.</td></tr>
               ) : (
-                filteredReps.map(rep => (
+                sortedReps.map(rep => (
                   <tr key={rep.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -237,7 +306,7 @@ export default function SalesRepsList() {
         </div>
         
         <div className="p-4 border-t border-border/50 text-xs text-muted-foreground flex justify-between items-center bg-muted/20">
-          <span>Total: <strong>{filteredReps.length}</strong> representantes</span>
+          <span>Total: <strong>{sortedReps.length}</strong> representantes</span>
         </div>
       </div>
     </div>

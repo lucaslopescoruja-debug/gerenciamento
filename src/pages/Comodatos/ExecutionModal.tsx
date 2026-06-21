@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import SignatureCanvas from 'react-signature-canvas'
 import { equipmentsApi } from '@/api/equipments'
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/components/ui/toaster'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { History, PenTool, Wrench, PackagePlus, Trash2 } from 'lucide-react'
+import { History, PenTool, Wrench, PackagePlus, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { EquipmentOrder, Supply } from '@/types/database'
 
 interface ExecutionModalProps {
@@ -60,6 +60,61 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
     queryFn: () => equipmentsApi.getEquipmentOrders(order!.equipment_id),
     enabled: !!order && isOpen && activeTab === 'historico'
   })
+
+  type SortFieldType = 'os_number' | 'created_at' | 'type' | null
+  const [sortField, setSortField] = useState<SortFieldType>(null)
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (field: SortFieldType) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc)
+    } else {
+      setSortField(field)
+      setSortAsc(true)
+    }
+  }
+
+  const renderSortIcon = (field: SortFieldType) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3.5 w-3.5 inline-block opacity-40 hover:opacity-100 transition-opacity" />
+    }
+    return sortAsc 
+      ? <ArrowUp className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+      : <ArrowDown className="ml-1 h-3.5 w-3.5 inline-block text-primary" />
+  }
+
+  const sortedEquipmentOrders = React.useMemo(() => {
+    const sorted = [...equipmentOrders]
+    if (!sortField) return sorted
+
+    return sorted.sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+      
+      switch (sortField) {
+        case 'os_number': valA = parseInt(a.os_number || '0'); valB = parseInt(b.os_number || '0'); break;
+        case 'created_at': valA = new Date(a.created_at).getTime(); valB = new Date(b.created_at).getTime(); break;
+        case 'type': valA = a.type; valB = b.type; break;
+      }
+
+      valA = valA ?? ''
+      valB = valB ?? ''
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortAsc ? valA - valB : valB - valA
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortAsc
+          ? valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' })
+          : valB.localeCompare(valA, 'pt-BR', { sensitivity: 'base' })
+      }
+
+      if (valA < valB) return sortAsc ? -1 : 1
+      if (valA > valB) return sortAsc ? 1 : -1
+      return 0
+    })
+  }, [equipmentOrders, sortField, sortAsc])
 
   const { data: supplies = [] } = useQuery({
     queryKey: ['supplies'],
@@ -210,14 +265,14 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>OS</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Tipo</TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('os_number')}>OS {renderSortIcon('os_number')}</TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('created_at')}>Data {renderSortIcon('created_at')}</TableHead>
+                      <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('type')}>Tipo {renderSortIcon('type')}</TableHead>
                       <TableHead>Detalhes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {equipmentOrders.map(o => (
+                    {sortedEquipmentOrders.map(o => (
                       <TableRow key={o.id}>
                         <TableCell className="font-bold whitespace-nowrap">#{o.os_number || '---'}</TableCell>
                         <TableCell className="whitespace-nowrap">{new Date(o.created_at).toLocaleDateString('pt-BR')}</TableCell>
