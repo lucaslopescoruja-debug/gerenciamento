@@ -447,7 +447,7 @@ export default function Conference() {
         description: matchedProduct.description,
         quantity_expected: isReceipt ? 0 : qtyToAdd,
         quantity_scanned: qtyToAdd,
-        status: (isReceipt ? 'divergent' : 'ok') as const
+        status: (isReceipt ? 'divergent' : 'ok') as 'divergent' | 'ok'
       }
       addItemMutation.mutate(newItem)
       playBeep('error')
