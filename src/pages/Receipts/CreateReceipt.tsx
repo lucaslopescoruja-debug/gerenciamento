@@ -225,20 +225,13 @@ export default function CreateReceipt() {
           if (currentLine) lines.push(currentLine.trim())
 
           for (const line of lines) {
-             const match = line.match(/^(\d+)\s+(\d+)\s+(.+?)\s+(CX|FD|UN)/)
+             const match = line.match(/^(\d+)\s+(\d+)\s+(.+?)\s+(CX|FD|UN)\s+(\d+,\d{2})\s+/);
              if (match) {
                const factoryCode = match[2]
                const desc = match[3]
                
-               const suffix = line.substring(match[0].length)
-               const tokens = suffix.trim().split(/\s+/)
-               let qty = 1
-               
-               if (tokens.length > 0) {
-                 // The very first token after the unit (CX|FD|UN) is the quantity
-                 let qtyStr = tokens[0]
-                 qty = parseInt(qtyStr.split(',')[0].replace(/\./g, ''), 10)
-               }
+               const qtyStr = match[5]
+               let qty = parseInt(qtyStr.split(',')[0].replace(/\./g, ''), 10)
                if (isNaN(qty) || qty === 0) qty = 1
 
                const normalizedCode = normalizeCode(factoryCode)
