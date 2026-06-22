@@ -12,6 +12,7 @@ import { ArrowLeft, Plus, Trash2, ClipboardList, User, Search, Upload, Package }
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { Navigate } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
@@ -27,7 +28,7 @@ export default function CreateReceipt() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, company } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   
   const [loadNumber, setLoadNumber] = useState('') // Nota Fiscal / Identificador
@@ -47,6 +48,16 @@ export default function CreateReceipt() {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: productsApi.getProducts,
+  })
+
+  const { data: relatedCodes = [] } = useQuery({
+    queryKey: ['related_codes_all'],
+    queryFn: async () => {
+      if (!company?.id) return []
+      const { data } = await supabase.from('related_codes').select('*').eq('company_id', company.id)
+      return data || []
+    },
+    enabled: !!company?.id
   })
 
   const { data: existingOp } = useQuery({
@@ -157,7 +168,11 @@ export default function CreateReceipt() {
     if (!itemToLink) return
 
     try {
-      await productsApi.updateProduct(product.id, { external_code: itemToLink.product_code })
+      await productsApi.addRelatedCode({
+        product_id: product.id,
+        code: itemToLink.product_code,
+        company_id: company?.id
+      })
       
       setItems(items.map(i => {
         if (i.product_code === itemToLink.product_code) {
@@ -173,7 +188,7 @@ export default function CreateReceipt() {
       toast.success(`Código ${itemToLink.product_code} vinculado a ${product.description} com sucesso!`)
       setLinkingItemId(null)
       setLinkSearch('')
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['related_codes_all'] })
     } catch (err) {
       toast.error('Erro ao vincular produto no sistema.')
     }
@@ -238,7 +253,8 @@ export default function CreateReceipt() {
                const foundProduct = products.find(prod => {
                  const pCode = normalizeCode(prod.code)
                  const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
-                 return (pCode === normalizedCode || pExt === normalizedCode)
+                 const hasRelated = relatedCodes.some((rc: any) => rc.product_id === prod.id && normalizeCode(rc.code) === normalizedCode)
+                 return (pCode === normalizedCode || pExt === normalizedCode || hasRelated)
                })
 
                if (!foundProduct) notFoundCount++
@@ -305,7 +321,8 @@ export default function CreateReceipt() {
              foundProduct = products.find(prod => {
                const pCode = normalizeCode(prod.code)
                const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
-               if (pCode === normalizedCode || pExt === normalizedCode) return true
+               const hasRelated = relatedCodes.some((rc: any) => rc.product_id === prod.id && normalizeCode(rc.code) === normalizedCode)
+               if (pCode === normalizedCode || pExt === normalizedCode || hasRelated) return true
                return false
              })
           }
