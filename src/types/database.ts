@@ -267,6 +267,7 @@ export interface Product {
   company_id: string
   code: string
   external_code?: string
+  factory_code?: string
   description: string
   group_name?: string
   stock: number

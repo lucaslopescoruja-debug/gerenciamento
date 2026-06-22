@@ -50,15 +50,7 @@ export default function CreateReceipt() {
     queryFn: productsApi.getProducts,
   })
 
-  const { data: relatedCodes = [] } = useQuery({
-    queryKey: ['related_codes_all'],
-    queryFn: async () => {
-      if (!company?.id) return []
-      const { data } = await supabase.from('related_codes').select('*').eq('company_id', company.id)
-      return data || []
-    },
-    enabled: !!company?.id
-  })
+
 
   const { data: existingOp } = useQuery({
     queryKey: ['operation', id],
@@ -168,11 +160,7 @@ export default function CreateReceipt() {
     if (!itemToLink) return
 
     try {
-      await productsApi.addRelatedCode({
-        product_id: product.id,
-        code: itemToLink.product_code,
-        company_id: company?.id
-      })
+      await productsApi.updateProduct(product.id, { factory_code: itemToLink.product_code })
       
       setItems(items.map(i => {
         if (i.product_code === itemToLink.product_code) {
@@ -188,7 +176,7 @@ export default function CreateReceipt() {
       toast.success(`Código ${itemToLink.product_code} vinculado a ${product.description} com sucesso!`)
       setLinkingItemId(null)
       setLinkSearch('')
-      queryClient.invalidateQueries({ queryKey: ['related_codes_all'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
     } catch (err) {
       toast.error('Erro ao vincular produto no sistema.')
     }
@@ -253,8 +241,8 @@ export default function CreateReceipt() {
                const foundProduct = products.find(prod => {
                  const pCode = normalizeCode(prod.code)
                  const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
-                 const hasRelated = relatedCodes.some((rc: any) => rc.product_id === prod.id && normalizeCode(rc.code) === normalizedCode)
-                 return (pCode === normalizedCode || pExt === normalizedCode || hasRelated)
+                 const pFact = prod.factory_code ? normalizeCode(prod.factory_code) : null
+                 return (pCode === normalizedCode || pExt === normalizedCode || pFact === normalizedCode)
                })
 
                if (!foundProduct) notFoundCount++
@@ -321,8 +309,8 @@ export default function CreateReceipt() {
              foundProduct = products.find(prod => {
                const pCode = normalizeCode(prod.code)
                const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
-               const hasRelated = relatedCodes.some((rc: any) => rc.product_id === prod.id && normalizeCode(rc.code) === normalizedCode)
-               if (pCode === normalizedCode || pExt === normalizedCode || hasRelated) return true
+               const pFact = prod.factory_code ? normalizeCode(prod.factory_code) : null
+               if (pCode === normalizedCode || pExt === normalizedCode || pFact === normalizedCode) return true
                return false
              })
           }

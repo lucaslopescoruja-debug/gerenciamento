@@ -15,6 +15,7 @@ export const productsApi = {
     const normalized = (data ?? []).map(p => ({
       ...p,
       code: String(p.code),
+      factory_code: p.factory_code ? String(p.factory_code) : null,
       external_code: p.external_code ? String(p.external_code) : null})) as Product[]
     return normalized
   },

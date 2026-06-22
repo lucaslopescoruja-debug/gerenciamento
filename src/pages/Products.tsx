@@ -155,6 +155,7 @@ export default function Products() {
     const data = {
       code: formData.get('code') as string,
       external_code: formData.get('external_code') as string,
+      factory_code: formData.get('factory_code') as string,
       description: formData.get('description') as string,
       stock: Number(formData.get('stock')),
       min_stock_alert: Number(formData.get('min_stock_alert')),
@@ -351,6 +352,7 @@ export default function Products() {
       p.id,
       p.code || '',
       p.external_code || '',
+      p.factory_code || '',
       p.description || '',
       p.group_name || '',
       p.stock || 0,
@@ -488,7 +490,8 @@ export default function Products() {
                 <TableRow key={product.id}>
                   <TableCell className="font-mono text-sm">
                     <div className="text-foreground">{product.code}</div>
-                    {product.external_code && <div className="text-xs text-muted-foreground">{product.external_code}</div>}
+                    {product.external_code && <div className="text-xs text-muted-foreground" title="Cód. Externo / EAN">EAN: {product.external_code}</div>}
+                    {product.factory_code && <div className="text-xs text-blue-500" title="Cód. Fábrica">Fáb: {product.factory_code}</div>}
                   </TableCell>
                   <TableCell className="font-medium">{product.description}</TableCell>
                   <TableCell>
@@ -535,14 +538,18 @@ export default function Products() {
             <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Código Interno *</Label>
                 <Input id="code" name="code" defaultValue={editingProduct?.code} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="external_code">Cód. Externo</Label>
+                <Label htmlFor="external_code">Cód. Externo (EAN)</Label>
                 <Input id="external_code" name="external_code" defaultValue={editingProduct?.external_code} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="factory_code">Cód. Fábrica</Label>
+                <Input id="factory_code" name="factory_code" defaultValue={editingProduct?.factory_code} />
               </div>
             </div>
             <div className="space-y-2">
