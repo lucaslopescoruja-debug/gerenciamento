@@ -240,10 +240,8 @@ export default function CreateReceipt() {
 
                const normalizedCode = normalizeCode(factoryCode)
                const foundProduct = products.find(prod => {
-                 const pCode = normalizeCode(prod.code)
-                 const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
                  const pFact = prod.factory_code ? normalizeCode(prod.factory_code) : null
-                 return (pCode === normalizedCode || pExt === normalizedCode || pFact === normalizedCode)
+                 return (pFact === normalizedCode)
                })
 
                if (!foundProduct) notFoundCount++
@@ -308,11 +306,8 @@ export default function CreateReceipt() {
           let foundProduct = null
           if (normalizedCode.length >= 2) {
              foundProduct = products.find(prod => {
-               const pCode = normalizeCode(prod.code)
-               const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
                const pFact = prod.factory_code ? normalizeCode(prod.factory_code) : null
-               if (pCode === normalizedCode || pExt === normalizedCode || pFact === normalizedCode) return true
-               return false
+               return (pFact === normalizedCode)
              })
           }
 
