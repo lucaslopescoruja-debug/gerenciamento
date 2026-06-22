@@ -9,12 +9,45 @@ import {
 import { Button } from '@/components/ui/button'
 import { saasApi } from '@/api/saas'
 import { toast } from '@/components/ui/toaster'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function Landing() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [demoModalOpen, setDemoModalOpen] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
+  const [demoForm, setDemoForm] = useState({
+    nome: '',
+    empresa: '',
+    telefone: '',
+    email: '',
+    descricao: ''
+  })
+
+  const handleDemoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setDemoLoading(true)
+    try {
+      await saasApi.createLead({
+        name: demoForm.nome,
+        email: demoForm.email,
+        phone: demoForm.telefone,
+        message: `Empresa: ${demoForm.empresa}\n\nDescrição da Operação: ${demoForm.descricao}`
+      })
+      toast.success('Solicitação enviada com sucesso! Entraremos em contato em breve.')
+      setDemoModalOpen(false)
+      setDemoForm({ nome: '', empresa: '', telefone: '', email: '', descricao: '' })
+    } catch (e: any) {
+      toast.error('Erro ao enviar solicitação. Tente novamente mais tarde.')
+    } finally {
+      setDemoLoading(false)
+    }
+  }
 
   // Efeito para adicionar fundo no cabeçalho ao rolar a página
   useEffect(() => {
@@ -78,7 +111,7 @@ export default function Landing() {
               <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/5" onClick={handleClientAreaClick}>
                 Acessar Sistema
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 rounded-full px-6">
+              <Button className="bg-blue-600 hover:bg-blue-500 text-white border-0 shadow-lg shadow-blue-600/30 rounded-full px-6" onClick={() => setDemoModalOpen(true)}>
                 Solicitar Demonstração
               </Button>
             </div>
@@ -98,7 +131,7 @@ export default function Landing() {
             <button onClick={() => scrollToSection('problema')} className="text-left py-2 text-slate-300">Problema</button>
             <button onClick={() => scrollToSection('solucao')} className="text-left py-2 text-slate-300">Solução</button>
             <button onClick={() => scrollToSection('planos')} className="text-left py-2 text-slate-300">Planos</button>
-            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white">Solicitar Demonstração</Button>
+            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white" onClick={() => setDemoModalOpen(true)}>Solicitar Demonstração</Button>
             <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/5" onClick={handleClientAreaClick}>Acessar Sistema</Button>
           </div>
         )}
@@ -123,7 +156,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-wrap items-center gap-4 pt-4">
-              <Button className="h-14 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:-translate-y-1 transition-all">
+              <Button className="h-14 px-8 text-lg font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:-translate-y-1 transition-all" onClick={() => setDemoModalOpen(true)}>
                 Solicitar Demonstração
               </Button>
               <Button variant="outline" className="h-14 px-8 text-lg font-bold border-white/20 text-white hover:bg-white/5 rounded-full hover:-translate-y-1 transition-all bg-transparent">
@@ -457,7 +490,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8">Pronto para profissionalizar sua operação?</h2>
           <p className="text-xl text-blue-200 mb-12">Automatize estoque, expedição, entregas e vendas em uma única plataforma.</p>
-          <Button className="h-16 px-12 text-xl font-bold bg-white text-blue-600 hover:bg-slate-100 rounded-full shadow-2xl hover:-translate-y-1 transition-all">
+          <Button className="h-16 px-12 text-xl font-bold bg-white text-blue-600 hover:bg-slate-100 rounded-full shadow-2xl hover:-translate-y-1 transition-all" onClick={() => setDemoModalOpen(true)}>
             Solicitar Demonstração Gratuita
           </Button>
         </div>
@@ -485,6 +518,76 @@ export default function Landing() {
       <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 h-14 w-14 bg-green-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 hover:scale-110 transition-all z-50">
         <Phone className="h-6 w-6" />
       </a>
+
+      {/* MODAL DE DEMONSTRAÇÃO */}
+      <Dialog open={demoModalOpen} onOpenChange={setDemoModalOpen}>
+        <DialogContent className="sm:max-w-[500px] border-blue-500/20 bg-[#0F172A]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white">Solicitar Demonstração</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Preencha os dados abaixo e entraremos em contato para mostrar como o Estoque Fácil se adequa à sua operação.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleDemoSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300">Seu Nome</Label>
+              <Input 
+                required 
+                className="bg-white/5 border-white/10 text-white" 
+                value={demoForm.nome} 
+                onChange={e => setDemoForm({...demoForm, nome: e.target.value})} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Nome da Empresa</Label>
+              <Input 
+                required 
+                className="bg-white/5 border-white/10 text-white" 
+                value={demoForm.empresa} 
+                onChange={e => setDemoForm({...demoForm, empresa: e.target.value})} 
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Telefone</Label>
+                <Input 
+                  required 
+                  className="bg-white/5 border-white/10 text-white" 
+                  value={demoForm.telefone} 
+                  onChange={e => setDemoForm({...demoForm, telefone: e.target.value})} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">E-mail</Label>
+                <Input 
+                  required 
+                  type="email"
+                  className="bg-white/5 border-white/10 text-white" 
+                  value={demoForm.email} 
+                  onChange={e => setDemoForm({...demoForm, email: e.target.value})} 
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-300">Descrição da Operação</Label>
+              <Textarea 
+                required 
+                placeholder="Como é a sua operação hoje? Ex: Tenho 3 caminhões e 5 vendedores..."
+                className="bg-white/5 border-white/10 text-white min-h-[100px]" 
+                value={demoForm.descricao} 
+                onChange={e => setDemoForm({...demoForm, descricao: e.target.value})} 
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white h-12 text-lg font-bold"
+              disabled={demoLoading}
+            >
+              {demoLoading ? 'Enviando...' : 'Enviar Solicitação'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
       
     </div>
   )
