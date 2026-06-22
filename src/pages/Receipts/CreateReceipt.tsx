@@ -186,7 +186,8 @@ export default function CreateReceipt() {
     if (file.name.toLowerCase().endsWith('.pdf')) {
       try {
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+        // Use unpkg as a reliable fallback or standard worker source, avoiding version mismatches
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
         
         const arrayBuffer = await file.arrayBuffer()
         const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
@@ -279,9 +280,9 @@ export default function CreateReceipt() {
         } else {
           toast.error('Nenhum produto válido encontrado no PDF.')
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error(err)
-        toast.error('Erro ao ler o arquivo PDF.')
+        toast.error(`Erro ao ler PDF: ${err?.message || 'Erro desconhecido'}`)
       }
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
