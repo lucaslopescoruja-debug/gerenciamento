@@ -234,15 +234,10 @@ export default function CreateReceipt() {
                const tokens = suffix.trim().split(/\s+/)
                let qty = 1
                
-               if (tokens.length >= 4) {
-                 let qtyStr = tokens[tokens.length - 2]
+               if (tokens.length > 0) {
+                 // The very first token after the unit (CX|FD|UN) is the quantity
+                 let qtyStr = tokens[0]
                  qty = parseInt(qtyStr.split(',')[0].replace(/\./g, ''), 10)
-               } else {
-                 for (const tk of tokens) {
-                   if (/^\d+,00$/.test(tk) || /^\d+$/.test(tk)) {
-                      qty = parseInt(tk.split(',')[0], 10)
-                   }
-                 }
                }
                if (isNaN(qty) || qty === 0) qty = 1
 
