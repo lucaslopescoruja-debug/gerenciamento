@@ -71,7 +71,7 @@ export default function Dashboard() {
   })
 
   const lowStockProducts = useMemo(() => {
-    return products.filter((p: any) => p.min_stock_alert !== undefined && p.min_stock_alert > 0 && p.stock < p.min_stock_alert)
+    return products.filter((p: any) => p.min_stock_alert !== undefined && p.min_stock_alert > 0 && p.stock <= p.min_stock_alert)
   }, [products])
 
   const loadStats = useMemo(() => {

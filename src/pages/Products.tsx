@@ -501,7 +501,7 @@ export default function Products() {
                     <div className="flex flex-col gap-1 items-start">
                       <Badge variant={
                         product.min_stock_alert !== undefined && product.min_stock_alert > 0
-                          ? (product.stock < product.min_stock_alert ? 'destructive' : (product.stock < product.min_stock_alert * 1.5 ? 'warning' : 'success'))
+                          ? (product.stock <= product.min_stock_alert ? 'destructive' : (product.stock <= product.min_stock_alert * 1.5 ? 'warning' : 'success'))
                           : (product.stock >= 10 ? 'success' : product.stock >= 3 ? 'warning' : 'destructive')
                       }>
                         {product.stock}
