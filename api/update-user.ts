@@ -47,6 +47,25 @@ export default async function handler(req, res) {
       }
     }
 
+    if (updates.force_password_reset) {
+      const { data: userToReset, error: fetchErr } = await supabaseAdmin
+        .from('users')
+        .select('auth_user_id')
+        .eq('id', id)
+        .single();
+        
+      if (!fetchErr && userToReset && userToReset.auth_user_id) {
+        const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(userToReset.auth_user_id, {
+          password: 'Trocar@123'
+        });
+        if (!authErr) {
+          updates.must_change_password = true;
+          updates.reset_requested = false;
+        }
+      }
+      delete updates.force_password_reset;
+    }
+
     // Atualiza tabela public.users
     const { data, error: dbError } = await supabaseAdmin
       .from('users')

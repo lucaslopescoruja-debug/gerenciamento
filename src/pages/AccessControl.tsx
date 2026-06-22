@@ -148,13 +148,8 @@ export default function AccessControl() {
 
   const handleResetPassword = async () => {
     if (!editing || !editing.email) return
-    if (window.confirm('Enviar link de redefinição de senha para este usuário?')) {
-      const { supabase } = await import('@/lib/supabase');
-      await supabase.auth.resetPasswordForEmail(editing.email, {
-        redirectTo: `${window.location.origin}/reset-password-auto`,
-      });
-      updateMutation.mutate({ id: editing.id, data: { reset_requested: false } })
-      toast.success('Link de redefinição enviado com sucesso!');
+    if (window.confirm('Resetar a senha deste usuário para a senha padrão (Trocar@123)?')) {
+      updateMutation.mutate({ id: editing.id, data: { force_password_reset: true } as any })
     }
   }
 
