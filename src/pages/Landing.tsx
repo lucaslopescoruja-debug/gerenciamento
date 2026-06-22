@@ -406,7 +406,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Bronze</Button>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white" onClick={() => setDemoModalOpen(true)}>Assinar Bronze</Button>
             </div>
 
             {/* Prata */}
@@ -421,7 +421,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Prata</Button>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white" onClick={() => setDemoModalOpen(true)}>Assinar Prata</Button>
             </div>
 
             {/* Ouro */}
@@ -437,7 +437,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white shadow-lg">Assinar Ouro</Button>
+              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white shadow-lg" onClick={() => setDemoModalOpen(true)}>Assinar Ouro</Button>
             </div>
 
             {/* Platina */}
@@ -452,7 +452,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full bg-white/10 hover:bg-white/20 text-white">Assinar Platina</Button>
+              <Button className="w-full bg-white/10 hover:bg-white/20 text-white" onClick={() => setDemoModalOpen(true)}>Assinar Platina</Button>
             </div>
           </div>
         </div>
