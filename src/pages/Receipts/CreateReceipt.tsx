@@ -13,6 +13,8 @@ import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { Navigate } from 'react-router-dom'
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
 interface NewItem {
   tempId: string
   product_id: string
@@ -36,6 +38,9 @@ export default function CreateReceipt() {
   const [codeSearch, setCodeSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [filteredProducts, setFilteredProducts] = useState<any[]>([])
+
+  const [linkingItemId, setLinkingItemId] = useState<string | null>(null)
+  const [linkSearch, setLinkSearch] = useState('')
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -145,9 +150,142 @@ export default function CreateReceipt() {
     setItems(items.filter(i => i.tempId !== tempId))
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleConfirmLink = async (product: any) => {
+    if (!linkingItemId) return
+
+    const itemToLink = items.find(i => i.tempId === linkingItemId)
+    if (!itemToLink) return
+
+    try {
+      await productsApi.updateProduct(product.id, { external_code: itemToLink.product_code })
+      
+      setItems(items.map(i => {
+        if (i.product_code === itemToLink.product_code) {
+          return {
+            ...i,
+            product_id: product.id,
+            description: product.description
+          }
+        }
+        return i
+      }))
+      
+      toast.success(`Código ${itemToLink.product_code} vinculado a ${product.description} com sucesso!`)
+      setLinkingItemId(null)
+      setLinkSearch('')
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    } catch (err) {
+      toast.error('Erro ao vincular produto no sistema.')
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      try {
+        const pdfjsLib = await import('pdfjs-dist')
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+        
+        const arrayBuffer = await file.arrayBuffer()
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
+        const pdf = await loadingTask.promise
+        
+        let parsedItems: NewItem[] = []
+        let notFoundCount = 0
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum)
+          const textContent = await page.getTextContent()
+          const pageItems = textContent.items as any[]
+          
+          pageItems.sort((a, b) => {
+            if (Math.abs(b.transform[5] - a.transform[5]) > 2) {
+               return b.transform[5] - a.transform[5]
+            }
+            return a.transform[4] - b.transform[4]
+          })
+
+          let lines: string[] = []
+          let currentLine = ""
+          let currentY = -1
+
+          pageItems.forEach(item => {
+             if (currentY === -1 || Math.abs(currentY - item.transform[5]) <= 2) {
+               currentLine += item.str + " "
+               currentY = item.transform[5]
+             } else {
+               lines.push(currentLine.trim())
+               currentLine = item.str + " "
+               currentY = item.transform[5]
+             }
+          })
+          if (currentLine) lines.push(currentLine.trim())
+
+          for (const line of lines) {
+             const match = line.match(/^(\d+)\s+(\d+)\s+(.+?)\s+(CX|FD|UN)/)
+             if (match) {
+               const factoryCode = match[2]
+               const desc = match[3]
+               
+               const suffix = line.substring(match[0].length)
+               const tokens = suffix.trim().split(/\s+/)
+               let qty = 1
+               
+               if (tokens.length >= 4) {
+                 let qtyStr = tokens[tokens.length - 2]
+                 qty = parseInt(qtyStr.split(',')[0].replace(/\./g, ''), 10)
+               } else {
+                 for (const tk of tokens) {
+                   if (/^\d+,00$/.test(tk) || /^\d+$/.test(tk)) {
+                      qty = parseInt(tk.split(',')[0], 10)
+                   }
+                 }
+               }
+               if (isNaN(qty) || qty === 0) qty = 1
+
+               const normalizedCode = normalizeCode(factoryCode)
+               const foundProduct = products.find(prod => {
+                 const pCode = normalizeCode(prod.code)
+                 const pExt = prod.external_code ? normalizeCode(prod.external_code) : null
+                 return (pCode === normalizedCode || pExt === normalizedCode)
+               })
+
+               if (!foundProduct) notFoundCount++
+
+               const existing = parsedItems.find(i => i.product_code === factoryCode)
+               if (existing) {
+                 existing.quantity_expected += qty
+               } else {
+                 parsedItems.push({
+                   tempId: `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                   product_id: foundProduct?.id || '',
+                   product_code: factoryCode,
+                   description: foundProduct ? foundProduct.description : desc,
+                   quantity_expected: Math.max(1, qty)
+                 })
+               }
+             }
+          }
+        }
+
+        if (parsedItems.length > 0) {
+          setItems(prev => [...parsedItems, ...prev])
+          toast.success(`${parsedItems.length} produtos importados do PDF!`)
+          if (notFoundCount > 0) {
+            toast.warning(`${notFoundCount} produtos não encontrados. Por favor, vincule-os manualmente abaixo.`)
+          }
+        } else {
+          toast.error('Nenhum produto válido encontrado no PDF.')
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Erro ao ler o arquivo PDF.')
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = (evt) => {
