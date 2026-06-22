@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from '@/components/ui/toaster'
-import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight, ScanLine, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight, ScanLine, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, ChevronUp } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { Link } from 'react-router-dom'
@@ -23,6 +23,13 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState({
+    group: 'Todos',
+    stockStatus: 'Todos',
+    factoryCode: '',
+    externalCode: ''
+  })
   const { user, isMaster } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || isMaster
 
@@ -101,11 +108,38 @@ export default function Products() {
     }
   })
 
-  const filtered = products.filter(p =>
-    p.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.external_code?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const groups = useMemo(() => {
+    const g = new Set<string>()
+    products.forEach((p: any) => {
+      if (p.group_name) g.add(p.group_name)
+    })
+    return Array.from(g).sort()
+  }, [products])
+
+  const filtered = products.filter(p => {
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      if (!p.description?.toLowerCase().includes(term) &&
+          !p.code?.toLowerCase().includes(term) &&
+          !p.external_code?.toLowerCase().includes(term) &&
+          !p.factory_code?.toLowerCase().includes(term)) {
+        return false
+      }
+    }
+
+    if (filters.group !== 'Todos' && p.group_name !== filters.group) return false
+    
+    if (filters.stockStatus === 'Com Estoque' && (p.stock || 0) <= 0) return false
+    if (filters.stockStatus === 'Sem Estoque' && (p.stock || 0) > 0) return false
+    if (filters.stockStatus === 'Estoque Baixo') {
+       if (p.min_stock_alert === undefined || p.min_stock_alert <= 0 || (p.stock || 0) > p.min_stock_alert) return false
+    }
+
+    if (filters.factoryCode && !p.factory_code?.toLowerCase().includes(filters.factoryCode.toLowerCase())) return false
+    if (filters.externalCode && !p.external_code?.toLowerCase().includes(filters.externalCode.toLowerCase())) return false
+
+    return true
+  })
 
   const [sortField, setSortField] = useState<'code' | 'description' | 'group_name' | 'stock' | null>(null)
   const [sortAsc, setSortAsc] = useState(true)
@@ -442,6 +476,76 @@ export default function Products() {
       <div className="relative">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar por código ou descrição..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      </div>
+
+      {/* Painel de Filtros */}
+      <div className="glass-card relative z-10">
+        <div 
+          className="flex justify-between items-center p-4 border-b border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors rounded-t-xl"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Filter className="h-4 w-4 text-primary" />
+            Filtros Avançados
+          </div>
+          {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </div>
+        
+        {showFilters && (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
+            {/* Grupo */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Grupo</label>
+              <select 
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={filters.group}
+                onChange={(e) => setFilters(f => ({ ...f, group: e.target.value }))}
+              >
+                <option value="Todos">Todos</option>
+                {groups.map(g => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status do Estoque */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Estoque</label>
+              <select 
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={filters.stockStatus}
+                onChange={(e) => setFilters(f => ({ ...f, stockStatus: e.target.value }))}
+              >
+                <option value="Todos">Todos</option>
+                <option value="Com Estoque">Com Estoque</option>
+                <option value="Sem Estoque">Sem Estoque</option>
+                <option value="Estoque Baixo">Estoque Baixo</option>
+              </select>
+            </div>
+
+            {/* Código de Fábrica */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Código de Fábrica</label>
+              <Input 
+                className="h-9 text-sm" 
+                placeholder="Ex: FAB-123"
+                value={filters.factoryCode}
+                onChange={(e) => setFilters(f => ({ ...f, factoryCode: e.target.value }))}
+              />
+            </div>
+
+            {/* Código Externo / EAN */}
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">Código Externo / EAN</label>
+              <Input 
+                className="h-9 text-sm" 
+                placeholder="Ex: 789102..."
+                value={filters.externalCode}
+                onChange={(e) => setFilters(f => ({ ...f, externalCode: e.target.value }))}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="glass-card overflow-hidden">
