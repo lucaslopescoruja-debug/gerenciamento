@@ -395,7 +395,7 @@ export default function Products() {
       return
     }
 
-    const headers = ['ID', 'Código', 'Código Externo', 'Descrição', 'Grupo', 'Estoque', 'Estoque Mínimo Alerta', 'Lote', 'Peso Unit.', 'Qtd. Caixa', 'Data Criação']
+    const headers = ['ID', 'Código', 'Código Externo', 'Código de Fábrica', 'Descrição', 'Grupo', 'Estoque', 'Estoque Mínimo Alerta', 'Lote', 'Peso Unit.', 'Qtd. Caixa', 'Data Criação']
     
     const rows = products.map(p => [
       p.id,
