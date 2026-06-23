@@ -105,11 +105,12 @@ export function SalesDashboard() {
   // Limit to customers belonging to the rep (if not manager or if a rep is selected)
   const relevantCustomers = useMemo(() => {
     return customers.filter(c => {
+      const customer = c as any;
       if (!isManager) {
-        const repName = c.sales_rep?.nickname || c.sales_rep?.legal_name
+        const repName = customer.sales_rep?.nickname || customer.sales_rep?.legal_name
         if (repName !== user?.name) return false
       } else if (selectedRep !== 'all') {
-        const repName = c.sales_rep?.nickname || c.sales_rep?.legal_name
+        const repName = customer.sales_rep?.nickname || customer.sales_rep?.legal_name
         if (repName !== selectedRep) return false
       }
       return true
@@ -239,7 +240,7 @@ export function SalesDashboard() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
               <XAxis dataKey="dia" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value}`} />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={(label) => `Dia ${label}`} />
+              <Tooltip formatter={(value: any) => formatCurrency(value)} labelFormatter={(label) => `Dia ${label}`} />
               <Legend />
               <Line type="monotone" dataKey="Vendido" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
             </LineChart>
