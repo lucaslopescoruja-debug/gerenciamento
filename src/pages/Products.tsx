@@ -162,7 +162,9 @@ export default function Products() {
       setSortField(field)
       setSortAsc(true)
     }
-   const sortedProducts = useMemo(() => {
+  }
+
+  const sortedProducts = useMemo(() => {
     const sorted = [...filtered]
     if (!sortField) return sorted
 
