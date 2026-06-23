@@ -160,6 +160,7 @@ export interface SalesRep {
   city: string | null
   state: string | null
   commission_rate: number | null
+  monthly_goal: number | null
   created_at: string
   updated_at: string
   sales_rep_regions?: { region: Region }[]

@@ -19,6 +19,7 @@ import {
   Legend
 } from 'recharts'
 import { usersApi } from '@/api/users'
+import { salesRepsApi } from '@/api/salesReps'
 
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -47,6 +48,12 @@ export function SalesDashboard() {
     enabled: isManager && !!company?.id,
   })
 
+  const { data: salesReps = [] } = useQuery({
+    queryKey: ['salesReps'],
+    queryFn: salesRepsApi.getSalesReps,
+    enabled: !!company?.id,
+  })
+
   const vendedores = usersList.filter(u => u.role === 'vendedor' || u.role === 'representante')
 
   // Filtros
@@ -59,18 +66,26 @@ export function SalesDashboard() {
         const repName = o.sales_rep?.nickname || o.sales_rep?.legal_name
         if (repName !== selectedRep) return false
       }
-
-      const orderDate = new Date(o.created_at)
-      if (orderDate.getMonth() !== selectedMonth || orderDate.getFullYear() !== selectedYear) {
-        return false
-      }
-
-      return true
+      return o.created_at.includes(`${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`)
     })
   }, [orders, isManager, user?.name, selectedRep, selectedMonth, selectedYear])
 
   let vendidoNoMes = filteredOrders.reduce((sum, o) => sum + (o.net_amount || 0), 0)
-  const objetivoNoMes = 0
+  
+  const objetivoNoMes = useMemo(() => {
+    // Se não for gestor, pega a meta apenas do vendedor logado
+    if (!isManager) {
+      const myRep = salesReps.find(r => (r.nickname || r.legal_name) === user?.name)
+      return myRep?.monthly_goal || 0
+    }
+    // Se for gestor e filtrou um vendedor específico
+    if (selectedRep !== 'all') {
+      const myRep = salesReps.find(r => (r.nickname || r.legal_name) === selectedRep)
+      return myRep?.monthly_goal || 0
+    }
+    // Se for gestor vendo geral, soma todas as metas
+    return salesReps.reduce((sum, r) => sum + (r.monthly_goal || 0), 0)
+  }, [salesReps, isManager, user?.name, selectedRep])
   const missingGoal = Math.max(0, objetivoNoMes - vendidoNoMes)
   
   const today = new Date()

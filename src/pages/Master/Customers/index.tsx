@@ -238,6 +238,12 @@ export default function CustomersList() {
 
   const filteredCustomers = useMemo(() => {
     return customers.filter(c => {
+      // Role-based filtering
+      if (!isManager) {
+        const repName = c.sales_rep_obj?.nickname || c.sales_rep_obj?.legal_name
+        if (repName !== user?.name) return false
+      }
+
       // Apelido (Nickname or Fantasy Name)
       const matchApelido = applyFilter(c.nickname || c.fantasy_name || '', filters.apelido, filters.apelidoType)
       

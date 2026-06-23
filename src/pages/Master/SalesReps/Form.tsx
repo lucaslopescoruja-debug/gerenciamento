@@ -25,7 +25,8 @@ export default function SalesRepForm() {
     phone: '',
     city: '',
     state: '',
-    commission_rate: 0
+    commission_rate: 0,
+    monthly_goal: 0
   })
 
   const [regionIds, setRegionIds] = useState<string[]>([])
@@ -55,7 +56,8 @@ export default function SalesRepForm() {
         phone: rep.phone || '',
         city: rep.city || '',
         state: rep.state || '',
-        commission_rate: rep.commission_rate || 0
+        commission_rate: rep.commission_rate || 0,
+        monthly_goal: rep.monthly_goal || 0
       })
       if (rep.sales_rep_regions) {
         setRegionIds(rep.sales_rep_regions.map((sr: any) => sr.regions?.id).filter(Boolean))
@@ -195,6 +197,20 @@ export default function SalesRepForm() {
                 className="pl-8"
               />
               <span className="absolute left-3 top-2.5 text-muted-foreground">%</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Meta de Vendas (Mensal)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-muted-foreground">R$</span>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.monthly_goal || ''}
+                onChange={e => setFormData({ ...formData, monthly_goal: parseFloat(e.target.value) || 0 })}
+                className="pl-9"
+              />
             </div>
           </div>
         </div>
