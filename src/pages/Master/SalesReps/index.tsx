@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Search, Plus, Edit2, Trash2, Users, UploadCloud, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Users, UploadCloud, ArrowUpDown, ArrowUp, ArrowDown, Key } from 'lucide-react'
 import Papa from 'papaparse'
 import { salesRepsApi } from '@/api/salesReps'
+import { usersApi } from '@/api/users'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
@@ -15,6 +16,7 @@ export default function SalesRepsList() {
   const { user } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || user?.role === 'master'
   const [isImporting, setIsImporting] = useState(false)
+  const [isCreatingUsers, setIsCreatingUsers] = useState(false)
 
   const { data: reps = [], isLoading } = useQuery({
     queryKey: ['salesReps'],
@@ -46,6 +48,63 @@ export default function SalesRepsList() {
     onError: (e: any) => {
       toast.error(`Erro ao importar: ${e.message}`)
       setIsImporting(false)
+    }
+  })
+
+  const createUsersMutation = useMutation({
+    mutationFn: async () => {
+      setIsCreatingUsers(true)
+      const allUsers = await usersApi.getUsers()
+      const existingEmails = new Set(allUsers.map(u => u.username.toLowerCase()))
+      
+      let created = 0;
+      for (const rep of reps) {
+        const name = (rep.nickname || rep.legal_name || 'Vendedor').trim()
+        
+        let baseEmail = name.split(' ')[0].toLowerCase()
+        baseEmail = baseEmail.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '')
+        const emailLogin = `${baseEmail}@delicius.com`
+
+        if (!existingEmails.has(emailLogin)) {
+          await usersApi.createUser({
+            name: name,
+            username: emailLogin,
+            role: 'vendedor',
+            permissions: {
+              can_view_dashboard: true,
+              can_manage_loads: false,
+              can_do_delivery: false,
+              can_do_conference: false,
+              can_manage_products: true,
+              can_manage_price_tables: true,
+              can_manage_payment_conditions: false,
+              can_manage_customers: true,
+              can_manage_reps: false,
+              can_manage_regions: false,
+              can_manage_integrations: false,
+              can_manage_equipments: true,
+              can_manage_os: true,
+              can_use_sales_app: true,
+              can_manage_sales: false,
+              can_manage_users: false,
+              can_manage_supplies: false,
+              can_request_supplies: false
+            },
+            active: true
+          })
+          created++;
+          existingEmails.add(emailLogin)
+        }
+      }
+      return created;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} logins de vendedores criados com sucesso!`)
+      setIsCreatingUsers(false)
+    },
+    onError: (e: any) => {
+      toast.error(`Erro ao criar logins: ${e.message}`)
+      setIsCreatingUsers(false)
     }
   })
 
@@ -180,6 +239,23 @@ export default function SalesRepsList() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {isManager && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full sm:w-auto shadow-sm text-indigo-500 hover:text-indigo-600 border-indigo-200" 
+              disabled={isCreatingUsers} 
+              onClick={() => {
+                if (window.confirm('Isto irá criar logins automaticamente (nome@delicius.com) para todos os representantes que ainda não tem acesso. Deseja continuar?')) {
+                  createUsersMutation.mutate()
+                }
+              }}
+            >
+              <Key className="mr-2 h-4 w-4" /> 
+              {isCreatingUsers ? 'Criando...' : 'Gerar Logins de Acesso'}
+            </Button>
+          )}
+
           <label className="cursor-pointer">
             <Button type="button" variant="outline" className="w-full sm:w-auto shadow-sm" disabled={isImporting} onClick={() => document.getElementById('csv-upload')?.click()}>
               <UploadCloud className="mr-2 h-4 w-4" /> 
