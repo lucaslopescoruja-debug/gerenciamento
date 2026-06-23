@@ -152,16 +152,16 @@ export default function CompanySettings() {
     setErpLoading(true)
     try {
       await companiesApi.updateCompany(company.id, { maxiprod_api_token: erpToken })
-      toast.success('Configurações ERP salvas com sucesso!')
       
-      const isOk = await maxiprodApi.testConnection()
-      if (isOk) {
+      try {
+        await maxiprodApi.testConnection()
         toast.success('Conexão com Maxiprod estabelecida!')
-      } else {
-        toast.error('Token salvo, mas a conexão falhou. Verifique se o token é válido.')
+      } catch (err: any) {
+        toast.error(`Falha na conexão: ${err.message}`)
       }
-    } catch (e: any) {
-      toast.error('Erro ao salvar configurações ERP')
+      
+    } catch (error: any) {
+      toast.error('Erro ao salvar token: ' + error.message)
     } finally {
       setErpLoading(false)
     }

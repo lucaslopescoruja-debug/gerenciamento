@@ -50,17 +50,15 @@ export default function Settings() {
 
       toast.success('Configurações salvas com sucesso!')
       
-      // Test connection
-      const isOk = await maxiprodApi.testConnection()
-      if (isOk) {
+      try {
+        await maxiprodApi.testConnection()
         toast.success('Conexão com Maxiprod estabelecida!')
-      } else {
-        toast.warning('Token salvo, mas a conexão falhou. Verifique se o token é válido.')
+      } catch (err: any) {
+        toast.error(`Falha na conexão: ${err.message}`)
       }
 
     } catch (e: any) {
-      toast.error('Erro ao salvar configurações')
-      console.error(e)
+      toast.error('Erro ao salvar token: ' + e.message)
     } finally {
       setLoading(false)
     }
