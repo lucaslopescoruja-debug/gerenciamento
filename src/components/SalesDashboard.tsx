@@ -227,17 +227,16 @@ export function SalesDashboard() {
         {/* Evolução de Venda Chart */}
         <Card className="p-6 overflow-hidden">
           <h3 className="text-lg font-semibold mb-6">Evolução de Venda</h3>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={evolucaoData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <div className="h-[300px] w-full overflow-x-auto">
+            <div style={{ width: '800px', height: '300px' }}>
+              <LineChart width={800} height={300} data={evolucaoData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
                 <XAxis dataKey="dia" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$ ${value}`} />
-                <Tooltip formatter={(value: any) => formatCurrency(value)} labelFormatter={(label) => `Dia ${label}`} />
                 <Legend />
                 <Line type="monotone" dataKey="Vendido" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
-            </ResponsiveContainer>
+            </div>
           </div>
         </Card>
 
@@ -246,18 +245,15 @@ export function SalesDashboard() {
           
           <Card className="p-6">
             <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase">Carteira de Clientes</h3>
-            <div className="h-[200px] relative">
+            <div className="h-[200px] relative flex justify-center">
               {(ativosCount + inativosCount) === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={carteiraData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                      {carteiraData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <PieChart width={200} height={200}>
+                  <Pie data={carteiraData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {carteiraData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                </PieChart>
               )}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-bold">{relevantCustomers.length}</span>
@@ -279,18 +275,15 @@ export function SalesDashboard() {
 
           <Card className="p-6">
             <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase">Positivação</h3>
-            <div className="h-[200px] relative">
+            <div className="h-[200px] relative flex justify-center">
               {(positivadosCount + naoPositivadosCount) === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={positivacaoData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                      {positivacaoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <PieChart width={200} height={200}>
+                  <Pie data={positivacaoData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {positivacaoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                </PieChart>
               )}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-bold">{positivadosCount}</span>
@@ -312,18 +305,15 @@ export function SalesDashboard() {
 
           <Card className="p-6">
             <h3 className="text-sm font-semibold text-muted-foreground mb-4 uppercase">Curva ABC (Apenas Clientes Ativos c/ Compra)</h3>
-            <div className="h-[200px] relative">
+            <div className="h-[200px] relative flex justify-center">
               {(curvaA + curvaB + curvaC) === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={abcData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                      {abcData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <PieChart width={200} height={200}>
+                  <Pie data={abcData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {abcData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                  </Pie>
+                </PieChart>
               )}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-bold">{salesByCustomer.length}</span>
