@@ -129,12 +129,12 @@ export const maxiprodApi = {
       })
       if (resItens.ok) {
         const itensData = await resItens.json()
-        // Assuming data is inside a property, or it is the array itself
         const itensList = Array.isArray(itensData) ? itensData : (itensData.itens || itensData.data || [])
         
         for (const item of itensList) {
-          // Upsert product
           if (item.codigo && item.descricao) {
+            // Utilizamos ignoreDuplicates para NÃO sobrescrever os dados locais (como códigos externos e estoque)
+            // caso o produto já exista no LS Stock. Assim, apenas novos produtos entram.
             await supabase.from('products').upsert({
               company_id: comp.id,
               code: item.codigo.toString(),
@@ -142,9 +142,8 @@ export const maxiprodApi = {
               price: item.preco_venda || 0,
               stock: item.estoque_atual || 0,
               unit: item.unidade_medida || 'UN',
-              external_code: item.id?.toString() || item.codigo?.toString(),
               active: item.ativo !== false
-            }, { onConflict: 'company_id, code' })
+            }, { onConflict: 'company_id, code', ignoreDuplicates: true })
             syncStats.products++
           }
         }
@@ -159,8 +158,8 @@ export const maxiprodApi = {
         const contatosList = Array.isArray(contatosData) ? contatosData : (contatosData.contatos || contatosData.data || [])
 
         for (const contato of contatosList) {
-          // Upsert customer
           if (contato.cnpj_cpf) {
+            // ignoreDuplicates previne que vínculos de vendedores, comodatos e regiões sejam apagados
             await supabase.from('customers').upsert({
               company_id: comp.id,
               document: contato.cnpj_cpf.replace(/\D/g, ''),
@@ -173,7 +172,7 @@ export const maxiprodApi = {
               city: contato.cidade || null,
               state: contato.uf || null,
               zip_code: contato.cep ? contato.cep.replace(/\D/g, '') : null
-            }, { onConflict: 'company_id, document' })
+            }, { onConflict: 'company_id, document', ignoreDuplicates: true })
             syncStats.customers++
           }
         }
