@@ -27,12 +27,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    let authToken = token;
+    
+    // Suporte temporário para login com email e senha no formato "email:senha"
+    if (token.includes(':') && token.includes('@')) {
+      const splitIndex = token.indexOf(':');
+      const email = token.substring(0, splitIndex);
+      const senha = token.substring(splitIndex + 1);
+      
+      const loginRes = await fetch('https://api.maxiprod.com.br/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ Email: email, Senha: senha })
+      });
+      
+      if (!loginRes.ok) {
+        const errorText = await loginRes.text();
+        return res.status(401).json({ error: 'Falha no login automático Maxiprod', details: errorText });
+      }
+      
+      const loginData = await loginRes.json();
+      if (typeof loginData === 'string') authToken = loginData;
+      else if (loginData.token) authToken = loginData.token;
+      else if (loginData.Token) authToken = loginData.Token;
+      else if (loginData.access_token) authToken = loginData.access_token;
+      else {
+        const values = Object.values(loginData);
+        authToken = values.find(v => typeof v === 'string' && v.length > 50) || token;
+      }
+    }
+
     const url = `https://api.maxiprod.com.br/api/v3${endpointPath}`;
     
     const options: RequestInit = {
       method: targetMethod,
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
