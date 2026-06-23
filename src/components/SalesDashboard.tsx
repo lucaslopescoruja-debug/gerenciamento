@@ -224,6 +224,158 @@ export function SalesDashboard() {
           </Card>
         </div>
 
+        {/* Evolução de Venda Chart (Gráfico de Barras Nativo) */}
+        <Card className="p-6 overflow-hidden">
+          <h3 className="text-lg font-semibold mb-6">Evolução Diária de Vendas</h3>
+          <div className="h-[250px] w-full mt-4">
+            <div className="flex items-end h-full gap-1 md:gap-2">
+              {(() => {
+                const dailyData: Record<number, number> = {}
+                for (let i = 1; i <= lastDay; i++) dailyData[i] = 0
+                filteredOrders.forEach(o => {
+                  const day = new Date(o.created_at).getDate()
+                  dailyData[day] += (o.net_amount || 0)
+                })
+                const chartData = Object.keys(dailyData).map(day => ({
+                  dia: parseInt(day),
+                  valor: dailyData[parseInt(day)]
+                }))
+                const maxValor = Math.max(...chartData.map(d => d.valor), 1)
+
+                return chartData.map(d => {
+                  const heightPercent = (d.valor / maxValor) * 100
+                  return (
+                    <div key={d.dia} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full mb-2 hidden group-hover:block bg-popover text-popover-foreground text-xs p-2 rounded shadow-lg whitespace-nowrap z-10 pointer-events-none">
+                        Dia {d.dia}<br/>
+                        <span className="font-bold">{formatCurrency(d.valor)}</span>
+                      </div>
+                      {/* Bar */}
+                      <div 
+                        className="w-full bg-emerald-500/80 rounded-t-sm transition-all duration-300 group-hover:bg-emerald-400" 
+                        style={{ height: `${Math.max(heightPercent, 1)}%`, minHeight: d.valor > 0 ? '4px' : '0' }}
+                      ></div>
+                      {/* Label */}
+                      <span className="text-[10px] text-muted-foreground mt-2 truncate">
+                        {d.dia % 5 === 0 || d.dia === 1 ? d.dia : ''}
+                      </span>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+        </Card>
+
+        {/* Bottom Charts (Barras de Progresso Nativas) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <Card className="p-6 flex flex-col">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-6 uppercase">Carteira de Clientes</h3>
+            <div className="flex-1 flex flex-col justify-center space-y-6">
+              {(ativosCount + inativosCount) === 0 ? (
+                <div className="flex items-center justify-center text-muted-foreground text-sm h-full">Sem dados</div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div>Ativos</span>
+                      <span className="font-bold">{ativosCount}</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${(ativosCount / relevantCustomers.length) * 100}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div>Inativos</span>
+                      <span className="font-bold">{inativosCount}</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${(inativosCount / relevantCustomers.length) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6 flex flex-col">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-6 uppercase">Positivação</h3>
+            <div className="flex-1 flex flex-col justify-center space-y-6">
+              {(positivadosCount + naoPositivadosCount) === 0 ? (
+                <div className="flex items-center justify-center text-muted-foreground text-sm h-full">Sem dados</div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div>Positivados</span>
+                      <span className="font-bold">{positivadosCount}</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${(positivadosCount / ativosCount) * 100}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500"></div>Não Positivados</span>
+                      <span className="font-bold">{naoPositivadosCount}</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${(naoPositivadosCount / ativosCount) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6 flex flex-col">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-6 uppercase">Curva ABC (Apenas c/ Compra)</h3>
+            <div className="flex-1 flex flex-col justify-center space-y-4">
+              {(curvaA + curvaB + curvaC) === 0 ? (
+                <div className="flex items-center justify-center text-muted-foreground text-sm h-full">Sem dados</div>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-violet-500"></div>Curva A (Top 80%)</span>
+                      <span className="font-bold">{curvaA} cl.</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-violet-500 transition-all duration-500" style={{ width: `${(curvaA / salesByCustomer.length) * 100}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-pink-500"></div>Curva B (15%)</span>
+                      <span className="font-bold">{curvaB} cl.</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-pink-500 transition-all duration-500" style={{ width: `${(curvaB / salesByCustomer.length) * 100}%` }}></div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500"></div>Curva C (Restante)</span>
+                      <span className="font-bold">{curvaC} cl.</span>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(curvaC / salesByCustomer.length) * 100}%` }}></div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </Card>
+
+        </div>
+
       </div>
     </ErrorBoundary>
   )
