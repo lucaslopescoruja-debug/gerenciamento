@@ -41,13 +41,9 @@ export default function SalesOrders() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       
-      {/* Top Tabs */}
       <div className="bg-card border-b border-border px-4 md:px-8 pt-4 flex gap-6 overflow-x-auto">
         <div className="flex items-center gap-2 pb-3 border-b-2 border-primary text-primary font-bold text-xs tracking-wider cursor-pointer whitespace-nowrap">
           <FileText className="h-4 w-4" /> PEDIDOS
-        </div>
-        <div className="flex items-center gap-2 pb-3 text-muted-foreground hover:text-foreground font-semibold text-xs tracking-wider cursor-pointer transition-colors whitespace-nowrap">
-          <Settings className="h-4 w-4" /> CONFIGURAÇÕES
         </div>
       </div>
 
@@ -61,10 +57,6 @@ export default function SalesOrders() {
                 <Plus className="h-4 w-4 mr-2" /> Criar pedido / orçamento
               </Button>
             </Link>
-            
-            <Button variant="outline" className="text-primary border-border bg-background font-semibold px-4 h-10 rounded-md">
-              <span className="font-bold mr-2 text-lg">✦</span> Criar com IA no WhatsApp
-            </Button>
             
             <Button variant="outline" className="text-primary border-border bg-background font-semibold px-4 h-10 rounded-md">
               <Printer className="h-4 w-4 mr-2" /> Imprimir pedidos
@@ -150,15 +142,7 @@ export default function SalesOrders() {
 
       </div>
       
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3">
-        <div className="h-10 w-10 bg-card border border-border rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-muted transition-colors ml-auto text-primary">
-          <FileDigit className="h-5 w-5" />
-        </div>
-        <div className="h-14 w-14 bg-primary rounded-full shadow-lg flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors text-primary-foreground">
-          <MessageSquare className="h-6 w-6" />
-        </div>
-      </div>
+
     </div>
   )
 }
