@@ -18,7 +18,7 @@ import { generateContractPDF } from '@/utils/pdf'
 export default function EquipmentOrdersList() {
   const queryClient = useQueryClient()
   const { hasPermission, user, company } = useAuth()
-  const canManage = hasPermission('can_manage_equipments') && user?.role !== 'mecanico'
+  const canManage = hasPermission('can_manage_os') && user?.role !== 'mecanico'
 
   const [search, setSearch] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)

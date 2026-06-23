@@ -16,7 +16,7 @@ export default function SupplyRequests() {
   const { hasPermission, user } = useAuth()
   
   // O Gestor vê de todos. O mecânico vê só as dele.
-  const isManager = hasPermission('can_manage_equipments') && user?.role !== 'mecanico'
+  const isManager = hasPermission('can_manage_supplies') && user?.role !== 'mecanico'
 
   const [isModalOpen, setIsModalOpen] = useState(false)
 

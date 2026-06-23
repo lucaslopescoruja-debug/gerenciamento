@@ -25,6 +25,9 @@ export interface UserPermissions {
   can_manage_regions?: boolean
   can_manage_integrations?: boolean
   can_manage_equipments?: boolean
+  can_manage_os?: boolean
+  can_manage_supplies?: boolean
+  can_request_supplies?: boolean
 
   // SaaS Master Permissions
   can_manage_saas_finance?: boolean

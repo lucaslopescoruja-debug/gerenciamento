@@ -269,13 +269,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user || !user.permissions) return false;
     if (user.permissions[permission] !== undefined) return user.permissions[permission] === true;
     if (user.role === 'vendedor' || user.role === 'representante')
-      return ['can_view_dashboard','can_manage_products','can_use_sales_app','can_manage_sales','can_manage_customers','can_manage_price_tables','can_manage_equipments'].includes(permission);
+      return ['can_view_dashboard','can_manage_products','can_use_sales_app','can_manage_sales','can_manage_customers','can_manage_price_tables','can_manage_equipments', 'can_manage_os', 'can_manage_supplies', 'can_request_supplies'].includes(permission);
     if (user.role === 'conferente' || user.role === 'operador')
       return ['can_view_dashboard','can_manage_loads','can_do_conference'].includes(permission);
     if (user.role === 'motorista' || user.role === 'ajudante')
       return ['can_view_dashboard','can_do_delivery'].includes(permission);
     if (user.role === 'mecanico')
-      return ['can_view_dashboard','can_manage_equipments'].includes(permission);
+      return ['can_view_dashboard','can_manage_equipments', 'can_manage_os', 'can_manage_supplies', 'can_request_supplies'].includes(permission);
     return false;
   };
 

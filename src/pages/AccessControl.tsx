@@ -19,13 +19,15 @@ const roleVariants: Record<UserRole, 'default' | 'success' | 'warning' | 'destru
 const baseFalsePermissions: Partial<UserPermissions> = {
   can_use_sales_app: false, can_manage_sales: false, can_manage_price_tables: false,
   can_manage_payment_conditions: false, can_manage_customers: false, can_manage_reps: false,
-  can_manage_regions: false, can_manage_integrations: false, can_manage_equipments: false
+  can_manage_regions: false, can_manage_integrations: false, can_manage_equipments: false,
+  can_manage_os: false, can_manage_supplies: false, can_request_supplies: false
 };
 
 const allTruePermissions: Partial<UserPermissions> = {
   can_use_sales_app: true, can_manage_sales: true, can_manage_price_tables: true,
   can_manage_payment_conditions: true, can_manage_customers: true, can_manage_reps: true,
-  can_manage_regions: true, can_manage_integrations: true, can_manage_equipments: true
+  can_manage_regions: true, can_manage_integrations: true, can_manage_equipments: true,
+  can_manage_os: true, can_manage_supplies: true, can_request_supplies: true
 };
 
 const defaultPermissions: Record<UserRole, UserPermissions> = {
@@ -37,7 +39,7 @@ const defaultPermissions: Record<UserRole, UserPermissions> = {
   vendedor: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
   representante: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_use_sales_app: true, can_manage_customers: true },
   operador: { can_view_dashboard: true, can_manage_loads: false, can_do_conference: true, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions },
-  mecanico: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_manage_equipments: true },
+  mecanico: { can_view_dashboard: false, can_manage_loads: false, can_do_conference: false, can_manage_products: false, can_manage_users: false, can_do_delivery: false, ...baseFalsePermissions, can_manage_equipments: true, can_manage_os: true, can_manage_supplies: true, can_request_supplies: true },
   master: { can_view_dashboard: true, can_manage_loads: true, can_do_conference: true, can_manage_products: true, can_manage_users: true, can_do_delivery: true, ...allTruePermissions }
 }
 
@@ -356,7 +358,19 @@ export default function AccessControl() {
                     <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Gestão de Comodatos</Label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_equipments} onChange={() => togglePerm('can_manage_equipments')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Gestão de Equipamentos / OS</span>
+                      <span className="text-sm">Gestão de Equipamentos</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_os} onChange={() => togglePerm('can_manage_os')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Ordens de Serviço</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_supplies} onChange={() => togglePerm('can_manage_supplies')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Insumos / Peças</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_request_supplies} onChange={() => togglePerm('can_request_supplies')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Solicitar Peças</span>
                     </label>
                   </div>
 
