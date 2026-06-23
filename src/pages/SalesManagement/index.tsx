@@ -261,7 +261,7 @@ export default function SalesManagement() {
                                 queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
                                 toast.success('Pedido excluído com sucesso')
                               })
-                              .catch(e => toast.error('Erro ao excluir pedido: ' + e.message))
+                              .catch((e: any) => toast.error('Erro ao excluir pedido: ' + e.message))
                           }
                         }}>
                           <XCircle className="h-4 w-4" />

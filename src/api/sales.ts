@@ -147,6 +147,17 @@ export const salesApi = {
     return data as SalesOrder
   },
 
+  async deleteSalesOrder(id: string) {
+    // Delete items first? Supabase probably has cascade delete, but if not we can just delete the order and let it cascade or fail
+    const { error } = await supabase
+      .from('sales_orders')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return true
+  },
+
   // ============================================
   // Sales Order Items
   // ============================================
