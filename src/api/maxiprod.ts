@@ -34,6 +34,7 @@ async function proxyFetch(endpointPath: string, targetMethod: string = 'GET', pa
       errorMsg = data.data.mensagem || data.data.message || errorMsg;
     } else if (data.error) {
       errorMsg = data.error;
+      if (data.details) errorMsg += ` - ${data.details}`;
     }
     throw new Error(errorMsg);
   }
