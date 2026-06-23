@@ -186,6 +186,7 @@ export default function SalesManagement() {
           <table className="w-full text-sm text-left">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
+                <th className="px-4 py-3 font-medium">Pedido</th>
                 <th className="px-4 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('created_at')}>
                   Data {renderSortIcon('created_at')}
                 </th>
@@ -205,13 +206,16 @@ export default function SalesManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Carregando pedidos...</td></tr>
-              ) : sortedOrders.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
-              ) : (
+              {isLoading ?
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando pedidos...</td></tr>
+               : sortedOrders.length === 0 ? 
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
+               : (
                 sortedOrders.map(order => (
                   <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-bold text-primary">
+                      #{order.order_number || order.id.slice(0, 5).toUpperCase()}
+                    </td>
                     <td className="px-4 py-3">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3 font-medium">
                       {(() => {

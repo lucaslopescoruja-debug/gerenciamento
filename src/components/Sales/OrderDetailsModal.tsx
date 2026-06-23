@@ -54,7 +54,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] p-0 flex flex-col overflow-hidden w-[95vw]">
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <DialogTitle>Resumo do Pedido</DialogTitle>
+          <DialogTitle>Resumo do Pedido {details?.order_number ? `#${details.order_number}` : ''}</DialogTitle>
           <DialogDescription>
             Detalhes dos itens e valores deste pedido.
           </DialogDescription>

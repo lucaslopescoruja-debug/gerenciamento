@@ -107,7 +107,7 @@ export default function SalesOrders() {
                     {/* Left Side */}
                     <div className="flex flex-col gap-3">
                       <div className="text-xs font-medium text-foreground">
-                        <span className="text-primary font-bold">#{order.id.slice(0, 5).toUpperCase()}</span> emitido por <span className="uppercase text-muted-foreground">{order.sales_rep?.nickname || 'Vendedor'}</span>
+                        <span className="text-primary font-bold">#{order.order_number || order.id.slice(0, 5).toUpperCase()}</span> emitido por <span className="uppercase text-muted-foreground">{order.sales_rep?.nickname || 'Vendedor'}</span>
                       </div>
                       
                       {order.customer && (

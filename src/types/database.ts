@@ -217,6 +217,7 @@ export interface CustomerPaymentCondition {
 
 export interface SalesOrder {
   id: string
+  order_number: number
   company_id: string
   customer_id: string
   sales_rep_id: string | null
