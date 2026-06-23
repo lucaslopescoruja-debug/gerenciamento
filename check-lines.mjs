@@ -1,1 +1,0 @@
-import fs from 'fs'; const content = fs.readFileSync('src/pages/Master/index.tsx', 'utf-8'); const lines = content.split('\n'); lines.forEach((l, i) => { if(l.includes('plan:')) console.log(i+1, l); });
