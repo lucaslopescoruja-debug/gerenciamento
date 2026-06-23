@@ -254,6 +254,18 @@ export default function SalesManagement() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" title="Ver Detalhes" onClick={() => openDetails(order.id)}>
                           <FileSignature className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600" title="Excluir Pedido" onClick={() => {
+                          if (window.confirm('Tem certeza que deseja excluir este pedido?')) {
+                            salesApi.deleteSalesOrder(order.id)
+                              .then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
+                                toast.success('Pedido excluído com sucesso')
+                              })
+                              .catch(e => toast.error('Erro ao excluir pedido: ' + e.message))
+                          }
+                        }}>
+                          <XCircle className="h-4 w-4" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -265,23 +277,24 @@ export default function SalesManagement() {
       </div>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[85vh] p-0 flex flex-col overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
             <DialogTitle>Resumo do Pedido</DialogTitle>
             <DialogDescription>
               Detalhes dos itens e valores deste pedido.
             </DialogDescription>
           </DialogHeader>
 
-          {isLoadingDetails ? (
-            <div className="py-8 text-center text-muted-foreground">Carregando detalhes...</div>
-          ) : selectedOrderDetails ? (
-            <div className="space-y-6 mt-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground font-medium">Cliente</p>
-                  <p className="text-sm font-semibold">{selectedOrderDetails.customer?.legal_name || 'Consumidor'}</p>
-                </div>
+          <div className="px-6 py-4 overflow-y-auto flex-1">
+            {isLoadingDetails ? (
+              <div className="py-8 text-center text-muted-foreground">Carregando detalhes...</div>
+            ) : selectedOrderDetails ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">Cliente</p>
+                    <p className="text-sm font-semibold">{selectedOrderDetails.customer?.legal_name || 'Consumidor'}</p>
+                  </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium">Vendedor</p>
                   <p className="text-sm font-semibold">{selectedOrderDetails.sales_rep?.nickname || '---'}</p>
@@ -353,6 +366,7 @@ export default function SalesManagement() {
           ) : (
             <div className="py-8 text-center text-muted-foreground">Erro ao carregar os detalhes do pedido.</div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

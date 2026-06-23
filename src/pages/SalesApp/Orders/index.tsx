@@ -7,10 +7,13 @@ import { Search, Plus, Printer, Settings, FileText, Store, Calendar, DollarSign,
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
+import { OrderDetailsModal } from '@/components/Sales/OrderDetailsModal'
 
 export default function SalesOrders() {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const { user, isMaster } = useAuth()
 
   const { data: orders = [], isLoading } = useQuery({
@@ -96,7 +99,10 @@ export default function SalesOrders() {
               <h3 className="text-muted-foreground text-xs font-semibold tracking-wider mb-3">{dateLabel}</h3>
               <div className="space-y-3">
                 {orders.map(order => (
-                  <div key={order.id} onClick={() => navigate(`/vendas/pedidos/${order.id}`)} className="bg-card border border-border rounded-md p-4 md:p-5 hover:border-primary/50 cursor-pointer transition-colors shadow-sm relative group flex justify-between items-start">
+                  <div key={order.id} onClick={() => {
+                    setSelectedOrderId(order.id)
+                    setIsDetailsOpen(true)
+                  }} className="bg-card border border-border rounded-md p-4 md:p-5 hover:border-primary/50 cursor-pointer transition-colors shadow-sm relative group flex justify-between items-start">
                     
                     {/* Left Side */}
                     <div className="flex flex-col gap-3">
@@ -143,6 +149,11 @@ export default function SalesOrders() {
           ))
         )}
 
+      <OrderDetailsModal 
+        isOpen={isDetailsOpen}
+        onOpenChange={setIsDetailsOpen}
+        orderId={selectedOrderId}
+      />
     </div>
   )
 }
