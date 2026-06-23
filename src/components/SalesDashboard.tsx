@@ -69,7 +69,7 @@ export function SalesDashboard() {
     })
   }, [orders, isManager, user?.name, selectedRep, selectedMonth, selectedYear])
 
-  const vendidoNoMes = filteredOrders.reduce((sum, o) => sum + (o.net_amount || 0), 0)
+  let vendidoNoMes = filteredOrders.reduce((sum, o) => sum + (o.net_amount || 0), 0)
   const objetivoNoMes = 0
   const missingGoal = Math.max(0, objetivoNoMes - vendidoNoMes)
   
@@ -77,7 +77,7 @@ export function SalesDashboard() {
   const lastDay = new Date(selectedYear, selectedMonth + 1, 0).getDate()
   const currentDay = (today.getMonth() === selectedMonth && today.getFullYear() === selectedYear) ? today.getDate() : 1
   const daysLeft = Math.max(1, lastDay - currentDay)
-  const necessarioVender = missingGoal / daysLeft
+  let necessarioVender = missingGoal / daysLeft
 
   const evolucaoData = useMemo(() => {
     const dataByDay: Record<number, number> = {}
@@ -112,8 +112,8 @@ export function SalesDashboard() {
     })
   }, [customers, isManager, user?.name, selectedRep])
 
-  const ativosCount = relevantCustomers.filter(c => c.active).length
-  const inativosCount = relevantCustomers.filter(c => !c.active).length
+  let ativosCount = relevantCustomers.filter(c => c.active).length
+  let inativosCount = relevantCustomers.filter(c => !c.active).length
 
   const carteiraData = [
     { name: 'Ativos', value: ativosCount, color: '#10b981' },
@@ -121,8 +121,8 @@ export function SalesDashboard() {
   ]
 
   const customersWithOrders = new Set(filteredOrders.map(o => o.customer_id))
-  const positivadosCount = customersWithOrders.size
-  const naoPositivadosCount = Math.max(0, ativosCount - positivadosCount)
+  let positivadosCount = customersWithOrders.size
+  let naoPositivadosCount = Math.max(0, ativosCount - positivadosCount)
 
   const positivacaoData = [
     { name: 'Positivados', value: positivadosCount, color: '#10b981' },
@@ -161,6 +161,35 @@ export function SalesDashboard() {
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ]
+
+  // ==========================================
+  // MOCK DATA TEMPORÁRIO PARA VISUALIZAÇÃO
+  // ==========================================
+  const IS_MOCKING = true;
+  if (IS_MOCKING) {
+    vendidoNoMes = 184500.25;
+    necessarioVender = 2150.00;
+    ativosCount = 145;
+    inativosCount = 23;
+    positivadosCount = 98;
+    naoPositivadosCount = 47;
+    curvaA = 15;
+    curvaB = 35;
+    curvaC = 95;
+    
+    // Substituir mockData para a Evolução de Vendas
+    const fakeChartData = [];
+    for (let i = 1; i <= lastDay; i++) {
+      fakeChartData.push({
+        dia: i,
+        // Gera valores aleatórios entre 2000 e 8000 simulando vendas
+        valor: Math.floor(Math.random() * 6000) + 2000 
+      });
+    }
+    // Dando override numa variável que precisa ser acessível no render
+    (window as any)._mockChartData = fakeChartData;
+  }
+  // ==========================================
 
   if (loadingOrders || loadingCustomers) {
     return <div className="p-8 text-center text-muted-foreground">Carregando painel de vendas...</div>
@@ -236,10 +265,16 @@ export function SalesDashboard() {
                   const day = new Date(o.created_at).getDate()
                   dailyData[day] += (o.net_amount || 0)
                 })
-                const chartData = Object.keys(dailyData).map(day => ({
+                let chartData = Object.keys(dailyData).map(day => ({
                   dia: parseInt(day),
                   valor: dailyData[parseInt(day)]
                 }))
+
+                // Usa os dados mockados se existirem
+                if ((window as any)._mockChartData) {
+                  chartData = (window as any)._mockChartData;
+                }
+
                 const maxValor = Math.max(...chartData.map(d => d.valor), 1)
 
                 return chartData.map(d => {
