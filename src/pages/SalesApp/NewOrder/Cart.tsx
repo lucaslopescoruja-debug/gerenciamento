@@ -87,19 +87,24 @@ export default function CartReview() {
       
       await salesApi.addSalesOrderItems(orderItemsToInsert)
 
-      // Tenta enviar para o ERP em background
-      maxiprodApi.sendSalesOrder(createdOrder.id).catch(err => {
+      // Tenta enviar para o ERP aguardando a resposta
+      try {
+        await maxiprodApi.sendSalesOrder(createdOrder.id)
+      } catch (err: any) {
         console.error('Falha ao enviar para o ERP:', err)
-        // Poderiamos disparar um toast aqui se o mutate() retornar o erro, 
-        // mas a regra é salvar localmente de qualquer forma.
-      })
+        return { createdOrder, maxiprodError: err.message }
+      }
 
-      return createdOrder
+      return { createdOrder, maxiprodError: null }
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
       clearCart()
-      toast.success('Pedido enviado com sucesso!')
+      if (data.maxiprodError) {
+        toast.warning(`Salvo no app, mas falhou na Maxiprod: ${data.maxiprodError}`)
+      } else {
+        toast.success('Pedido enviado para a Maxiprod com sucesso!')
+      }
       navigate('/vendas/pedidos')
     },
     onError: (e: any) => {
