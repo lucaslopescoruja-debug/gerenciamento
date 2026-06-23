@@ -177,34 +177,8 @@ export function SalesDashboard() {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ]
 
-  // ==========================================
-  // MOCK DATA TEMPORÁRIO PARA VISUALIZAÇÃO
-  // ==========================================
-  const IS_MOCKING = true;
-  if (IS_MOCKING) {
-    vendidoNoMes = 184500.25;
-    necessarioVender = 2150.00;
-    ativosCount = 145;
-    inativosCount = 23;
-    positivadosCount = 98;
-    naoPositivadosCount = 47;
-    curvaA = 15;
-    curvaB = 35;
-    curvaC = 95;
-    
-    // Substituir mockData para a Evolução de Vendas
-    const fakeChartData = [];
-    for (let i = 1; i <= lastDay; i++) {
-      fakeChartData.push({
-        dia: i,
-        // Gera valores aleatórios entre 2000 e 8000 simulando vendas
-        valor: Math.floor(Math.random() * 6000) + 2000 
-      });
-    }
-    // Dando override numa variável que precisa ser acessível no render
-    (window as any)._mockChartData = fakeChartData;
-  }
-  // ==========================================
+  // O mock de dados foi removido
+  // Agora todos os dados são puxados diretamente do banco de dados real.
 
   if (loadingOrders || loadingCustomers) {
     return <div className="p-8 text-center text-muted-foreground">Carregando painel de vendas...</div>
@@ -284,11 +258,6 @@ export function SalesDashboard() {
                   dia: parseInt(day),
                   valor: dailyData[parseInt(day)]
                 }))
-
-                // Usa os dados mockados se existirem
-                if ((window as any)._mockChartData) {
-                  chartData = (window as any)._mockChartData;
-                }
 
                 const maxValor = Math.max(...chartData.map(d => d.valor), 1)
 
