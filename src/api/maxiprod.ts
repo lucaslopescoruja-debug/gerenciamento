@@ -47,7 +47,14 @@ export const maxiprodApi = {
    * Valida se a chave inserida é funcional
    */
   async testConnection() {
-    await proxyFetch('/Item?limit=1', 'GET');
+    try {
+      await proxyFetch('/Item?limit=1', 'GET');
+    } catch (e: any) {
+      if (e.message && e.message.includes('Maxiprod.Dominio')) {
+        return true; // Se respondeu erro de negócio do C#, é porque conectou com sucesso!
+      }
+      throw e;
+    }
     return true;
   },
 
