@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const options: RequestInit = {
       method: targetMethod,
       headers: {
-        'Authorization': `Basic ${Buffer.from(token + ':').toString('base64')}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
