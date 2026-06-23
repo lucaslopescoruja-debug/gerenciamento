@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productsApi } from '@/api/products'
 import type { Product } from '@/types/database'
@@ -30,9 +30,19 @@ export default function Products() {
     factoryCode: '',
     externalCode: ''
   })
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 100
+
   const { user, isMaster, hasPermission } = useAuth()
   const isManager = user?.role === 'admin' || user?.role === 'gestor' || isMaster
   const canDoConference = hasPermission('can_do_conference')
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filters])
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -152,9 +162,7 @@ export default function Products() {
       setSortField(field)
       setSortAsc(true)
     }
-  }
-
-  const sortedProducts = useMemo(() => {
+   const sortedProducts = useMemo(() => {
     const sorted = [...filtered]
     if (!sortField) return sorted
 
@@ -174,6 +182,10 @@ export default function Products() {
       return 0
     })
   }, [filtered, sortField, sortAsc])
+
+  // Pagination Logic
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage)
+  const paginatedProducts = sortedProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   const renderSortIcon = (field: 'code' | 'description' | 'group_name' | 'stock') => {
     if (sortField !== field) {
@@ -587,7 +599,7 @@ export default function Products() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={isManager ? 5 : 4} className="text-center py-12 text-muted-foreground">Carregando...</TableCell></TableRow>
-            ) : sortedProducts.length === 0 ? (
+            ) : paginatedProducts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isManager ? 5 : 4} className="text-center py-12 text-muted-foreground">
                   <FileDown className="h-8 w-8 mx-auto mb-2 opacity-30" />
@@ -595,7 +607,7 @@ export default function Products() {
                 </TableCell>
               </TableRow>
             ) : (
-              sortedProducts.map((product) => (
+              paginatedProducts.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-mono text-sm">
                     <div className="text-foreground">{product.code}</div>
@@ -640,6 +652,35 @@ export default function Products() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 pt-4">
+          <div className="text-sm text-muted-foreground hidden sm:block">
+            Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, sortedProducts.length)} de {sortedProducts.length} produtos
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <div className="text-sm font-medium px-2">
+              Página {currentPage} de {totalPages}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingProduct(null); }}>
         <DialogContent>
