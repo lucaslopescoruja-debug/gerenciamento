@@ -7,6 +7,8 @@ import App from './App.tsx'
 import { Toaster } from './components/ui/toaster'
 import { ThemeProvider } from './components/ThemeProvider'
 
+import { ErrorBoundary } from './components/ErrorBoundary'
+
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
@@ -14,8 +16,10 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <App />
-          <Toaster />
+          <ErrorBoundary>
+            <App />
+            <Toaster />
+          </ErrorBoundary>
         </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
