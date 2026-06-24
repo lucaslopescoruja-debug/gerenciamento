@@ -136,6 +136,13 @@ export const salesApi = {
   },
 
   async updateSalesOrder(id: string, order: Partial<SalesOrder>) {
+    // Buscar o pedido atual antes de atualizar para verificar mudança de status
+    const { data: oldOrder } = await supabase
+      .from('sales_orders')
+      .select('status')
+      .eq('id', id)
+      .single()
+
     const { data, error } = await supabase
       .from('sales_orders')
       .update(order)
@@ -144,6 +151,25 @@ export const salesApi = {
       .single()
 
     if (error) throw error
+
+    // Se o pedido foi cancelado (e antes não era), liberar o estoque reservado
+    if (order.status === 'Cancelado' && oldOrder?.status !== 'Cancelado') {
+      const { data: items } = await supabase
+        .from('sales_order_items')
+        .select('product_id, quantity')
+        .eq('sales_order_id', id)
+      
+      if (items && items.length > 0) {
+        // Usa a productsApi (ou chama rpc direto aqui pra evitar dependência circular se houver)
+        for (const item of items) {
+          await supabase.rpc('increment_reserved_stock', {
+            p_product_id: item.product_id,
+            p_delta: -item.quantity
+          })
+        }
+      }
+    }
+
     return data as SalesOrder
   },
 
@@ -170,6 +196,15 @@ export const salesApi = {
       .select()
 
     if (error) throw error
+
+    // Aumentar o estoque reservado para cada item inserido
+    for (const item of items) {
+      await supabase.rpc('increment_reserved_stock', {
+        p_product_id: item.product_id,
+        p_delta: item.quantity
+      })
+    }
+
     return data as SalesOrderItem[]
   }
 }

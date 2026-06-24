@@ -148,8 +148,16 @@ export const productsApi = {
       p_code: code,
       p_delta: qtyToAdd
     });
-    if (error) throw error;
-    // Retorna um objeto mock só para manter retrocompatibilidade simples, ou o valor real
-    return { stock: data } as unknown as Product;
+    if (error) throw error
+    return data
+  },
+
+  async incrementReservedStock(productId: string, qtyToAdd: number) {
+    const { data, error } = await supabase.rpc('increment_reserved_stock', {
+      p_product_id: productId,
+      p_delta: qtyToAdd
+    });
+    if (error) throw error
+    return data
   }
 }

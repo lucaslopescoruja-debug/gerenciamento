@@ -281,6 +281,7 @@ export interface Product {
   unit_measure?: string
   group_name?: string
   stock: number
+  reserved_stock?: number
   maxiprod_id?: number | null
   min_stock_alert?: number
   batch?: string

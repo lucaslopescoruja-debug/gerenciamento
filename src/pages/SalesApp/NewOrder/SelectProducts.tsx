@@ -100,16 +100,23 @@ export default function SelectProducts() {
   })
 
   const handleAdd = (product: any) => {
+    const availableStock = Math.max(0, (product.stock || 0) - (product.reserved_stock || 0))
     if (product.cartQuantity === 0) {
+      if (1 > availableStock) {
+        return // O botão já estará desabilitado, mas por segurança
+      }
       addItem({
         product_id: product.id,
         name: product.description,
         code: product.code || '',
         price: product.finalPrice,
         quantity: 1,
-        stock: product.stock || 0
+        stock: availableStock
       })
     } else {
+      if (product.cartQuantity + 1 > availableStock) {
+        return // Limita o botão de +
+      }
       updateQuantity(product.id, product.cartQuantity + 1)
     }
   }
@@ -193,7 +200,8 @@ export default function SelectProducts() {
         ) : (
           <div className="space-y-2">
             {filteredProducts.map(product => {
-              const isOutOfStock = (product.stock || 0) <= 0
+              const availableStock = Math.max(0, (product.stock || 0) - (product.reserved_stock || 0))
+              const isOutOfStock = availableStock <= 0
               
               return (
                 <div key={product.id} className={`bg-card rounded-xl p-3 shadow-sm border border-border flex items-center justify-between gap-3 ${product.cartQuantity > 0 ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}>
@@ -203,7 +211,7 @@ export default function SelectProducts() {
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className="font-bold text-emerald-600">{formatCurrency(product.finalPrice)}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${isOutOfStock ? 'bg-red-500/10 text-red-500' : 'bg-muted text-muted-foreground'}`}>
-                        Estoque: {product.stock || 0}
+                        Disp: {availableStock}
                       </span>
                     </div>
                   </div>
@@ -230,7 +238,10 @@ export default function SelectProducts() {
                         <span className="w-6 text-center font-bold text-foreground">{product.cartQuantity}</span>
                         <button 
                           onClick={() => handleAdd(product)}
-                          className="h-8 w-8 rounded flex items-center justify-center bg-primary/10 text-primary active:bg-primary/20"
+                          disabled={product.cartQuantity >= availableStock}
+                          className={`h-8 w-8 rounded flex items-center justify-center transition-colors ${
+                            product.cartQuantity >= availableStock ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50' : 'bg-primary/10 text-primary active:bg-primary/20'
+                          }`}
                         >
                           +
                         </button>
