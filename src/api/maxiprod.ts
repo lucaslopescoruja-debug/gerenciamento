@@ -87,8 +87,8 @@ export const maxiprodApi = {
         Quantidade: i.quantity,
         ValorUnitario: i.unit_price,
         DescontoPercentual: i.discount_percent || 0,
-        UnidadeId: 1, // Exigido pelo ERP
-        PagamentoCom: 1 // Exigido pelo ERP
+        UnidadeId: 1, // Exigido pelo ERP (Inteiro aceito)
+        PagamentoCom: false // Booleano: Pagamento de Comissão
       }))
     }
 
