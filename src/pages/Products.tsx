@@ -643,7 +643,7 @@ export default function Products() {
               </TableHead>
               <TableHead className="cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('stock')}>
                 <div className="flex items-center gap-1">
-                  Estoque (Fís/Res/Disp)
+                  Estoque
                   {renderSortIcon('stock')}
                 </div>
               </TableHead>
@@ -673,38 +673,16 @@ export default function Products() {
                     {product.group_name && <Badge variant="secondary">{product.group_name}</Badge>}
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1.5 items-start text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground w-12">Físico:</span>
-                        <Badge variant={
-                          product.min_stock_alert !== undefined && product.min_stock_alert > 0
-                            ? (product.stock <= product.min_stock_alert ? 'destructive' : (product.stock <= product.min_stock_alert * 1.5 ? 'warning' : 'outline'))
-                            : (product.stock >= 10 ? 'outline' : product.stock >= 3 ? 'warning' : 'destructive')
-                        } className="font-mono">
-                          {product.stock}
-                        </Badge>
-                      </div>
-                      
-                      {(product.reserved_stock || 0) > 0 && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-12">Reserv:</span>
-                          <Badge variant="secondary" className="font-mono text-orange-500 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/20">
-                            {product.reserved_stock}
-                          </Badge>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 mt-0.5 pt-1 border-t border-border/50">
-                        <span className="font-semibold w-12">Disp:</span>
-                        <Badge variant={
-                          (product.stock - (product.reserved_stock || 0)) > 0 ? 'success' : 'destructive'
-                        } className="font-mono">
-                          {product.stock - (product.reserved_stock || 0)}
-                        </Badge>
-                      </div>
-
+                    <div className="flex flex-col gap-1 items-start">
+                      <Badge variant={
+                        product.min_stock_alert !== undefined && product.min_stock_alert > 0
+                          ? (product.stock <= product.min_stock_alert ? 'destructive' : (product.stock <= product.min_stock_alert * 1.5 ? 'warning' : 'success'))
+                          : (product.stock >= 10 ? 'success' : product.stock >= 3 ? 'warning' : 'destructive')
+                      }>
+                        {product.stock}
+                      </Badge>
                       {product.min_stock_alert !== undefined && product.min_stock_alert > 0 && (
-                        <span className="text-[10px] text-muted-foreground font-semibold mt-1">
+                        <span className="text-[10px] text-muted-foreground font-semibold">
                           Mín: {product.min_stock_alert}
                         </span>
                       )}
