@@ -30,7 +30,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
         .select(`
           *,
           customer:customers(*),
-          sales_rep:users!sales_orders_sales_rep_id_fkey(*),
+          sales_rep:sales_reps(*),
           payment_condition:payment_conditions(*),
           items:sales_order_items(
             *,
