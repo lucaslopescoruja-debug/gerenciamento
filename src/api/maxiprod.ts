@@ -86,7 +86,9 @@ export const maxiprodApi = {
         ItemId: i.product.external_code || i.product.code,
         Quantidade: i.quantity,
         ValorUnitario: i.unit_price,
-        DescontoPercentual: i.discount_percent || 0
+        DescontoPercentual: i.discount_percent || 0,
+        UnidadeId: 1, // Exigido pelo ERP
+        PagamentoCom: 1 // Exigido pelo ERP
       }))
     }
 
