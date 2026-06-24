@@ -278,6 +278,7 @@ export interface Product {
   external_code?: string
   factory_code?: string
   description: string
+  unit_measure?: string
   group_name?: string
   stock: number
   maxiprod_id?: number | null

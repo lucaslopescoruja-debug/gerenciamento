@@ -7,6 +7,7 @@ import CreateLoad from './pages/CreateLoad'
 import Conference from './pages/Conference'
 import DeliveryProof from './pages/DeliveryProof'
 import Products from './pages/Products'
+import ProductForm from './pages/ProductForm'
 import AccessControl from './pages/AccessControl'
 import CompanySettings from './pages/CompanySettings'
 import Login from './pages/Login'
@@ -121,6 +122,8 @@ function App() {
             <Route path="/conferencia/:id" element={<PlanGuard requiredPlan="prata"><Conference /></PlanGuard>} />
             <Route path="/comprovante/:id" element={<PlanGuard requiredPlan="ouro"><DeliveryProof /></PlanGuard>} />
             <Route path="/produtos" element={<Products />} />
+            <Route path="/produtos/novo" element={<ProductForm />} />
+            <Route path="/produtos/editar/:id" element={<ProductForm />} />
             <Route path="/contagens" element={<CountsMenu />} />
             <Route path="/contagens/avulsa" element={<AdhocCount />} />
             <Route path="/contagens/planejados" element={<PlannedInventoriesList />} />

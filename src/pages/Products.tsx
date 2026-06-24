@@ -12,9 +12,10 @@ import { toast } from '@/components/ui/toaster'
 import { Plus, Pencil, Trash2, Search, Package, Upload, Archive, FileDown, ArrowRight, ScanLine, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, ChevronUp } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function Products() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -484,7 +485,7 @@ export default function Products() {
                   <Package className="h-4 w-4 mr-1.5" /> Ajustar para 100
                 </Button>
               )}
-              <Button size="sm" onClick={() => { setEditingProduct(null); setIsDialogOpen(true); }}>
+              <Button size="sm" onClick={() => navigate('/produtos/novo')}>
                 <Plus className="h-4 w-4 mr-1.5" /> Novo Produto
               </Button>
             </>
@@ -639,7 +640,7 @@ export default function Products() {
                   {isManager && (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingProduct(product); setIsDialogOpen(true); }}>
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/produtos/editar/${product.id}`)}>
                           <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)} disabled={deleteMutation.isPending}>
@@ -684,57 +685,7 @@ export default function Products() {
         </div>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setEditingProduct(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Código Interno *</Label>
-                <Input id="code" name="code" defaultValue={editingProduct?.code} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="external_code">Cód. Externo (EAN)</Label>
-                <Input id="external_code" name="external_code" defaultValue={editingProduct?.external_code} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="factory_code">Cód. Fábrica</Label>
-                <Input id="factory_code" name="factory_code" defaultValue={editingProduct?.factory_code} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Input id="description" name="description" defaultValue={editingProduct?.description} required />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="group_name">Grupo</Label>
-                <Input id="group_name" name="group_name" defaultValue={editingProduct?.group_name} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="batch">Lote</Label>
-                <Input id="batch" name="batch" defaultValue={editingProduct?.batch} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="stock">Estoque Atual</Label>
-                <Input type="number" id="stock" name="stock" min={0} defaultValue={editingProduct?.stock || 0} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="min_stock_alert">Mínimo para Alerta</Label>
-                <Input type="number" id="min_stock_alert" name="min_stock_alert" min={0} defaultValue={editingProduct?.min_stock_alert ?? 0} />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>Salvar</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+
 
       <Dialog open={isImportOpen} onOpenChange={(open) => { setIsImportOpen(open); if (!open) setSelectedFile(null); }}>
         <DialogContent>

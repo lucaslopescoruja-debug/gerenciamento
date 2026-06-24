@@ -66,6 +66,53 @@ export const productsApi = {
     return data as Product
   },
 
+  async saveProductWithPrices(
+    productData: Partial<Product>, 
+    prices: { tableId: string, price: number, discount_percent: number }[]
+  ) {
+    let productId = productData.id;
+    let savedProduct: Product;
+
+    if (productId) {
+      // Update
+      const { data, error } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', productId)
+        .select()
+        .single()
+      if (error) throw error
+      savedProduct = data as Product
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single()
+      if (error) throw error
+      savedProduct = data as Product
+      productId = savedProduct.id
+    }
+
+    // Now upsert prices
+    for (const p of prices) {
+      const { error: priceError } = await supabase
+        .from('price_table_items')
+        .upsert({
+          price_table_id: p.tableId,
+          product_id: productId,
+          price: p.price,
+          discount_percent: p.discount_percent
+        }, {
+          onConflict: 'price_table_id,product_id'
+        })
+      if (priceError) throw priceError
+    }
+
+    return savedProduct;
+  },
+
   async deleteProduct(id: string) {
     const { error } = await supabase
       .from('products')
