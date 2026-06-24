@@ -19,6 +19,8 @@ export default function ProductForm() {
   
   const isEditing = Boolean(id)
 
+  const [activeTab, setActiveTab] = useState('geral')
+
   const [formData, setFormData] = useState({
     code: '',
     external_code: '',
@@ -179,7 +181,7 @@ export default function ProductForm() {
       </div>
 
       <div className="glass-card">
-        <Tabs defaultValue="geral" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="border-b border-border/50 px-4 py-2">
             <TabsList className="bg-transparent h-auto p-0">
               <TabsTrigger 
