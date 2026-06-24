@@ -78,24 +78,28 @@ export const maxiprodApi = {
     const { data: comp } = await supabase.from('companies').select('*').eq('id', order.company_id).single();
     if (!comp) throw new Error('Configurações da empresa não encontradas');
 
-    // Validações comentadas a pedido do usuário para teste
-    // if (!order.customer.maxiprod_id) { ... }
-    // const missingItems = order.items.filter((i: any) => !i.product.maxiprod_id);
-    // if (missingItems.length > 0) { ... }
+    if (!order.customer.maxiprod_id) {
+       throw new Error(`Cliente ${order.customer.legal_name || order.customer.fantasy_name || 'selecionado'} não possui ID do Maxiprod mapeado. Por favor, execute a Sincronização de IDs no menu Configurações.`);
+    }
+
+    const missingItems = order.items.filter((i: any) => !i.product.maxiprod_id);
+    if (missingItems.length > 0) {
+       throw new Error(`Existem ${missingItems.length} produto(s) sem ID do Maxiprod mapeado. Por favor, execute a Sincronização de IDs no menu Configurações.`);
+    }
 
     const payload = {
-      ClienteId: order.customer.document ? parseInt(order.customer.document.replace(/\D/g, ''), 10) : 0, 
-      MoedaId: 1, 
-      OperacaoFiscalId: 5405, 
+      ClienteId: order.customer.maxiprod_id,
+      MoedaId: comp.maxiprod_moeda_id || 1, 
+      OperacaoFiscalId: comp.maxiprod_operacao_id || 1, 
       Observacoes: order.notes || '',
       DescontoTotal: order.total_discount || 0,
       ValorTotal: order.net_amount,
       ItensDoPedidoDeVenda: order.items.map((i: any) => ({
-        ItemId: parseInt(i.product.external_code || i.product.code, 10) || 0,
+        ItemId: i.product.maxiprod_id,
         Quantidade: i.quantity,
         ValorUnitario: i.unit_price,
         DescontoPercentual: i.discount_percent || 0,
-        UnidadeId: 1, // Passando número 1 para evitar o erro de conversão
+        UnidadeId: comp.maxiprod_unidade_id || 1, 
         PagamentoCom: false
       }))
     }
