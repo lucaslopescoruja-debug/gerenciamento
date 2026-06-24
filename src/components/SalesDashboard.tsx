@@ -147,8 +147,9 @@ export function SalesDashboard() {
   const salesByCustomer = useMemo(() => {
     const map: Record<string, number> = {}
     filteredOrders.forEach(o => {
-      if (!map[o.customer_id]) map[o.customer_id] = 0
-      map[o.customer_id] += (o.net_amount || 0)
+      const cid = o.customer_id || 'unknown'
+      if (!map[cid]) map[cid] = 0
+      map[cid] += (o.net_amount || 0)
     })
     return Object.entries(map).map(([id, total]) => ({ id, total })).sort((a, b) => b.total - a.total)
   }, [filteredOrders])

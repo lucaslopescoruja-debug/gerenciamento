@@ -123,7 +123,7 @@ export const salesApi = {
     return data as SalesOrder
   },
 
-  async createSalesOrder(order: Omit<SalesOrder, 'id' | 'order_number' | 'company_id' | 'created_at' | 'updated_at' | 'customer' | 'sales_rep' | 'payment_condition' | 'price_table' | 'items'>) {
+  async createSalesOrder(order: Omit<SalesOrder, 'id' | 'order_number' | 'created_at' | 'updated_at' | 'customer' | 'sales_rep' | 'payment_condition' | 'price_table' | 'items'>) {
     
     const { data, error } = await supabase
       .from('sales_orders')

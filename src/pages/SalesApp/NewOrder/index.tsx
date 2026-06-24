@@ -154,7 +154,7 @@ export default function NewOrder() {
                   <p className="font-bold">{order.customer.legal_name || order.customer.fantasy_name}</p>
                   <p className="text-xs text-muted-foreground flex gap-3 mt-1">
                     <span>{order.customer.document}</span>
-                    {order.customer.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3"/> {order.customer.phone}</span>}
+                    {order.customer.phone1 && <span className="flex items-center gap-1"><Phone className="h-3 w-3"/> {order.customer.phone1}</span>}
                   </p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => handleUpdate({ customer_id: null })} className="text-red-500 hover:text-red-600 hover:bg-red-50">
