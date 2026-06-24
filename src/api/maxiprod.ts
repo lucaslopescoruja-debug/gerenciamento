@@ -84,18 +84,18 @@ export const maxiprodApi = {
     // if (missingItems.length > 0) { ... }
 
     const payload = {
-      ClienteId: order.customer.document ? order.customer.document.replace(/\D/g, '') : '', // Testando CNPJ direto
-      MoedaId: comp.maxiprod_moeda_id || 1, // Mantido 1 (ou configuração)
-      OperacaoFiscalId: 5405, // Testando operação 5405
+      ClienteId: order.customer.document ? parseInt(order.customer.document.replace(/\D/g, ''), 10) : 0, 
+      MoedaId: 1, 
+      OperacaoFiscalId: 5405, 
       Observacoes: order.notes || '',
       DescontoTotal: order.total_discount || 0,
       ValorTotal: order.net_amount,
       ItensDoPedidoDeVenda: order.items.map((i: any) => ({
-        ItemId: i.product.external_code || i.product.code, // Testando código interno
+        ItemId: parseInt(i.product.external_code || i.product.code, 10) || 0,
         Quantidade: i.quantity,
         ValorUnitario: i.unit_price,
         DescontoPercentual: i.discount_percent || 0,
-        UnidadeId: 'UN', // Testando string 'UN' em vez de número
+        UnidadeId: 1, // Passando número 1 para evitar o erro de conversão
         PagamentoCom: false
       }))
     }
