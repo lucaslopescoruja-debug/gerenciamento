@@ -454,6 +454,7 @@ export default function NewOrder() {
         onClose={() => setIsProductModalOpen(false)}
         onAddProducts={handleSaveProductsFromModal}
         currentItems={order.items?.map((i: any) => ({ product_id: i.product_id, quantity: i.quantity })) || []}
+        priceTableId={order.customer?.price_table_id}
       />
     </div>
     </>

@@ -12,9 +12,10 @@ interface ProductSelectModalProps {
   onClose: () => void
   onAddProducts: (products: { productId: string, quantity: number, price: number }[]) => void
   currentItems: { product_id: string, quantity: number }[]
+  priceTableId?: string | null
 }
 
-export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItems }: ProductSelectModalProps) {
+export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItems, priceTableId }: ProductSelectModalProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [activeTab, setActiveTab] = useState<'repositions' | 'promotions' | 'highlights'>('repositions')
@@ -39,13 +40,40 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
     enabled: isOpen
   })
 
+  const { data: priceTableData } = useQuery({
+    queryKey: ['price_table', priceTableId],
+    queryFn: async () => {
+      if (!priceTableId) return null
+      const { priceTablesApi } = await import('@/api/priceTables')
+      return priceTablesApi.getPriceTable(priceTableId)
+    },
+    enabled: !!priceTableId && isOpen
+  })
+  const priceTableItems = priceTableData?.price_table_items || []
+
+  const productsWithPrices = useMemo(() => {
+    return products.map((product: any) => {
+      let finalPrice = 0
+      if (priceTableId) {
+        const tableItem = priceTableItems.find((pti: any) => pti.product_id === product.id)
+        if (tableItem) {
+          finalPrice = tableItem.price
+        }
+      }
+      return {
+        ...product,
+        finalPrice
+      }
+    })
+  }, [products, priceTableItems, priceTableId])
+
   const categories = useMemo(() => {
-    const cats = new Set(products.map((p: any) => p.group_name).filter(Boolean))
+    const cats = new Set(productsWithPrices.map((p: any) => p.group_name).filter(Boolean))
     return Array.from(cats).sort() as string[]
-  }, [products])
+  }, [productsWithPrices])
 
   const filteredProducts = useMemo(() => {
-    let filtered = products
+    let filtered = productsWithPrices
     
     if (selectedCategory) {
       filtered = filtered.filter((p: any) => p.group_name === selectedCategory)
@@ -61,7 +89,7 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
     }
     
     return filtered.slice(0, 50) // limit initial load to 50 for performance
-  }, [products, searchTerm, selectedCategory])
+  }, [productsWithPrices, searchTerm, selectedCategory])
 
   const handleUpdateQuantity = (productId: string, delta: number) => {
     setLocalCart(prev => {
@@ -69,7 +97,7 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
       const next = Math.max(0, current + delta)
       
       // Stock validation
-      const product = products.find(p => p.id === productId)
+      const product = productsWithPrices.find(p => p.id === productId)
       if (product) {
         const availableStock = (product.stock || 0) - (product.reserved_stock || 0)
         // If we are increasing and it exceeds stock, we block it
@@ -100,11 +128,11 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
     // The parent component should probably replace the entire order items or merge them.
     // For simplicity, we just pass the new localCart mapped to array.
     const newItems = Object.keys(localCart).map(productId => {
-      const product = products.find(p => p.id === productId) as any
+      const product = productsWithPrices.find(p => p.id === productId) as any
       return {
         productId,
         quantity: localCart[productId],
-        price: product?.price || 0
+        price: product?.finalPrice || 0
       }
     })
     onAddProducts(newItems)
@@ -113,8 +141,8 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
 
   const totalItems = Object.values(localCart).reduce((a, b) => a + b, 0)
   const totalValue = Object.entries(localCart).reduce((sum, [productId, quantity]) => {
-    const product = products.find(p => p.id === productId) as any
-    return sum + ((product?.price || 0) * quantity)
+    const product = productsWithPrices.find(p => p.id === productId) as any
+    return sum + ((product?.finalPrice || 0) * quantity)
   }, 0)
 
   // Se quisermos que fique tela cheia no mobile e modal no desktop:
@@ -211,7 +239,7 @@ export function ProductSelectModal({ isOpen, onClose, onAddProducts, currentItem
                         <div className="text-xs text-muted-foreground mt-1">{product.code}</div>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="font-bold text-base">{formatCurrency(product.price)}</span>
+                        <span className="font-bold text-base">{formatCurrency(product.finalPrice)}</span>
                         <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
                           <span className="text-[10px] font-bold">$</span>
                         </div>
