@@ -55,6 +55,7 @@ export default function NewOrder() {
   const [showOptionsTop, setShowOptionsTop] = useState(false)
   const [showOptionsBottom, setShowOptionsBottom] = useState(false)
   const [discountPercent, setDiscountPercent] = useState('')
+  const [currentStep, setCurrentStep] = useState(1)
 
   const filteredCustomers = customerSearch.length > 1 
     ? customers.filter((c: any) => 
@@ -305,9 +306,9 @@ export default function NewOrder() {
         </div>
       </div>
 
-      <div className="space-y-8 mt-6">
-        {/* BLOCO 1: CLIENTE */}
-        <section className="bg-card border border-border rounded-xl p-5 shadow-sm">
+      <div className="flex flex-col gap-8 mt-6">
+        {/* BLOCO 1: CLIENTE (Step 2) */}
+        <section className={`bg-card border border-border rounded-xl p-5 shadow-sm order-2 md:order-none ${currentStep === 2 ? 'block' : 'hidden md:block'}`}>
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <Building2 className="h-5 w-5" />
             <h2 className="text-sm font-bold uppercase tracking-wider">Cliente</h2>
@@ -373,8 +374,8 @@ export default function NewOrder() {
           </div>
         </section>
 
-        {/* BLOCO 2: BUSCA DE PRODUTOS INLINE */}
-        <section className="mt-8">
+        {/* BLOCO 2: BUSCA DE PRODUTOS INLINE (Step 3) */}
+        <section className={`order-3 md:order-none ${currentStep === 3 ? 'block' : 'hidden md:block'}`}>
           <div className="flex items-center gap-2 text-muted-foreground mb-4 px-1">
             <h2 className="text-sm font-bold uppercase tracking-wider">Adicionar Produtos</h2>
           </div>
@@ -385,12 +386,13 @@ export default function NewOrder() {
           />
         </section>
 
-        {/* BLOCO 3: CARRINHO (ITENS ADICIONADOS) */}
-        <section className="bg-card border border-border rounded-xl p-5 shadow-sm mt-8">
+        {/* BLOCO 3 E 4: RESUMO E PAGAMENTO (Step 4) */}
+        <div className={`order-4 md:order-none ${currentStep === 4 ? 'flex flex-col gap-8' : 'hidden md:flex md:flex-col md:gap-8'}`}>
+          <section className="bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <FileText className="h-5 w-5" />
-              <h2 className="text-sm font-bold uppercase tracking-wider">Itens Adicionados</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider">Resumo do Pedido</h2>
             </div>
           </div>
 
@@ -409,48 +411,14 @@ export default function NewOrder() {
                   {order.items.map(item => (
                     <tr key={item.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3">
-                        <div className="font-medium flex items-center justify-between">
+                        <div className="font-medium">
                           <span>{item.product?.description}</span>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500 opacity-50 hover:opacity-100" onClick={() => handleDeleteItem(item.id)}>
-                            <X className="h-4 w-4" />
-                          </Button>
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">Cód: {item.product?.code}</div>
                         <div className="text-[10px] text-muted-foreground">Saldo previsto: {(item.product?.stock || 0) - (item.product?.reserved_stock || 0)}</div>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end">
-                          <div className="flex overflow-hidden rounded shadow-sm border border-border">
-                            <button 
-                              className="px-3 bg-muted hover:bg-muted/80 h-8 flex items-center justify-center border-r border-border transition-colors disabled:opacity-50"
-                              onClick={() => {
-                                const val = item.quantity - 1
-                                if (val > 0) handleUpdateItem(item.id, val, item.unit_price)
-                                else handleDeleteItem(item.id)
-                              }}
-                            >
-                              <span className="font-bold">-</span>
-                            </button>
-                            <div className="px-3 h-8 flex items-center justify-center font-bold min-w-[40px] bg-background">
-                              {item.quantity}
-                            </div>
-                            <button 
-                              className="px-3 bg-[#1a1530] hover:bg-[#2a2540] text-white h-8 flex items-center justify-center transition-colors"
-                              onClick={() => {
-                                const val = item.quantity + 1
-                                const saldoPrevisto = (item.product?.stock || 0) - (item.product?.reserved_stock || 0)
-                                const saldoDisponivelReal = saldoPrevisto + item.quantity
-                                if (val > saldoDisponivelReal) {
-                                  toast.error(`Quantidade indisponível. Saldo máximo: ${saldoDisponivelReal}`)
-                                } else {
-                                  handleUpdateItem(item.id, val, item.unit_price)
-                                }
-                              }}
-                            >
-                              <span className="font-bold">+</span>
-                            </button>
-                          </div>
-                        </div>
+                      <td className="px-4 py-3 text-right font-medium">
+                        {item.quantity} un
                       </td>
                       <td className="px-4 py-3 text-right">{formatCurrency(item.unit_price)}</td>
                       <td className="px-4 py-3 text-right font-medium">{formatCurrency(item.total_price)}</td>
@@ -466,8 +434,8 @@ export default function NewOrder() {
           )}
         </section>
 
-        {/* BLOCO 3: DETALHES DO PEDIDO */}
-        <section className="bg-card border border-border rounded-xl p-5 shadow-sm">
+        {/* BLOCO 5: DETALHES DO PEDIDO (Step 1) */}
+        <section className={`bg-card border border-border rounded-xl p-5 shadow-sm order-1 md:order-none ${currentStep === 1 ? 'block' : 'hidden md:block'}`}>
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <FileText className="h-5 w-5" />
             <h2 className="text-sm font-bold uppercase tracking-wider">Detalhes do Pedido</h2>
@@ -516,7 +484,7 @@ export default function NewOrder() {
           </div>
         </section>
 
-        {/* BLOCO 4: PAGAMENTO */}
+        {/* BLOCO 6: PAGAMENTO (Step 4 - continues) */}
         <section className="bg-card border border-border rounded-xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <CreditCard className="h-5 w-5" />
@@ -560,6 +528,33 @@ export default function NewOrder() {
             </div>
           </div>
         </section>
+        </div>
+
+        {/* CONTROLES DO WIZARD MOBILE */}
+        <div className="md:hidden flex items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm sticky bottom-4 z-40 order-last mt-4">
+          <Button 
+            variant="outline" 
+            disabled={currentStep === 1}
+            onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
+          >
+            Voltar
+          </Button>
+          <div className="text-sm font-medium text-muted-foreground">
+            Passo {currentStep} de 4
+          </div>
+          {currentStep < 4 ? (
+            <Button 
+              className="bg-primary text-primary-foreground"
+              onClick={() => setCurrentStep(prev => Math.min(4, prev + 1))}
+            >
+              Avançar
+            </Button>
+          ) : (
+            <Button onClick={handleGenerateOrder} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+              <Save className="h-4 w-4 mr-2" /> Finalizar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* AÇÕES RODAPÉ */}
