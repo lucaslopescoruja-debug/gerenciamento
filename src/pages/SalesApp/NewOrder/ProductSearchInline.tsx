@@ -195,12 +195,7 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
                   <div className="flex-1 flex flex-col justify-between py-0.5">
                     <div>
                       <div className="font-semibold text-sm leading-tight line-clamp-2">{product.description}</div>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-                        <div className="text-xs text-muted-foreground">Cód: {product.code}</div>
-                        <div className="text-xs font-medium text-emerald-600/80 bg-emerald-500/10 px-1.5 rounded">
-                          Estoque: {(product.stock || 0) - (product.reserved_stock || 0)}
-                        </div>
-                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Cód: {product.code}</div>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="font-bold text-emerald-600">{formatCurrency(product.finalPrice)}</span>
@@ -208,25 +203,39 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
                   </div>
 
                   {/* Controles (+ / -) */}
-                  <div className="flex flex-col items-center justify-between w-[80px] sm:w-[90px] shrink-0 border-l border-border/50 pl-2">
-                    <button 
-                      className="w-full h-8 sm:h-9 bg-[#1a1530] hover:bg-[#2a2540] text-white rounded flex items-center justify-center transition-colors shadow-sm"
-                      onClick={() => handleUpdate(product.id, 1)}
-                    >
-                      <span className="font-bold">+</span>
-                    </button>
-                    
-                    <div className="font-bold text-sm sm:text-base py-1">
-                      {qty}
+                  <div className="flex flex-col items-center justify-between w-[90px] sm:w-[100px] shrink-0 border-l border-border/50 pl-2">
+                    <div className="text-[10px] text-muted-foreground w-full text-center">
+                      Estoque: {(product.stock || 0) - (product.reserved_stock || 0)}
                     </div>
                     
-                    <button 
-                      className="w-full h-8 sm:h-9 bg-muted hover:bg-muted/80 text-foreground rounded flex items-center justify-center transition-colors border border-border"
-                      onClick={() => handleUpdate(product.id, -1)}
-                      disabled={qty === 0}
-                    >
-                      <span className="font-bold">-</span>
-                    </button>
+                    {qty === 0 ? (
+                      <div className="flex items-baseline justify-center flex-1 w-full gap-1 pt-1 pb-1">
+                        <span className="text-2xl font-bold">0</span>
+                        <span className="text-xs text-muted-foreground">un</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline justify-center flex-1 w-full gap-1 text-primary pt-1 pb-1">
+                        <span className="text-2xl font-black">{qty}</span>
+                        <span className="text-xs">un</span>
+                      </div>
+                    )}
+
+                    <div className="flex w-full overflow-hidden rounded shadow-sm border border-border mt-1">
+                      <button 
+                        className="flex-1 bg-muted hover:bg-muted/80 h-9 flex items-center justify-center border-r border-border transition-colors disabled:opacity-50"
+                        onClick={() => handleUpdate(product.id, -1)}
+                        disabled={qty === 0}
+                      >
+                        <span className="text-lg font-bold">-</span>
+                      </button>
+                      <button 
+                        className="flex-1 bg-[#1a1530] hover:bg-[#2a2540] text-white h-9 flex items-center justify-center transition-colors disabled:opacity-50 disabled:bg-[#1a1530]/50"
+                        onClick={() => handleUpdate(product.id, 1)}
+                        disabled={qty >= ((product.stock || 0) - (product.reserved_stock || 0))}
+                      >
+                        <span className="text-lg font-bold">+</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
