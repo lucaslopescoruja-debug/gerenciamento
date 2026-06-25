@@ -125,10 +125,11 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-6 overflow-y-auto flex-1 bg-background" ref={contentRef}>
-          {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground">Carregando detalhes...</div>
-          ) : details ? (
+        <div className="px-6 py-6 overflow-y-auto flex-1 bg-background">
+          <div ref={contentRef} className="bg-background">
+            {isLoading ? (
+              <div className="py-8 text-center text-muted-foreground">Carregando detalhes...</div>
+            ) : details ? (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-1">
@@ -208,6 +209,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
           ) : (
             <div className="py-8 text-center text-muted-foreground">Erro ao carregar os detalhes do pedido.</div>
           )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
