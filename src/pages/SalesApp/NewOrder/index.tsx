@@ -5,7 +5,7 @@ import { salesApi } from '@/api/sales'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency } from '@/utils/formatters'
 import { toast } from '@/components/ui/toaster'
-import { FileText, Save, Send, Eye, X, Search, Phone, Building2 } from ', ChevronLeft } from ', Plus } from ', Trash2 } from ', ShoppingCart } from 'lucide-react'
+import { FileText, Save, Send, Eye, X, Search, Phone, Building2, ChevronLeft, Plus, Trash2, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/lib/supabase'
 import { ProductSearchInline } from './ProductSearchInline'
 import { OrderDetailsModal } from '@/components/Sales/OrderDetailsModal'
-import { ChevronDown, Copy, Mail, Ban, CreditCard } from ', ChevronLeft } from ', Plus } from ', Trash2 } from ', ShoppingCart } from 'lucide-react'
+import { ChevronDown, Copy, Mail, Ban, CreditCard } from 'lucide-react'
 
 export default function NewOrder() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -646,7 +646,7 @@ export default function NewOrder() {
       <div className="flex flex-col gap-6 mt-4 px-4 md:px-0">
         
         {/* TELA 1: CLIENTES */}
-        <section className={\`\${currentStep === 1 ? 'block' : 'hidden md:block'} md:order-1\`}>
+        <section className={`${currentStep === 1 ? 'block' : 'hidden md:block'} md:order-1`}>
           <div className="hidden md:flex items-center gap-2 mb-4 text-muted-foreground">
             <Building2 className="h-5 w-5" />
             <h2 className="text-sm font-bold uppercase tracking-wider">Cliente</h2>
@@ -696,7 +696,7 @@ export default function NewOrder() {
                         <div className="font-bold text-sm text-foreground">{c.legal_name || c.fantasy_name}</div>
                         <div className="text-xs text-muted-foreground flex justify-between mt-1.5">
                           <span>{c.document}</span>
-                          <span>{c.city && c.state ? \`\${c.city}/\${c.state}\` : ''}</span>
+                          <span>{c.city && c.state ? `${c.city}/${c.state}` : ''}</span>
                         </div>
                       </div>
                     ))
@@ -712,7 +712,7 @@ export default function NewOrder() {
         </section>
 
         {/* TELA 2: RESUMO DO PEDIDO */}
-        <section className={\`\${currentStep === 2 ? 'block' : 'hidden md:block'} md:order-2 max-w-2xl mx-auto w-full\`}>
+        <section className={`${currentStep === 2 ? 'block' : 'hidden md:block'} md:order-2 max-w-2xl mx-auto w-full`}>
           
           <div className="bg-card border border-border shadow-sm rounded-xl overflow-hidden mb-6">
             <div className="bg-muted/50 p-4 border-b border-border flex justify-between items-center">
@@ -810,7 +810,7 @@ export default function NewOrder() {
         </section>
 
         {/* TELA 3: PRODUTOS */}
-        <section className={\`\${currentStep === 3 ? 'block' : 'hidden md:block'} md:order-3 max-w-2xl mx-auto w-full\`}>
+        <section className={`${currentStep === 3 ? 'block' : 'hidden md:block'} md:order-3 max-w-2xl mx-auto w-full`}>
           <ProductSearchInline 
             currentItems={order.items?.map((i: any) => ({ product_id: i.product_id, quantity: i.quantity })) || []}
             priceTableId={order.customer?.price_table_id}
@@ -819,7 +819,7 @@ export default function NewOrder() {
         </section>
 
         {/* TELA 4: FINALIZACAO E PAGAMENTO */}
-        <section className={\`\${currentStep === 4 ? 'block' : 'hidden md:block'} md:order-4 max-w-2xl mx-auto w-full\`}>
+        <section className={`${currentStep === 4 ? 'block' : 'hidden md:block'} md:order-4 max-w-2xl mx-auto w-full`}>
           <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-6">
             
             <div className="flex items-center gap-2 text-primary border-b border-border pb-3">
@@ -897,7 +897,7 @@ export default function NewOrder() {
       </div>
 
       {/* FLOAT BOTTOM BAR FOR PRODUCTS PAGE (Mobile Only) */}
-      <div className={\`md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-[0_-4px_15px_rgba(0,0,0,0.05)] p-4 z-50 transition-transform \${currentStep === 3 ? 'translate-y-0' : 'translate-y-full opacity-0 pointer-events-none'}\`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-[0_-4px_15px_rgba(0,0,0,0.05)] p-4 z-50 transition-transform ${currentStep === 3 ? 'translate-y-0' : 'translate-y-full opacity-0 pointer-events-none'}`}>
         <div className="flex justify-between items-center max-w-2xl mx-auto">
           <div className="flex flex-col">
             <span className="text-xs text-muted-foreground">{totalItems} itens adicionados</span>
