@@ -100,8 +100,12 @@ export default function SalesOrders() {
               <div className="space-y-3">
                 {orders.map(order => (
                   <div key={order.id} onClick={() => {
-                    setSelectedOrderId(order.id)
-                    setIsDetailsOpen(true)
+                    if (order.status === 'Rascunho') {
+                      navigate(`/vendas/novo-pedido?id=${order.id}`)
+                    } else {
+                      setSelectedOrderId(order.id)
+                      setIsDetailsOpen(true)
+                    }
                   }} className="bg-card border border-border rounded-md p-4 md:p-5 hover:border-primary/50 cursor-pointer transition-colors shadow-sm relative group flex justify-between items-start">
                     
                     {/* Left Side */}
