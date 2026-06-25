@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Image as ImageIcon } from 'lucide-react'
+import { Filter, Search, Image as ImageIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/utils/formatters'
 import { productsApi } from '@/api/products'
@@ -14,6 +14,7 @@ interface ProductSearchInlineProps {
 
 export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuantity }: ProductSearchInlineProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'repositions' | 'promotions' | 'highlights'>('all')
 
   const { data: products = [], isLoading } = useQuery({
@@ -48,6 +49,11 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
     })
   }, [products, priceTableItems, priceTableId])
 
+  const categories = useMemo(() => {
+    const cats = new Set(productsWithPrices.map((p: any) => p.group_name).filter(Boolean))
+    return Array.from(cats).sort() as string[]
+  }, [productsWithPrices])
+
   const filteredProducts = useMemo(() => {
     let filtered = productsWithPrices
     
@@ -60,6 +66,10 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
       filtered = []
     }
 
+    if (selectedCategory && activeTab === 'all') {
+      filtered = filtered.filter((p: any) => p.group_name === selectedCategory)
+    }
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter((p: any) => 
@@ -70,7 +80,7 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
     }
     
     return filtered.slice(0, 50)
-  }, [productsWithPrices, searchTerm, activeTab])
+  }, [productsWithPrices, searchTerm, selectedCategory, activeTab])
 
   const handleUpdate = (productId: string, delta: number) => {
     const product = productsWithPrices.find(p => p.id === productId)
@@ -125,14 +135,31 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
 
       {/* BUSCA */}
       <div className="p-3 bg-background border-b border-border">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar por nome, código ou código de barras..." 
-            className="pl-9 bg-muted/10 border-border h-11"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar por nome, código ou código de barras..." 
+              className="pl-9 bg-muted/10 border-border h-11"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="relative h-11 w-11 shrink-0 flex items-center justify-center border border-border rounded-md bg-muted/10 hover:bg-muted/30 transition-colors">
+            <Filter className={`h-5 w-5 ${selectedCategory ? "text-primary" : "text-muted-foreground"}`} />
+            <select 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+              title="Filtrar por categoria"
+            >
+              <option value="">Todas</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            {selectedCategory && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background" />
+            )}
+          </div>
         </div>
       </div>
 

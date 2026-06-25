@@ -336,6 +336,9 @@ export default function NewOrder() {
 
         {/* BLOCO 2: BUSCA DE PRODUTOS INLINE */}
         <section className="mt-8">
+          <div className="flex items-center gap-2 text-muted-foreground mb-4 px-1">
+            <h2 className="text-sm font-bold uppercase tracking-wider">Adicionar Produtos</h2>
+          </div>
           <ProductSearchInline 
             currentItems={order.items?.map((i: any) => ({ product_id: i.product_id, quantity: i.quantity })) || []}
             priceTableId={order.customer?.price_table_id}
