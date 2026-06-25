@@ -85,7 +85,7 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
       const realAvailable = availableStock + currentQty
       
       if (nextQty > realAvailable) {
-        toast({ title: "Erro", description: `Quantidade indisponível. Saldo máximo: ${realAvailable}`, variant: "destructive" })
+        toast.error(`Quantidade indisponível. Saldo máximo: ${realAvailable}`)
         return
       }
     }
