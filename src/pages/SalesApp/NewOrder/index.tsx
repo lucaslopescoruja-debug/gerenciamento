@@ -95,8 +95,10 @@ export default function NewOrder() {
     }
   }, [order?.total_discount, order?.items])
 
+  const hasAutoAdvancedRef = useRef(false)
   useEffect(() => {
-    if (order?.customer_id && currentStep === 1) {
+    if (order?.customer_id && currentStep === 1 && !hasAutoAdvancedRef.current) {
+      hasAutoAdvancedRef.current = true
       setCurrentStep(2)
     }
   }, [order?.customer_id, currentStep])
