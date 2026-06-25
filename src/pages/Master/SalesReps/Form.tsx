@@ -144,6 +144,8 @@ export default function SalesRepForm() {
             <label className="text-sm font-medium">Nome Fantasia / Apelido *</label>
             <Input
               required
+              disabled
+              title="Este campo é sincronizado com o cadastro de Usuários"
               value={formData.nickname || ''}
               onChange={e => setFormData({ ...formData, nickname: e.target.value })}
               placeholder="Como é conhecido"
@@ -152,6 +154,8 @@ export default function SalesRepForm() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Razão Social</label>
             <Input
+              disabled
+              title="Este campo é sincronizado com o cadastro de Usuários"
               value={formData.legal_name || ''}
               onChange={e => setFormData({ ...formData, legal_name: e.target.value })}
             />
@@ -215,38 +219,7 @@ export default function SalesRepForm() {
           </div>
         </div>
 
-        {/* User Account Creation */}
-        {!isEditing && (
-          <div className="pt-4 border-t border-border/50">
-            <h3 className="text-lg font-medium mb-4">Acesso ao Aplicativo</h3>
-            <div className="space-y-4 max-w-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="rounded border-input text-primary focus:ring-primary w-4 h-4"
-                  checked={createLogin}
-                  onChange={e => setCreateLogin(e.target.checked)}
-                />
-                <span className="text-sm font-medium">Criar login de Vendedor?</span>
-              </label>
-              
-              {createLogin && (
-                <div className="space-y-2 pl-6 animate-in slide-in-from-top-2">
-                  <label className="text-sm font-medium">Usuário de Login *</label>
-                  <Input
-                    required
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="Ex: joao.vendedor"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    A senha inicial será <strong>Trocar@123</strong>.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* User Account Creation was removed, now managed in Settings > Users */}
 
         {/* Regions */}
         <div className="pt-4 border-t border-border/50">
@@ -271,10 +244,11 @@ export default function SalesRepForm() {
 
         {/* Status */}
         <div className="pt-4 border-t border-border/50 flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 opacity-50 cursor-not-allowed" title="O status é espelhado do cadastro de Usuário">
             <input
               type="checkbox"
-              className="rounded border-input text-primary focus:ring-primary w-4 h-4"
+              disabled
+              className="rounded border-input text-primary focus:ring-primary w-4 h-4 cursor-not-allowed"
               checked={formData.active}
               onChange={e => setFormData({ ...formData, active: e.target.checked })}
             />

@@ -256,25 +256,10 @@ export default function SalesRepsList() {
             </Button>
           )}
 
-          <label className="cursor-pointer">
-            <Button type="button" variant="outline" className="w-full sm:w-auto shadow-sm" disabled={isImporting} onClick={() => document.getElementById('csv-upload')?.click()}>
-              <UploadCloud className="mr-2 h-4 w-4" /> 
-              {isImporting ? 'Importando...' : 'Importar CSV'}
-            </Button>
-            <Input 
-              id="csv-upload"
-              type="file" 
-              accept=".csv" 
-              className="hidden" 
-              onChange={handleFileUpload}
-              disabled={isImporting}
-            />
-          </label>
-          <Link to="/cadastros/representantes/novo">
-            <Button className="w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95">
-              <Plus className="mr-2 h-4 w-4" /> Novo Representante
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+            <Users className="h-4 w-4" />
+            <span>Para adicionar um novo representante, crie um usuário com a função de <strong>Vendedor</strong> em <Link to="/configuracoes" className="underline font-semibold hover:text-amber-800">Configurações</Link>.</span>
+          </div>
         </div>
       </div>
 
