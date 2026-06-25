@@ -46,7 +46,7 @@ export default function SalesOrders() {
   }
 
   const getStatusBadge = (status: string) => {
-    if (status === 'Rascunho' || status === 'Orçamento') {
+    if (status === 'Rascunho') {
       return <span className="bg-yellow-200 text-yellow-800 text-[11px] font-bold px-3 py-1 rounded-full">Em orçamento</span>
     }
     return <span className="bg-emerald-500 text-white text-[11px] font-bold px-3 py-1 rounded-full">Concluído</span>
@@ -100,7 +100,7 @@ export default function SalesOrders() {
               <div className="space-y-3">
                 {orders.map(order => (
                   <div key={order.id} onClick={() => {
-                    if (order.status === 'Rascunho' || order.status === 'Orçamento') {
+                    if (order.status === 'Rascunho') {
                       navigate(`/vendas/novo-pedido?id=${order.id}`)
                     } else {
                       setSelectedOrderId(order.id)
@@ -129,7 +129,7 @@ export default function SalesOrders() {
                       )}
                       
                       <div className="flex items-center gap-1.5 mt-2 font-bold text-sm text-foreground">
-                        {order.status === 'Rascunho' || order.status === 'Orçamento' ? (
+                        {order.status === 'Rascunho' ? (
                           <span className="text-foreground text-xs">{formatCurrency(order.net_amount || 0)}</span>
                         ) : (
                           <>

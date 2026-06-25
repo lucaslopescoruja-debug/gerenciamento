@@ -246,7 +246,7 @@ export default function NewOrder() {
     }
     
     try {
-      await salesApi.updateSalesOrder(orderId, { status: 'Orçamento' })
+      await salesApi.updateSalesOrder(orderId, { status: 'Rascunho' })
       toast.success('Orçamento salvo com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
       navigate('/vendas/pedidos')
@@ -266,7 +266,7 @@ export default function NewOrder() {
     }
     
     try {
-      await salesApi.updateSalesOrder(orderId, { status: 'Concluído' })
+      await salesApi.updateSalesOrder(orderId, { status: 'Enviado' })
       toast.success('Pedido concluído com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
       navigate('/vendas/pedidos')
