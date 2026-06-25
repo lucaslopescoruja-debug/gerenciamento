@@ -343,7 +343,7 @@ export default function NewOrder() {
                         <div className="font-medium text-sm">{p.description}</div>
                         <div className="text-xs text-muted-foreground mt-1 flex gap-3">
                           <span>Cód: {p.code}</span>
-                          <span className={p.stock_quantity > 0 ? "text-emerald-600" : "text-red-500"}>Estoque: {p.stock_quantity || 0}</span>
+                          <span className={p.stock > 0 ? "text-emerald-600" : "text-red-500"}>Estoque: {p.stock || 0}</span>
                         </div>
                       </div>
                       <div className="font-bold text-primary">
@@ -380,7 +380,7 @@ export default function NewOrder() {
                           </Button>
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">Cód: {item.product?.code}</div>
-                        <div className="text-[10px] text-muted-foreground">Saldo previsto: {(item.product?.stock_quantity || 0) - (item.product?.reserved_quantity || 0)}</div>
+                        <div className="text-[10px] text-muted-foreground">Saldo previsto: {(item.product?.stock || 0) - (item.product?.reserved_stock || 0)}</div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -392,7 +392,7 @@ export default function NewOrder() {
                             onChange={(e) => {
                               const val = parseInt(e.target.value) || 1
                               // Validar saldo previsto
-                              const saldoPrevisto = (item.product?.stock_quantity || 0) - (item.product?.reserved_quantity || 0)
+                              const saldoPrevisto = (item.product?.stock || 0) - (item.product?.reserved_stock || 0)
                               // Se aumentou a quantidade alem do saldo previsto, bloqueia (saldoPrevisto não inclui a quantidade que JA ESTA neste item se for rascunho. Para simplificar, o saldo previsto do produto já tem essa reserva subtraída)
                               // Para ser perfeitamente correto: o saldo disponível total é `saldoPrevisto + item.quantity` (já que o item atual reservou essa quantity).
                               const saldoDisponivelReal = saldoPrevisto + item.quantity
