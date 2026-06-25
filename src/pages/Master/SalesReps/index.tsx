@@ -23,7 +23,22 @@ export default function SalesRepsList() {
     queryFn: salesRepsApi.getSalesReps
   })
 
-  // deleteMutation removed because SalesReps are managed via Users
+  const deleteMutation = useMutation({
+    mutationFn: salesRepsApi.deleteSalesRep,
+    onSuccess: () => {
+      toast.success('Representante removido com sucesso')
+      queryClient.invalidateQueries({ queryKey: ['salesReps'] })
+    },
+    onError: (e: any) => {
+      // The API will throw an error with the inactivation message, which we show as an info/warning toast instead of an error if it's the 23503 handler
+      if (e.message.includes('inativado')) {
+        toast.success(e.message) // Show as success because the inactivation worked
+        queryClient.invalidateQueries({ queryKey: ['salesReps'] })
+      } else {
+        toast.error(`Erro ao remover representante: ${e.message}`)
+      }
+    }
+  })
 
   const importMutation = useMutation({
     mutationFn: async (payload: any[]) => {
@@ -138,7 +153,11 @@ export default function SalesRepsList() {
     })
   }
 
-  // handleDelete removed
+  const handleDelete = (id: string, name: string) => {
+    if (window.confirm(`Deseja realmente excluir o representante "${name}"?. Esta ação não pode ser desfeita.`)) {
+      deleteMutation.mutate(id)
+    }
+  }
 
   const filteredReps = useMemo(() => {
     return reps.filter(r => {
@@ -339,9 +358,8 @@ export default function SalesRepsList() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          disabled
-                          title="Para excluir, desative o usuário correspondente em Configurações > Usuários"
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 cursor-not-allowed opacity-50"
+                          onClick={() => handleDelete(rep.id, rep.nickname || rep.legal_name || '')}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

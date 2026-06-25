@@ -62,7 +62,17 @@ export const salesRepsApi = {
       .from('sales_reps')
       .delete()
       .eq('id', id)
-    if (error) throw error
+    if (error) {
+      if (error.code === '23503') {
+        const { error: updateError } = await supabase
+          .from('sales_reps')
+          .update({ active: false })
+          .eq('id', id);
+        if (updateError) throw updateError;
+        throw new Error('Este representante possui histórico no sistema (pedidos, clientes, etc.) e não pode ser excluído permanentemente. Ele foi inativado.');
+      }
+      throw error;
+    }
     return true
   }
 }
