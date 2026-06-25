@@ -16,7 +16,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
     const computedNetAmount = computedSubtotal - totalDiscount
 
     return (
-      <div ref={ref} className="bg-white text-black p-8 text-[11px] leading-tight font-sans mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
+      <div ref={ref} className="bg-white text-black p-8 text-[11px] leading-tight font-sans mx-auto w-[800px] print:w-full print:p-0">
         {/* CABEÇALHO */}
         <div className="flex justify-between items-start border border-black p-4 mb-2">
           <div className="w-1/3">

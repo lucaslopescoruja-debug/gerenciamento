@@ -76,11 +76,12 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
         format: 'a4'
       })
       
+      const margin = 10 // 10mm margin
       const imgProps = pdf.getImageProperties(imgData)
-      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfWidth = pdf.internal.pageSize.getWidth() - margin * 2
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.addImage(imgData, 'PNG', margin, margin, pdfWidth, pdfHeight)
       pdf.save(`pedido_${details?.order_number || 'novo'}.pdf`)
       
       toast.success('PDF gerado com sucesso!')
@@ -123,7 +124,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
         </style>
 
         {/* Hidden off-screen wrapper for HTML-to-Image AND Print */}
-        <div className="absolute top-[-9999px] left-[-9999px] print:static print:top-auto print:left-auto print:block w-[210mm]">
+        <div className="absolute top-[-9999px] left-[-9999px] print:static print:top-auto print:left-auto print:block print:w-full print:h-auto overflow-visible">
           <div id="printable-order-details">
             <InvoicePrintTemplate details={details} ref={printRef} />
           </div>
