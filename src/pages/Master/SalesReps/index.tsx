@@ -23,16 +23,7 @@ export default function SalesRepsList() {
     queryFn: salesRepsApi.getSalesReps
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: salesRepsApi.deleteSalesRep,
-    onSuccess: () => {
-      toast.success('Representante removido com sucesso')
-      queryClient.invalidateQueries({ queryKey: ['salesReps'] })
-    },
-    onError: (e: any) => {
-      toast.error(`Erro ao remover representante: ${e.message}`)
-    }
-  })
+  // deleteMutation removed because SalesReps are managed via Users
 
   const importMutation = useMutation({
     mutationFn: async (payload: any[]) => {
@@ -147,11 +138,7 @@ export default function SalesRepsList() {
     })
   }
 
-  const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Deseja realmente excluir o representante "${name}"?. Esta ação não pode ser desfeita.`)) {
-      deleteMutation.mutate(id)
-    }
-  }
+  // handleDelete removed
 
   const filteredReps = useMemo(() => {
     return reps.filter(r => {
@@ -352,8 +339,9 @@ export default function SalesRepsList() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => handleDelete(rep.id, rep.nickname || rep.legal_name || '')}
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          disabled
+                          title="Para excluir, desative o usuário correspondente em Configurações > Usuários"
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 cursor-not-allowed opacity-50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
