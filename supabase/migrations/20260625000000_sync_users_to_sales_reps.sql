@@ -9,7 +9,6 @@ BEGIN
     VALUES (NEW.id, NEW.company_id, NEW.name, NEW.name, NEW.active)
     ON CONFLICT (id) DO UPDATE SET
       nickname = EXCLUDED.nickname,
-      legal_name = EXCLUDED.legal_name,
       active = EXCLUDED.active,
       updated_at = timezone('utc'::text, now());
   ELSE

@@ -154,8 +154,6 @@ export default function SalesRepForm() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Razão Social</label>
             <Input
-              disabled
-              title="Este campo é sincronizado com o cadastro de Usuários"
               value={formData.legal_name || ''}
               onChange={e => setFormData({ ...formData, legal_name: e.target.value })}
             />
