@@ -20,7 +20,7 @@ import { TesterNotes } from '@/components/TesterNotes'
 import type { LucideIcon } from 'lucide-react'
 
 // ATUALIZE ESTA VERSÃO PARA TESTAR SE O APLICATIVO ATUALIZOU NOS DISPOSITIVOS
-const APP_VERSION = 'v3.2.6'
+const APP_VERSION = 'v3.2.7'
 
 interface NavItem {
   label: string;

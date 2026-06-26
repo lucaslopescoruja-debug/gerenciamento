@@ -41,10 +41,10 @@ export default function EquipmentsList() {
   const [type, setType] = useState('Freezer')
   const [model, setModel] = useState('')
   const [size, setSize] = useState('')
-  const [voltage, setVoltage] = useState<'127v' | '220v' | ''>('')
+  const [voltage, setVoltage] = useState<'127v' | '220v' | 'Bivolt' | ''>('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<'Teste' | 'Disponível' | 'Em Manutenção' | 'Danificado' | 'No Cliente' | 'Equipamento de Estoque'>('Disponível')
-  const [voltageFilter, setVoltageFilter] = useState<'Todos' | '127v' | '220v'>('Todos')
+  const [voltageFilter, setVoltageFilter] = useState<'Todos' | '127v' | '220v' | 'Bivolt'>('Todos')
   const [currentCustomerId, setCurrentCustomerId] = useState('')
   const [customerSearch, setCustomerSearch] = useState('')
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
@@ -258,6 +258,7 @@ export default function EquipmentsList() {
             <option value="Todos">Todos</option>
             <option value="127v">127v</option>
             <option value="220v">220v</option>
+            <option value="Bivolt">Bivolt</option>
           </select>
         </div>
         <div className="flex items-center gap-2">
@@ -510,8 +511,8 @@ export default function EquipmentsList() {
                   220v
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="radio" name="voltage" value="" checked={voltage === ''} onChange={e => setVoltage(e.target.value as any)} className="cursor-pointer" />
-                  Nenhuma / Bivolt
+                  <input type="radio" name="voltage" value="Bivolt" checked={voltage === 'Bivolt'} onChange={e => setVoltage(e.target.value as any)} className="cursor-pointer" />
+                  Bivolt
                 </label>
               </div>
             </div>
