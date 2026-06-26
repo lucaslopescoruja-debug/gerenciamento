@@ -158,7 +158,7 @@ export default function SupplyRequests() {
                 </div>
               </div>
               
-              <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+              <div className="flex flex-wrap gap-2 w-full md:w-auto mt-2 md:mt-0">
                 <span className={`px-3 py-1 rounded text-sm font-bold flex items-center justify-center w-full md:w-auto ${
                   req.status === 'aprovado' ? 'bg-green-100 text-green-700' :
                   req.status === 'rejeitado' ? 'bg-red-100 text-red-700' :

@@ -271,7 +271,7 @@ export default function EquipmentOrdersList() {
                 </div>
               </div>
               
-              <div className="flex gap-2 w-full md:w-auto">
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
                 {canManage && (
                   <>
                     <Button variant="outline" size="sm" className="flex-1 md:flex-none" onClick={() => openEdit(order)}>

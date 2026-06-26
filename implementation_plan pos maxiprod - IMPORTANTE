@@ -1,0 +1,107 @@
+# Planejamento do Fluxo de Pedidos: Estoque Fácil ↔ MaxiProd
+
+Este plano estrutura a solução arquitetural para o ciclo de vida completo do pedido, desde a sua criação no aplicativo de vendas, faturamento no ERP MaxiProd, até o controle rigoroso de expedição e entrega na ponta logística.
+
+## 1. Arquitetura e Modelagem de Dados
+
+Para suportar todas as etapas exigidas sem misturar os fluxos, a tabela `sales_orders` no Supabase precisará ser expandida. Vamos categorizar as colunas para melhor organização:
+
+### 1.1 Colunas de Integração ERP (`sales_orders`)
+- `maxiprod_id (bigint)`: ID do Pedido de Venda dentro do MaxiProd.
+- `maxiprod_invoice_id (varchar)`: Número da Nota Fiscal (quando faturado).
+- `maxiprod_route_id (varchar)`: ID ou Nome da Rota vinculada no MaxiProd.
+- `sync_status (varchar)`: Status da sincronização (ex: `pending`, `synced`, `error`).
+- `sync_error_log (text)`: Armazena o motivo caso o MaxiProd recuse o pedido.
+
+### 1.2 Colunas de Rastreio e Logística (`sales_orders`)
+O status atual do pedido (`status`) deixará de ser apenas "Orçamento/Concluído" e adotará o fluxo completo estipulado na regra de negócios. Além do `status` mestre, teremos os timestamps de cada transição para métricas de tempo:
+
+- `status (varchar)`: O estado central do pedido (ver seção Fluxo de Status).
+- `logistic_step (varchar)`: Sub-etapa atual (`separation`, `loading`, `delivery`, `return`, `completed`).
+- `separation_started_at (timestamp)` / `separation_finished_at (timestamp)`
+- `loading_started_at (timestamp)` / `loading_finished_at (timestamp)`
+- `delivery_started_at (timestamp)` / `delivery_finished_at (timestamp)`
+- `return_started_at (timestamp)` / `return_finished_at (timestamp)`
+
+### 1.3 Histórico de Movimentação (Nova Tabela: `order_tracking`)
+Para saber *quem* fez *o que* e *quando*, criaremos uma tabela de log de auditoria:
+- `id` (uuid)
+- `order_id` (uuid - FK)
+- `user_id` (uuid - FK para saber quem moveu o pedido)
+- `old_status` (varchar)
+- `new_status` (varchar)
+- `created_at` (timestamp)
+
+---
+
+## 2. Fluxo de Status Completo (Regra de Negócios)
+
+O sistema fará a transição do status do pedido respeitando rigorosamente a seguinte cadeia:
+
+### Fase 1: Comercial (Estoque Fácil -> MaxiProd)
+1. `Orçamento`: Pedido criado (ainda pode ser editado pelo vendedor).
+2. `Aguardando envio ao MaxiProd`: Vendedor fechou o pedido no app.
+3. `Enviado ao MaxiProd`: Pedido recebido pelo ERP com sucesso.
+4. `Aguardando faturamento`: O ERP reconheceu, mas a nota ainda não foi emitida.
+
+### Fase 2: Escuta Ativa (MaxiProd -> Estoque Fácil)
+5. `Faturado no MaxiProd`: A integração detecta a emissão da NF.
+6. `Rota identificada`: O MaxiProd atribuiu o pedido a uma rota de entrega.
+7. `Pronto para expedição`: O pedido cumpre os dois requisitos (Faturado + Rota) e é **liberado para o pátio logístico do Estoque Fácil**.
+
+### Fase 3: Logística (Estoque Fácil Interno)
+8. `Em separação`: Operador de armazém inicia a coleta dos itens.
+9. `Separado`: Itens bipados/conferidos aguardando doca.
+10. `Em carregamento`: Operador movimentando os itens para o caminhão da rota.
+11. `Carregado`: Veículo fechado e liberado.
+12. `Saiu para entrega`: Motorista iniciou o trajeto.
+13. `Em retorno`: (Condicional) Caso haja devolução total/parcial, avaria ou cliente ausente.
+14. `Entregue`: Fechamento da cadeia (com sucesso total ou após tratativa do retorno).
+
+> [!CAUTION]
+> **Regra de Bloqueio Sistêmico**
+> O sistema (UI e API) irá bloquear e ocultar o pedido das telas de armazém ("Separação") enquanto o status for inferior a `Pronto para expedição`. Isso garante que o estoque físico não seja tocado antes do faturamento e roteirização oficiais.
+
+---
+
+## 3. Arquitetura da Integração (Automação)
+
+### 3.1 Transmissão (Push)
+Quando o vendedor clicar em "Gerar Pedido", o Estoque Fácil (via a Serverless Function já desenhada na `api/maxiprod.ts`) montará o payload JSON e injetará via `POST /PedidoDeVenda` no MaxiProd. Retornando Sucesso (200), salvamos o `maxiprod_id` gerado.
+
+### 3.2 Escuta Ativa / Polling (Pull)
+Como o MaxiProd é o detentor da verdade para Faturamento e Rotas, o Estoque Fácil precisa perguntar a ele o que mudou.
+- **Estratégia Edge Function / Cron**: Criaremos uma rotina no Supabase (Cron Job) que roda a cada `X` minutos.
+- **Ação**: A rotina busca no MaxiProd o status de todos os pedidos no nosso banco que estejam com o status `Aguardando faturamento`.
+- **Match**: Quando a API do MaxiProd informar que o `PedidoDeVenda.Id` possui Faturamento e Rota preenchidos, a Cron Function atualizará o Supabase, movendo o pedido para `Pronto para expedição`.
+
+---
+
+## 4. Telas e Painéis (Interface)
+
+Para atender a escalabilidade operacional, a aplicação será dividida em painéis especializados baseados no papel do usuário:
+
+### Painel Comercial (App de Vendas)
+- Focado na criação do pedido, catálogo e carteira de clientes.
+- Acompanhamento passivo: o vendedor vê o status atual ("Faturado", "Saiu para entrega"), mas não interage mais com o pedido após o envio.
+
+### Kanban Operacional (App Logístico - Web/Desktop)
+Uma interface visual em formato de esteira (Kanban) ou listagem por abas, separando:
+1. **Doca de Separação:** Lista apenas pedidos `Pronto para expedição`.
+2. **Carregamento:** Visualização agrupada por `ID da Rota`. O conferente puxa os pedidos `Separado` para `Carregado`.
+3. **Monitoramento (Tracking):** Painel do Gestor Logístico para visualizar pedidos na rua e veículos em trânsito.
+
+### App do Motorista (Coletor Mobile)
+- Ao iniciar a rota, o motorista baixa os pedidos que estão na **sua rota**.
+- Realiza a transição de `Carregado` para `Saiu para entrega`.
+- No destino, assinala `Entregue` (com comprovante/assinatura) ou lança um Motivo de Retorno, acionando o status `Em retorno`.
+
+---
+
+## 5. Próximos Passos & User Feedback
+
+> [!IMPORTANT]
+> **Por favor, valide as seguintes questões técnicas antes de eu começar a codificar:**
+> 1. **Frequência da Automação**: De quanto em quanto tempo o sistema deve consultar o MaxiProd para saber se faturou/roteirizou? (ex: A cada 15 minutos? 1 vez por hora?).
+> 2. **Rota do MaxiProd vs Rota Interna**: A rota é criada e atribuída EXCLUSIVAMENTE pelo MaxiProd, e o Estoque Fácil apenas "lê" o nome/ID dessa rota, ou o Estoque Fácil tem poder para alterar rotas caso necessário?
+> 3. **Retorno de Mercadoria**: Se o motorista colocar o pedido como `Em retorno`, o tratamento físico e fiscal desse retorno será feito no MaxiProd ou o Estoque Fácil terá um painel para dizer "Retorno Aceito/Estoque Devolvido"?

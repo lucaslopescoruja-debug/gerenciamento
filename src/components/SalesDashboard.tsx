@@ -194,7 +194,7 @@ export function SalesDashboard() {
           <div className="flex items-center gap-2 font-semibold text-lg text-foreground">
             Painel de Vendas
           </div>
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <select 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
