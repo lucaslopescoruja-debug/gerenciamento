@@ -57,6 +57,7 @@ export interface Company {
   phone?: string | null
   email?: string | null
   additional_info?: string | null
+  logo_url?: string | null
   garage_lat?: number | null
   garage_lng?: number | null
   maxiprod_api_token?: string | null

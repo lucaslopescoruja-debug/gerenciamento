@@ -26,30 +26,54 @@ export function drawDeliveryProofOnDoc(doc: jsPDF, client: any, company: any) {
   let y = 15
 
   // Header - Title & Brand (Company name & CNPJ)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14) // large font for company name
-  doc.setTextColor(79, 70, 229) // Brand color (indigo-600)
-  const compNameText = company?.name || 'Empresa Emissora'
-  const compNameLines = doc.splitTextToSize(compNameText, 120)
-  doc.text(compNameLines, 15, y)
+  let cnpjY = y;
+  
+  if (company?.logo_url) {
+    try {
+      doc.addImage(company.logo_url, 15, y, 40, 15, undefined, 'FAST')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(15, 23, 42) // Slate-900
+      doc.text('COMPROVANTE DE ENTREGA', 195, y + 5, { align: 'right' })
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.setTextColor(15, 23, 42) // Slate-900
-  doc.text('COMPROVANTE DE ENTREGA', 195, y, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(71, 85, 105) // Slate-600
+      doc.text(`Pedido: ${client.order_number || 'Sem número'}`, 195, y + 10, { align: 'right' })
+      
+      cnpjY = y + 20
+    } catch (e) {
+      console.error('Error drawing logo on PDF', e)
+      // Fallback
+    }
+  }
 
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(71, 85, 105) // Slate-600
-  doc.text(`Pedido: ${client.order_number || 'Sem número'}`, 195, y + 5, { align: 'right' })
+  if (!company?.logo_url || cnpjY === y) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14) // large font for company name
+    doc.setTextColor(79, 70, 229) // Brand color (indigo-600)
+    const compNameText = company?.name || 'Empresa Emissora'
+    const compNameLines = doc.splitTextToSize(compNameText, 120)
+    doc.text(compNameLines, 15, y)
 
-  let cnpjY = y + (compNameLines.length * 5)
-  if (company?.cnpj) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(15, 23, 42) // Slate-900
+    doc.text('COMPROVANTE DE ENTREGA', 195, y, { align: 'right' })
+
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
+    doc.setFontSize(10)
     doc.setTextColor(71, 85, 105) // Slate-600
-    doc.text(`CNPJ: ${company.cnpj}`, 15, cnpjY)
-    cnpjY += 5
+    doc.text(`Pedido: ${client.order_number || 'Sem número'}`, 195, y + 5, { align: 'right' })
+
+    cnpjY = y + (compNameLines.length * 5)
+    if (company?.cnpj) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(71, 85, 105) // Slate-600
+      doc.text(`CNPJ: ${company.cnpj}`, 15, cnpjY)
+      cnpjY += 5
+    }
   }
 
   y = Math.max(cnpjY, y + 10)

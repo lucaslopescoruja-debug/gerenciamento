@@ -23,7 +23,7 @@ export default function NewOrder() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  const { user, company } = useAuth()
   
   const orderId = searchParams.get('id')
   const creatingRef = useRef(false)
@@ -1063,7 +1063,7 @@ export default function NewOrder() {
       
       {/* Hidden Invoice Template for PDF Generation */}
       <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '800px' }}>
-        <InvoicePrintTemplate ref={printRef} details={{
+        <InvoicePrintTemplate ref={printRef} company={company} details={{
           ...order,
           customer: customers.find((c: any) => c.id === order.customer_id) || order.customer,
           payment_condition: paymentConditions.find((pc: any) => pc.id === order.payment_condition_id) || order.payment_condition,

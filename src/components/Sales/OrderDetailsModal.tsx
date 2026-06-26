@@ -8,6 +8,7 @@ import { Printer, Download } from 'lucide-react'
 import jsPDF from 'jspdf'
 import { toPng } from 'html-to-image'
 import { toast } from '@/components/ui/toaster'
+import { useAuth } from '@/contexts/AuthContext'
 import { InvoicePrintTemplate } from './InvoicePrintTemplate'
 
 interface OrderDetailsModalProps {
@@ -21,6 +22,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
+  const { company } = useAuth()
 
   useEffect(() => {
     if (isOpen && orderId) {
@@ -126,7 +128,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
       {/* Hidden off-screen wrapper for HTML-to-Image AND Print */}
       <div className="absolute top-[-9999px] left-[-9999px] print:static print:top-auto print:left-auto print:block print:w-full print:h-auto overflow-visible">
         <div id="printable-order-details">
-          <InvoicePrintTemplate details={details} ref={printRef} />
+          <InvoicePrintTemplate details={details} company={company} ref={printRef} />
         </div>
       </div>
 

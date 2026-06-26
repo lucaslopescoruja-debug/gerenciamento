@@ -3,10 +3,11 @@ import { formatCurrency } from '@/utils/formatters'
 
 interface InvoicePrintTemplateProps {
   details: any
+  company?: any
 }
 
 export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrintTemplateProps>(
-  ({ details }, ref) => {
+  ({ details, company }, ref) => {
     if (!details) return null
 
     const computedSubtotal = details?.items?.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0) || 0
@@ -20,8 +21,14 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
         {/* CABEÇALHO */}
         <div className="flex justify-between items-start border border-black p-4 mb-2">
           <div className="w-1/3">
-            <h1 className="text-2xl font-bold text-orange-500 italic">Delicius</h1>
-            <h2 className="text-sm font-bold text-orange-400 tracking-widest">S O R V E T E S</h2>
+            {company?.logo_url ? (
+              <img src={company.logo_url} alt="Logo" className="max-h-16 object-contain" />
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-orange-500 italic">{company?.fantasy_name || company?.name || 'Delicius'}</h1>
+                <h2 className="text-sm font-bold text-orange-400 tracking-widest">S O R V E T E S</h2>
+              </>
+            )}
           </div>
           <div className="w-2/3 text-center">
             <h2 className="text-base font-bold">DELICIUS SORVETES</h2>
@@ -32,7 +39,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
         {/* DADOS DO CLIENTE */}
         <div className="border border-black mb-2 flex flex-col">
           <div className="border-b border-black p-1">
-            <strong>Representada:</strong> DELICIUS SORVETES / DELICIUS DISTRIBUIDORA DE ALIMENTOS LTDA
+            <strong>Representada:</strong> {company?.name || 'DELICIUS SORVETES / DELICIUS DISTRIBUIDORA DE ALIMENTOS LTDA'}
           </div>
           <div className="p-1 grid grid-cols-2 gap-x-2 gap-y-1">
             <div className="col-span-2 sm:col-span-1">

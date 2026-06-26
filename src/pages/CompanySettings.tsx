@@ -11,7 +11,7 @@ import { geocodeAddress } from '@/api/routing'
 import { maxiprodApi } from '@/api/maxiprod'
 import { backupApi } from '@/api/backup'
 import { saasApi } from '@/api/saas'
-import { Database, Download, Upload, Crown, Star, CheckCircle2, ArrowUpCircle } from 'lucide-react'
+import { Database, Download, Upload, Crown, Star, CheckCircle2, ArrowUpCircle, Image as ImageIcon } from 'lucide-react'
 
 export default function CompanySettings() {
   const queryClient = useQueryClient()
@@ -64,7 +64,8 @@ export default function CompanySettings() {
     garage_state: '',
     garage_lat: '',
     garage_lng: '',
-    additional_info: ''
+    additional_info: '',
+    logo_url: ''
   })
 
   useEffect(() => {
@@ -84,7 +85,8 @@ export default function CompanySettings() {
         garage_state: companyData.garage_state || '',
         garage_lat: companyData.garage_lat ? companyData.garage_lat.toString() : '',
         garage_lng: companyData.garage_lng ? companyData.garage_lng.toString() : '',
-        additional_info: companyData.additional_info || ''
+        additional_info: companyData.additional_info || '',
+        logo_url: companyData.logo_url || ''
       })
       setErpToken(companyData.maxiprod_api_token || '')
       setLastSync(companyData.maxiprod_last_sync || null)
@@ -248,6 +250,23 @@ export default function CompanySettings() {
     }
   }
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('A imagem da logo não pode ter mais de 2MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setFormData(prev => ({ ...prev, logo_url: base64 }))
+    }
+    reader.readAsDataURL(file)
+  }
+
   async function handleImportBackup(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !company?.id) return
@@ -379,6 +398,47 @@ export default function CompanySettings() {
                 onChange={e => setFormData({...formData, fantasy_name: e.target.value})} 
                 placeholder="Nome Fantasia"
               />
+            </div>
+            <div className="md:col-span-12 mt-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase mb-2 block">Logo da Empresa</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {formData.logo_url ? (
+                  <div className="relative group rounded-md border border-border p-2 bg-background flex items-center justify-center w-32 h-32 overflow-hidden">
+                    <img src={formData.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData(prev => ({...prev, logo_url: ''}))}
+                      className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed border-muted-foreground/50 p-4 bg-muted/20 flex flex-col items-center justify-center w-32 h-32 text-muted-foreground">
+                    <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                    <span className="text-xs text-center">Nenhuma logo</span>
+                  </div>
+                )}
+                
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    A logo aparecerá nos PDFs gerados pelo sistema, como pedidos de venda e comprovantes.
+                  </p>
+                  <div className="relative inline-block">
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={handleLogoUpload}
+                    />
+                    <Button type="button" variant="outline" className="w-full sm:w-auto">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Anexar Logo
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Máx. 2MB. Formatos JPG ou PNG.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
