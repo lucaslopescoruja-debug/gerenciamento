@@ -7,6 +7,7 @@ import { customersApi } from '@/api/customers'
 import { regionsApi } from '@/api/regions'
 import { priceTablesApi } from '@/api/priceTables'
 import { salesRepsApi } from '@/api/salesReps'
+import { supabase } from '@/lib/supabase'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
@@ -19,6 +20,7 @@ export default function CustomersList() {
   const isManager = canEdit
   const [isImporting, setIsImporting] = useState(false)
   const [isGeocoding, setIsGeocoding] = useState(false)
+  const [isFixing, setIsFixing] = useState(false)
   const [geocodeProgress, setGeocodeProgress] = useState({ current: 0, total: 0 })
   const [showFilters, setShowFilters] = useState(() => {
     return sessionStorage.getItem('customersShowFilters') === 'true'
@@ -202,21 +204,44 @@ export default function CustomersList() {
             const lng = parseFloat(data[0].lon)
             
             await customersApi.updateCustomer(c.id, { latitude: lat, longitude: lng })
+            setGeocodeProgress(prev => ({ ...prev, current: prev.current + 1 }))
             updatedCount++
           }
         }
-      } catch (err) {
-        console.error('Erro ao geocodificar:', err)
+      } catch (e) {
+        console.error('Erro na geocodificação:', e)
       }
       
-      setGeocodeProgress({ current: i + 1, total: customersToGeocode.length })
-      
+      // Delay to respect nominatim rate limits (1 req / sec)
       await new Promise(resolve => setTimeout(resolve, 1500))
     }
 
-    toast.success(`Geocodificação concluída! ${updatedCount} clientes atualizados.`)
-    queryClient.invalidateQueries({ queryKey: ['customers'] })
+    toast.success(`Processo concluído. ${updatedCount} endereços atualizados com sucesso.`)
     setIsGeocoding(false)
+    queryClient.invalidateQueries({ queryKey: ['customers'] })
+  }
+
+  const handleFixReps = async () => {
+    if (!window.confirm('Deseja corrigir os vendedores conforme a lista fornecida?')) return;
+    setIsFixing(true);
+    let count = 0;
+    try {
+      const { default: updates } = await import('@/customer_updates.json');
+      for (const item of updates) {
+        if (!item.rep) continue;
+        const { data: repData } = await supabase.from('sales_reps').select('id').eq('document', item.rep).single();
+        if (repData) {
+          const { error } = await supabase.from('customers').update({ sales_rep_id: repData.id }).eq('document', item.cnpj);
+          if (!error) count++;
+        }
+      }
+      toast.success(`Foram atualizados ${count} clientes!`);
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    } catch (err: any) {
+      toast.error('Erro ao atualizar: ' + err.message);
+    } finally {
+      setIsFixing(false);
+    }
   }
 
   const applyFilter = (value: string, filterValue: string, type: string, isDocument: boolean = false) => {
@@ -476,6 +501,15 @@ export default function CustomersList() {
               >
                 <MapPin className="mr-2 h-4 w-4" /> 
                 {isGeocoding ? `Atualizando (${geocodeProgress.current}/${geocodeProgress.total})...` : 'Atualizar Lat. Log.'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                className="w-full sm:w-auto shadow-sm" 
+                disabled={isFixing} 
+                onClick={handleFixReps}
+              >
+                {isFixing ? 'Corrigindo...' : 'Corrigir Vendedores'}
               </Button>
               <Link to="/cadastros/clientes/novo" className="w-full sm:w-auto">
                 <Button className="w-full sm:w-auto shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95">
