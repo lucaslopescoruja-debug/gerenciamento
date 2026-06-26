@@ -260,7 +260,7 @@ export default function EquipmentsList() {
         </div>
       </div>
 
-      <Card>
+      <Card className="hidden md:block">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -357,6 +357,71 @@ export default function EquipmentsList() {
           </Table>
         </div>
       </Card>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden flex flex-col gap-4">
+        {filtered.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground">
+            Nenhum equipamento encontrado.
+          </Card>
+        ) : (
+          filtered.map(eq => (
+            <Card key={eq.id} className="p-4 space-y-4 shadow-sm">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-base text-foreground truncate">{eq.type} {eq.model}</div>
+                  <div className="font-mono text-xs text-muted-foreground mt-0.5">S/N: {eq.patrimony}</div>
+                  {eq.size && <div className="text-xs text-muted-foreground mt-0.5">{eq.size}</div>}
+                </div>
+                <Badge variant="outline" className={`whitespace-nowrap shrink-0 ${
+                    eq.status === 'Disponível' ? 'bg-green-100 text-green-700 border-green-200' :
+                    eq.status === 'No Cliente' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                    'bg-amber-100 text-amber-700 border-amber-200'
+                  }`}>
+                    {eq.status}
+                </Badge>
+              </div>
+              
+              {eq.customer && (
+                <div className="text-sm bg-muted/30 p-2.5 rounded-md border border-border/50">
+                  <span className="font-semibold text-foreground/80 block mb-0.5">Cliente Atual</span>
+                  <div className="truncate text-foreground">
+                    {eq.customer.legal_name || eq.customer.nickname || eq.customer.fantasy_name}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-border/50">
+                <Button variant="outline" size="sm" onClick={() => openHistory(eq)} title="Histórico" className="flex-1">
+                  <History className="h-4 w-4 mr-2" />
+                  Histórico
+                </Button>
+                {canEdit ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(eq)} className="flex-1">
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(eq.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 flex-none px-3">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  eq.status !== 'No Cliente' && (
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                      setMaintenanceEquipment(eq)
+                      setIsMaintenanceModalOpen(true)
+                    }}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manutenção
+                    </Button>
+                  )
+                )}
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
 
       <InternalMaintenanceModal 
         isOpen={isMaintenanceModalOpen}
