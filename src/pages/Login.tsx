@@ -359,7 +359,7 @@ export default function Login() {
         </div>
 
         <div className="text-[#64748B] text-xs">
-          © 2024 Estoque Fácil. Todos os direitos reservados.
+          © 2025 LS Stokc. Todos os direitos reservados.
         </div>
       </div>
 
