@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit2, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, History, CheckCircle, Clock, Save, Copy, FileText, Settings, Settings2, ShieldCheck, MapPin, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, History, CheckCircle, Clock, Save, Copy, FileText, Settings, Settings2, ShieldCheck, MapPin, X, Box, AlertCircle, ClipboardList } from 'lucide-react'
 import type { Equipment } from '@/types/database'
 
 import { InternalMaintenanceModal } from './InternalMaintenanceModal'
