@@ -648,7 +648,7 @@ export default function EquipmentsList() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Nº Patrimônio / Série *</Label>
-                <Input value={patrimony} onChange={e => setPatrimony(e.target.value)} required />
+                <Input value={patrimony} onChange={e => setPatrimony(e.target.value.replace(/\D/g, ''))} required />
               </div>
               <div className="space-y-2">
                 <Label>Tipo *</Label>
