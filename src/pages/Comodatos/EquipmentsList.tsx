@@ -22,7 +22,40 @@ export default function EquipmentsList() {
   const hasAccess = hasPermission('can_manage_equipments')
   const canEdit = user?.role === 'admin' || user?.role === 'gestor' || isMaster
 
-  const [search, setSearch] = useState('')
+  const [showFilters, setShowFilters] = useState(() => {
+    return sessionStorage.getItem('equipmentsShowFilters') === 'true'
+  })
+
+  const defaultFilters = {
+    patrimonio: '',
+    patrimonioType: 'contains',
+    modelo: '',
+    modeloType: 'contains',
+    cliente: '',
+    clienteType: 'contains',
+    status: 'Todos',
+    voltagem: 'Todos'
+  }
+
+  type FiltersType = typeof defaultFilters
+
+  const [filters, setFilters] = useState<FiltersType>(() => {
+    const saved = sessionStorage.getItem('equipmentsFilters')
+    if (saved) {
+      try { 
+        return { ...defaultFilters, ...JSON.parse(saved) } 
+      } catch (e) {}
+    }
+    return defaultFilters
+  })
+
+  useEffect(() => {
+    sessionStorage.setItem('equipmentsFilters', JSON.stringify(filters))
+  }, [filters])
+
+  useEffect(() => {
+    sessionStorage.setItem('equipmentsShowFilters', showFilters.toString())
+  }, [showFilters])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editing, setEditing] = useState<Equipment | null>(null)
 
@@ -44,7 +77,6 @@ export default function EquipmentsList() {
   const [voltage, setVoltage] = useState<'127v' | '220v' | 'Bivolt' | ''>('')
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<'Teste' | 'Disponível' | 'Em Manutenção' | 'Danificado' | 'No Cliente' | 'Equipamento de Estoque'>('Disponível')
-  const [voltageFilter, setVoltageFilter] = useState<'Todos' | '127v' | '220v' | 'Bivolt'>('Todos')
   const [currentCustomerId, setCurrentCustomerId] = useState('')
   const [customerSearch, setCustomerSearch] = useState('')
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
@@ -187,12 +219,22 @@ export default function EquipmentsList() {
     return sortOrder === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />
   }
 
+  const applyFilter = (value: string, filterValue: string, type: string) => {
+    if (!filterValue) return true
+    const val = (value || '').toLowerCase()
+    const filterVal = filterValue.toLowerCase()
+    if (type === 'equals') return val === filterVal
+    if (type === 'startsWith') return val.startsWith(filterVal)
+    return val.includes(filterVal)
+  }
+
   const filtered = equipments
     .filter(eq => 
-      (eq.patrimony.toLowerCase().includes(search.toLowerCase()) ||
-      eq.model.toLowerCase().includes(search.toLowerCase()) ||
-      eq.customer?.fantasy_name?.toLowerCase().includes(search.toLowerCase())) &&
-      (voltageFilter === 'Todos' || eq.voltage === voltageFilter)
+      applyFilter(eq.patrimony, filters.patrimonio, filters.patrimonioType) &&
+      applyFilter(`${eq.type} ${eq.model}`, filters.modelo, filters.modeloType) &&
+      applyFilter(eq.customer?.fantasy_name || eq.customer?.legal_name || '', filters.cliente, filters.clienteType) &&
+      (filters.status === 'Todos' || eq.status === filters.status) &&
+      (filters.voltagem === 'Todos' || eq.voltage === filters.voltagem)
     )
     .sort((a, b) => {
       let aVal = ''
@@ -238,28 +280,131 @@ export default function EquipmentsList() {
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar por patrimônio, modelo ou cliente..." 
-            className="pl-10"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      {/* Painel de Filtros */}
+      <div className="glass-card relative z-50">
+        <div 
+          className="flex justify-between items-center p-4 border-b border-border/50 bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors rounded-t-xl"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Search className="h-4 w-4 text-primary" />
+            Filtros Avançados
+          </div>
+          {showFilters ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
         </div>
-        <div className="flex items-center gap-2">
-          <Label className="whitespace-nowrap hidden sm:block">Voltagem:</Label>
-          <select 
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:w-[120px]"
-            value={voltageFilter}
-            onChange={e => setVoltageFilter(e.target.value as any)}
-          >
-            <option value="Todos">Todos</option>
-            <option value="127v">127v</option>
-            <option value="220v">220v</option>
-            <option value="Bivolt">Bivolt</option>
-          </select>
+        
+        {showFilters && (
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
+            
+            {/* Patrimônio */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Patrimônio / Série</label>
+                <div className="flex gap-1">
+                  <select 
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={filters.patrimonioType}
+                    onChange={(e) => setFilters(f => ({ ...f, patrimonioType: e.target.value }))}
+                  >
+                    <option value="contains">Contém</option>
+                    <option value="startsWith">Inicia com</option>
+                    <option value="equals">Igual a</option>
+                  </select>
+                  <Input 
+                    className="flex-1 h-9" 
+                    value={filters.patrimonio}
+                    onChange={(e) => setFilters(f => ({ ...f, patrimonio: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Modelo */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Marca / Modelo</label>
+                <div className="flex gap-1">
+                  <select 
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={filters.modeloType}
+                    onChange={(e) => setFilters(f => ({ ...f, modeloType: e.target.value }))}
+                  >
+                    <option value="contains">Contém</option>
+                    <option value="startsWith">Inicia com</option>
+                    <option value="equals">Igual a</option>
+                  </select>
+                  <Input 
+                    className="flex-1 h-9" 
+                    value={filters.modelo}
+                    onChange={(e) => setFilters(f => ({ ...f, modelo: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cliente Atual */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Cliente Atual</label>
+                <div className="flex gap-1">
+                  <select 
+                    className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+                    value={filters.clienteType}
+                    onChange={(e) => setFilters(f => ({ ...f, clienteType: e.target.value }))}
+                  >
+                    <option value="contains">Contém</option>
+                    <option value="startsWith">Inicia com</option>
+                    <option value="equals">Igual a</option>
+                  </select>
+                  <Input 
+                    className="flex-1 h-9" 
+                    value={filters.cliente}
+                    onChange={(e) => setFilters(f => ({ ...f, cliente: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Status e Voltagem */}
+            <div className="flex gap-4">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Situação</label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={filters.status}
+                  onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="Teste">Em Teste</option>
+                  <option value="Disponível">Disponível no Galpão</option>
+                  <option value="Em Manutenção">Em Manutenção</option>
+                  <option value="Danificado">Danificado / Sucata</option>
+                  <option value="No Cliente">No Cliente</option>
+                  <option value="Equipamento de Estoque">Equipamento de Estoque</option>
+                </select>
+              </div>
+
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Voltagem</label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={filters.voltagem}
+                  onChange={(e) => setFilters(f => ({ ...f, voltagem: e.target.value }))}
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="127v">127v</option>
+                  <option value="220v">220v</option>
+                  <option value="Bivolt">Bivolt</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-muted/20 p-2 rounded-lg border border-border/50">
+        <div className="text-sm font-medium text-muted-foreground">
+          {filtered.length} equipamento(s) encontrado(s)
         </div>
         <div className="flex items-center gap-2">
           <Label className="whitespace-nowrap hidden sm:block">Ordenar:</Label>
