@@ -34,7 +34,8 @@ export default function EquipmentsList() {
     cliente: '',
     clienteType: 'contains',
     status: 'Todos',
-    voltagem: 'Todos'
+    voltagem: 'Todos',
+    tipo: 'Todos'
   }
 
   type FiltersType = typeof defaultFilters
@@ -234,7 +235,8 @@ export default function EquipmentsList() {
       applyFilter(`${eq.type} ${eq.model}`, filters.modelo, filters.modeloType) &&
       applyFilter(eq.customer?.fantasy_name || eq.customer?.legal_name || '', filters.cliente, filters.clienteType) &&
       (filters.status === 'Todos' || eq.status === filters.status) &&
-      (filters.voltagem === 'Todos' || eq.voltage === filters.voltagem)
+      (filters.voltagem === 'Todos' || eq.voltage === filters.voltagem) &&
+      (filters.tipo === 'Todos' || eq.type === filters.tipo)
     )
     .sort((a, b) => {
       let aVal = ''
@@ -395,6 +397,23 @@ export default function EquipmentsList() {
                   <option value="127v">127v</option>
                   <option value="220v">220v</option>
                   <option value="Bivolt">Bivolt</option>
+                </select>
+              </div>
+              
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground font-medium">Tipo</label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={filters.tipo}
+                  onChange={(e) => setFilters(f => ({ ...f, tipo: e.target.value }))}
+                >
+                  <option value="Todos">Todos</option>
+                  <option value="Freezer Vertical">Freezer Vertical</option>
+                  <option value="Freezer Horizontal">Freezer Horizontal</option>
+                  <option value="Lixeira">Lixeira</option>
+                  <option value="Windbanner">Windbanner</option>
+                  <option value="Expositor">Expositor</option>
+                  <option value="Outros">Outros</option>
                 </select>
               </div>
             </div>
