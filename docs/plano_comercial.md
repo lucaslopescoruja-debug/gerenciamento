@@ -28,9 +28,10 @@ Ao abordar potenciais clientes, a equipe de vendas deve focar nos seguintes dife
 
 1.  **Redução Imediata de Erros (Travas Duras)**: O conferente é fisicamente impedido pelo software de carregar produtos incorretos ou em quantidades superiores sem aprovação. Isso elimina custos de reentrega e devoluções.
 2.  **Economia Massiva de Hardware (UI Windows 2000)**: A maioria dos WMS de mercado exige smartphones caros ou coletores de última geração. O Coletor IA roda de forma extremamente fluida em coletores antigos (Honeywell, Zebra) graças ao **Modo Tradicional**, que economiza até 90% de processamento e bateria.
-3.  **Comprovante de Entrega Digital (POD)**: Assinatura na tela do smartphone, sem papelada, arquivado digitalmente e pesquisável instantaneamente no painel administrativo.
+3.  **Comprovante de Entrega Digital (POD) e Documentos Personalizados**: Assinatura na tela do smartphone, sem papelada, arquivado digitalmente. Geração de PDFs (Romaneios e Pedidos) totalmente customizados com a logomarca de cada cliente SaaS (White-labeling visual nativo).
 4.  **Liberações Remotas em Tempo Real**: Gestores tomam decisões de liberação de divergências da sala de controle ou de casa, destravando a operação dos motoristas/conferentes instantaneamente.
 5.  **Ajuste Inteligente de Estoque**: Ferramenta de inventário oficial que calcula divergências de sobras/faltas e atualiza a base do cliente com um único clique.
+6.  **Gestão Completa de Equipamentos (Comodatos)**: Módulo integrado para controle rigoroso de patrimônios cedidos em comodato (freezers, expositores). Permite gerar e gerir ordens de serviço (Entrega, Recolha, Manutenção) conectadas diretamente ao banco de clientes.
 
 ---
 

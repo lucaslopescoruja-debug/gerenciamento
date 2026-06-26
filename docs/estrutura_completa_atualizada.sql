@@ -1,4 +1,4 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- COLETOR IA (ESTOQUE FÃCIL) - SQL CONSOLIDADO DO BANCO DE DADOS
 -- ==============================================================================
 -- Este script cria todas as tabelas, relacionamentos, chaves estrangeiras,
@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS public.companies (
     active BOOLEAN DEFAULT true,
     billing_day INTEGER DEFAULT 10,
     monthly_fee DECIMAL(10, 2) DEFAULT 0.00,
+    logo_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
