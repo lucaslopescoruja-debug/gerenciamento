@@ -192,7 +192,7 @@ export function ExecutionModal({ isOpen, onClose, order }: ExecutionModalProps) 
     },
     onSuccess: () => {
       toast.success('OS concluída com sucesso!')
-      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['equipment_orders'] })
       queryClient.invalidateQueries({ queryKey: ['equipments'] })
       onClose()
     },
