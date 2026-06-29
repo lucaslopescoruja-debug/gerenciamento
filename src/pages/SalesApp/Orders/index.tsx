@@ -95,6 +95,12 @@ export default function SalesOrders() {
             </Button>
           </Link>
           
+          <Link to="/entregas/importar-grupo">
+            <Button variant="outline" className="text-emerald-600 border-emerald-500 hover:bg-emerald-50 font-bold px-4 h-10 shadow-sm rounded-md">
+              <Boxes className="h-4 w-4 mr-2" /> Importar Grupo
+            </Button>
+          </Link>
+          
           <Button variant="outline" className="text-primary border-border bg-background font-semibold px-4 h-10 rounded-md">
             <Printer className="h-4 w-4 mr-2" /> Imprimir pedidos
           </Button>
