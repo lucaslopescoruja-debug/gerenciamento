@@ -39,22 +39,16 @@ const navGroups: NavGroup[] = [
   {
     title: '',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' }
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'can_view_dashboard' },
+      { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_use_sales_app' }
     ]
   },
   {
     title: 'OPERAÇÕES',
     items: [
+      { label: 'Gestão de Pedidos', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_sales' },
       { label: 'Cargas', icon: Truck, path: '/cargas', permission: 'can_manage_loads' },
       { label: 'Entregas', icon: MapPin, path: '/entregas', permission: 'can_do_delivery' }
-    ]
-  },
-  {
-    title: 'VENDAS',
-    items: [
-      { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_use_sales_app' },
-      { label: 'Grupos de Pedidos', icon: Boxes, path: '/vendas/grupos', permission: 'can_manage_sales' },
-      { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_sales' }
     ]
   },
   {
@@ -78,6 +72,7 @@ const navGroups: NavGroup[] = [
     title: 'CRM & CADASTROS',
     items: [
       { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_customers' },
+      { label: 'Grupos de Pedidos', icon: Boxes, path: '/vendas/grupos', permission: 'can_manage_sales' },
       { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_reps' },
       { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_regions' }
     ]
