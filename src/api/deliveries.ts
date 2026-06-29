@@ -69,11 +69,13 @@ export const deliveriesApi = {
     return data
   },
 
-  async createDeliveryRoute(operationId: string, driverId?: string | null, helperId?: string | null, scheduledDate?: string) {
-        const payload: any = { operation_id: operationId}
+  async createDeliveryRoute(operationId: string | null, driverId?: string | null, helperId?: string | null, scheduledDate?: string, title?: string) {
+    const payload: any = {}
+    if (operationId) payload.operation_id = operationId
     if (driverId) payload.driver_id = driverId
     if (helperId) payload.helper_id = helperId
     if (scheduledDate) payload.scheduled_date = scheduledDate
+    if (title) payload.title = title
 
     const { data, error } = await supabase
       .from('delivery_routes')
@@ -231,6 +233,13 @@ export const deliveriesApi = {
 
       if (updates.status && data) {
         await this.recalculateRouteStatus(data.delivery_route_id)
+        
+        if ((data.status === 'delivered' || data.status === 'delivered_with_divergence') && data.order_number) {
+          const orderNumbers = String(data.order_number).split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+          if (orderNumbers.length > 0) {
+            await supabase.from('sales_orders').update({ status: 'Entregue' }).in('order_number', orderNumbers)
+          }
+        }
       }
 
       return data as DeliveryClient
@@ -387,6 +396,13 @@ export const deliveriesApi = {
 
     if (client) {
       await this.recalculateRouteStatus(client.delivery_route_id)
+      
+      if (client.order_number) {
+        const orderNumbers = String(client.order_number).split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+        if (orderNumbers.length > 0) {
+          await supabase.from('sales_orders').update({ status: 'Retornou' }).in('order_number', orderNumbers)
+        }
+      }
     }
 
     return client as DeliveryClient
@@ -468,6 +484,16 @@ export const deliveriesApi = {
       }
       throw error
     }
+  },
+
+  async createDeliveryItem(itemData: Partial<DeliveryItem>) {
+    const { data, error } = await supabase
+      .from('delivery_items')
+      .insert([{ ...itemData }])
+      .select()
+      .single()
+    if (error) throw error
+    return data as DeliveryItem
   },
 
   async updateDeliveryItem(itemId: string, updates: Partial<DeliveryItem>) {

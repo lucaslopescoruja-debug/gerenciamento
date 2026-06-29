@@ -55,11 +55,24 @@ export default function NewOrder() {
     }
   })
 
+  const { data: orderGroups = [] } = useQuery({
+    queryKey: ['order_groups'],
+    queryFn: async () => {
+      const { salesApi } = await import('@/api/sales')
+      return salesApi.getOrderGroups()
+    }
+  })
+
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [showOptionsTop, setShowOptionsTop] = useState(false)
   const [showOptionsBottom, setShowOptionsBottom] = useState(false)
   const [discountPercent, setDiscountPercent] = useState('')
   const [currentStep, setCurrentStep] = useState(1)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -131,6 +144,7 @@ export default function NewOrder() {
         sales_rep_id: salesRepId,
         price_table_id: null,
         payment_condition_id: null,
+        order_group_id: null,
         status: 'Rascunho',
         total_amount: 0,
         total_discount: 0,
@@ -259,6 +273,7 @@ export default function NewOrder() {
         sales_rep_id: order.sales_rep_id,
         price_table_id: order.price_table_id,
         payment_condition_id: order.payment_condition_id,
+        order_group_id: null,
         status: 'Rascunho',
         total_amount: order.total_amount,
         total_discount: order.total_discount,
@@ -359,12 +374,17 @@ export default function NewOrder() {
       return
     }
     
+    if (!order.order_group_id) {
+      toast.error('Selecione um Grupo de Pedidos')
+      return
+    }
+
     try {
       const calcSubtotal = order.items?.reduce((acc: number, item: any) => acc + (item.quantity * item.unit_price), 0) || 0;
       const calcNet = calcSubtotal - (order.total_discount || 0);
 
       await salesApi.updateSalesOrder(orderId, { 
-        status: 'Rascunho',
+        status: 'Pedido Criado',
         total_amount: calcSubtotal,
         net_amount: calcNet
       })
@@ -427,11 +447,8 @@ export default function NewOrder() {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={handleGenerateOrder} variant="outline" className="border-primary text-primary hover:bg-primary/5 font-bold h-9">
-            <Save className="h-4 w-4 mr-2" /> Salvar
-          </Button>
-          <Button onClick={handleFinishOrder} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9">
-            <Send className="h-4 w-4 mr-2" /> Concluir pedido
+          <Button onClick={handleGenerateOrder} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9">
+            <Save className="h-4 w-4 mr-2" /> Salvar Pedido
           </Button>
           <Button variant="outline" className="h-9 font-medium border-border" onClick={() => setIsDetailsModalOpen(true)}>
             <Eye className="h-4 w-4 mr-2" /> Visualizar
@@ -627,6 +644,19 @@ export default function NewOrder() {
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Cond. de pagamento</label>
               <div className="font-medium">{order.payment_condition?.name || 'A definir'}</div>
             </div>
+            <div>
+              <label className="text-xs text-muted-foreground font-medium mb-1 block">* Grupo de Pedidos</label>
+              <select 
+                className="w-full border border-border bg-background rounded-md h-9 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 border-emerald-500/50"
+                value={order.order_group_id || ''}
+                onChange={(e) => handleUpdate({ order_group_id: e.target.value || null })}
+              >
+                <option value="">Selecione um grupo...</option>
+                {orderGroups.filter((g: any) => g.active || g.id === order.order_group_id).map((group: any) => (
+                  <option key={group.id} value={group.id}>{group.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -655,7 +685,7 @@ export default function NewOrder() {
             <div className="flex-1">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">* Condição de pagamento</label>
               <select 
-                className="w-full border border-border bg-background rounded-md h-9 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="w-full border border-border bg-background rounded-md h-12 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-base"
                 value={order.payment_condition_id || ''}
                 onChange={(e) => handleUpdate({ payment_condition_id: e.target.value || null })}
               >
@@ -686,6 +716,19 @@ export default function NewOrder() {
                 }}
               />
             </div>
+          </div>
+          <div className="mt-4">
+            <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">* Grupo de Pedidos</label>
+            <select 
+              className="w-full border border-border bg-background rounded-md h-12 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-base border-emerald-500/50"
+              value={order.order_group_id || ''}
+              onChange={(e) => handleUpdate({ order_group_id: e.target.value || null })}
+            >
+              <option value="">Selecione um grupo...</option>
+              {orderGroups.filter((g: any) => g.active || g.id === order.order_group_id).map((group: any) => (
+                <option key={group.id} value={group.id}>{group.name}</option>
+              ))}
+            </select>
           </div>
         </section>
         </div>
@@ -982,12 +1025,8 @@ export default function NewOrder() {
               <ChevronDown className="h-5 w-5" />
             </Button>
 
-            <Button onClick={handleGenerateOrder} variant="outline" className="w-full h-12 text-base border-primary text-primary hover:bg-primary/5 font-bold rounded-xl mt-2">
-              <Save className="h-5 w-5 mr-2" /> Salvar Orçamento
-            </Button>
-
-            <Button onClick={handleFinishOrder} className="w-full h-12 text-base bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl">
-              <Send className="h-5 w-5 mr-2" /> Gerar Pedido
+            <Button onClick={handleGenerateOrder} className="w-full h-12 text-base bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl mt-2">
+              <Save className="h-5 w-5 mr-2" /> Salvar Pedido
             </Button>
 
             <Button onClick={handleDownloadPDF} disabled={isGeneratingPdf} variant="outline" className="w-full h-12 text-base border-border font-bold rounded-xl">

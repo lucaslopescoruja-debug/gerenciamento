@@ -90,12 +90,14 @@ import ClientConference from './pages/Deliveries/ClientConference'
 import RouteClientForm from './pages/Deliveries/RouteClientForm'
 import ReturnConference from './pages/Deliveries/ReturnConference'
 import SignaturePad from './pages/Deliveries/SignaturePad'
+import ImportGroup from './pages/Deliveries/ImportGroup'
 import ApprovalsPage from './pages/Approvals'
 import ClientHistory from './pages/ClientHistory'
 import SalesManagement from './pages/SalesManagement/index'
 import SalesOrders from './pages/SalesApp/Orders/index'
 import SalesCustomers from './pages/SalesApp/Customers/index'
 import NewOrder from '@/pages/SalesApp/NewOrder'
+import OrderGroups from '@/pages/SalesApp/OrderGroups/index'
 import { PlanGuard } from './components/PlanGuard'
 
 function App() {
@@ -136,6 +138,7 @@ function App() {
             {/* Deliveries Routes */}
             <Route path="/entregas" element={<PlanGuard requiredPlan="ouro"><DeliveriesList /></PlanGuard>} />
             <Route path="/entregas/nova" element={<PlanGuard requiredPlan="ouro"><CreateDelivery /></PlanGuard>} />
+            <Route path="/entregas/importar-grupo" element={<PlanGuard requiredPlan="ouro"><ImportGroup /></PlanGuard>} />
             <Route path="/entregas/:id" element={<PlanGuard requiredPlan="ouro"><RouteClients /></PlanGuard>} />
             <Route path="/entregas/:id/novo-cliente" element={<PlanGuard requiredPlan="ouro"><RouteClientForm /></PlanGuard>} />
             <Route path="/entregas/cliente/:clientId/editar" element={<PlanGuard requiredPlan="ouro"><RouteClientForm /></PlanGuard>} />
@@ -160,6 +163,7 @@ function App() {
             <Route path="/vendas" element={<Navigate to="/vendas/pedidos" replace />} />
             <Route path="/vendas/pedidos" element={<SalesOrders />} />
             <Route path="/vendas/clientes" element={<SalesCustomers />} />
+            <Route path="/vendas/grupos" element={<OrderGroups />} />
             
             {/* New Order Flow */}
             <Route path="/vendas/novo-pedido" element={<NewOrder />} />

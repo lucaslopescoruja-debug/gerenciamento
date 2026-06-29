@@ -53,6 +53,7 @@ const navGroups: NavGroup[] = [
     title: 'VENDAS',
     items: [
       { label: 'App Força de Vendas', icon: Briefcase, path: '/vendas', permission: 'can_use_sales_app' },
+      { label: 'Grupos de Pedidos', icon: Boxes, path: '/vendas/grupos', permission: 'can_manage_sales' },
       { label: 'Gestão de Vendas', icon: FileSignature, path: '/vendas/gestao', permission: 'can_manage_sales' }
     ]
   },

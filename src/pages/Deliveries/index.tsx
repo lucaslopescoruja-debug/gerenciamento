@@ -23,7 +23,8 @@ import {
   FileSignature,
   Bell,
   Pencil,
-  CalendarDays
+  CalendarDays,
+  Boxes
 } from 'lucide-react'
 import type { DeliveryRoute } from '@/types/database'
 
@@ -138,6 +139,11 @@ export default function DeliveriesList() {
             <Link to="/historico">
               <Button variant="outline" className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm">
                 <FileSignature className="h-5 w-5 sm:h-4 sm:w-4" /> Comprovantes
+              </Button>
+            </Link>
+            <Link to="/entregas/importar-grupo">
+              <Button variant="outline" className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm border-emerald-500 text-emerald-600 hover:bg-emerald-50">
+                <Boxes className="h-5 w-5 sm:h-4 sm:w-4" /> Importar Grupo
               </Button>
             </Link>
             <Link to="/entregas/nova">

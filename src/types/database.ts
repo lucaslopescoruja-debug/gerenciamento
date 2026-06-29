@@ -228,7 +228,8 @@ export interface SalesOrder {
   sales_rep_id: string | null
   price_table_id: string | null
   payment_condition_id: string | null
-  status: 'Rascunho' | 'Enviado' | 'Faturado' | 'Cancelado'
+  order_group_id: string | null
+  status: 'Rascunho' | 'Pedido Criado' | 'Enviado' | 'Faturado' | 'Cancelado' | 'Retornou' | 'Entregue'
   total_amount: number
   total_discount: number
   net_amount: number
@@ -242,6 +243,17 @@ export interface SalesOrder {
   payment_condition?: PaymentCondition
   price_table?: PriceTable
   items?: SalesOrderItem[]
+  order_group?: OrderGroup
+}
+
+export interface OrderGroup {
+  id: string
+  company_id: string
+  name: string
+  description: string | null
+  active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface SalesOrderItem {

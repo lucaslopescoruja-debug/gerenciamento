@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { salesApi } from '@/api/sales'
 import { formatCurrency, formatDate } from '@/utils/formatters'
-import { Search, Plus, Printer, Settings, FileText, Store, Calendar, DollarSign, MessageSquare, FileDigit, Trash2 } from 'lucide-react'
+import { Search, Plus, Printer, Settings, FileText, Store, Calendar, DollarSign, MessageSquare, FileDigit, Trash2, Boxes } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
@@ -12,9 +12,15 @@ import { OrderDetailsModal } from '@/components/Sales/OrderDetailsModal'
 export default function SalesOrders() {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const { user, isMaster } = useAuth()
+  const { user, company, isMaster } = useAuth()
+
+  const { data: orderGroups = [] } = useQuery({
+    queryKey: ['order_groups'],
+    queryFn: salesApi.getOrderGroups,
+  })
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['sales_orders'],
@@ -31,11 +37,16 @@ export default function SalesOrders() {
       }
     }
 
+    if (selectedGroupId && o.order_group_id !== selectedGroupId) {
+      return false
+    }
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       return o.id.toLowerCase().includes(term) ||
              o.customer?.fantasy_name?.toLowerCase().includes(term) ||
-             o.customer?.legal_name?.toLowerCase().includes(term)
+             o.customer?.legal_name?.toLowerCase().includes(term) ||
+             o.order_number?.toString().includes(term)
     }
     return true
   })
@@ -46,10 +57,24 @@ export default function SalesOrders() {
   }
 
   const getStatusBadge = (status: string) => {
-    if (status === 'Rascunho') {
-      return <span className="bg-yellow-200 text-yellow-800 text-[11px] font-bold px-3 py-1 rounded-full">Em orçamento</span>
+    switch (status) {
+      case 'Rascunho':
+        return <span className="bg-yellow-200 text-yellow-800 text-[11px] font-bold px-3 py-1 rounded-full">Orçamento</span>
+      case 'Pedido Criado':
+        return <span className="bg-blue-100 text-blue-800 text-[11px] font-bold px-3 py-1 rounded-full">Pedido Criado</span>
+      case 'Faturado':
+        return <span className="bg-purple-100 text-purple-800 text-[11px] font-bold px-3 py-1 rounded-full">Faturado</span>
+      case 'Enviado':
+        return <span className="bg-emerald-500 text-white text-[11px] font-bold px-3 py-1 rounded-full">Enviado</span>
+      case 'Retornou':
+        return <span className="bg-orange-100 text-orange-800 text-[11px] font-bold px-3 py-1 rounded-full">Retornou</span>
+      case 'Entregue':
+        return <span className="bg-green-100 text-green-800 text-[11px] font-bold px-3 py-1 rounded-full">Entregue</span>
+      case 'Cancelado':
+        return <span className="bg-red-100 text-red-800 text-[11px] font-bold px-3 py-1 rounded-full">Cancelado</span>
+      default:
+        return <span className="bg-gray-100 text-gray-800 text-[11px] font-bold px-3 py-1 rounded-full">{status}</span>
     }
-    return <span className="bg-emerald-500 text-white text-[11px] font-bold px-3 py-1 rounded-full">Enviado</span>
   }
 
   return (
@@ -77,14 +102,28 @@ export default function SalesOrders() {
       </div>
 
       <div className="glass-card p-4">
-        <div className="relative max-w-md">
-          <Input 
-            placeholder="Pedido, cliente ou representada..." 
-            className="pl-10 h-10 bg-background/50 border-border/50 focus:bg-background transition-colors"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Input 
+              placeholder="Pedido, cliente ou representante..." 
+              className="pl-10 h-10 bg-background/50 border-border/50 focus:bg-background transition-colors"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="w-full md:w-64 shrink-0">
+            <select
+              className="w-full h-10 rounded-md border border-input bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              value={selectedGroupId}
+              onChange={e => setSelectedGroupId(e.target.value)}
+            >
+              <option value="">Todos os Grupos</option>
+              {orderGroups.map((g: any) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -98,9 +137,11 @@ export default function SalesOrders() {
             <div key={dateLabel} className="mb-12">
               <h3 className="text-muted-foreground text-xs font-semibold tracking-wider mb-3">{dateLabel}</h3>
               <div className="space-y-3">
-                {orders.map(order => (
+                {orders.map(order => {
+                  const isEditable = !['Faturado', 'Retornou', 'Entregue', 'Cancelado'].includes(order.status)
+                  return (
                   <div key={order.id} onClick={() => {
-                    if (order.status === 'Rascunho') {
+                    if (isEditable) {
                       navigate(`/vendas/novo-pedido?id=${order.id}`)
                     } else {
                       setSelectedOrderId(order.id)
@@ -125,6 +166,12 @@ export default function SalesOrders() {
                           <div className="flex items-center gap-2 mt-0.5">
                             <Calendar className="h-3.5 w-3.5 text-muted-foreground/60" /> {order.payment_condition?.name || 'A VISTA'}
                           </div>
+                          {order.order_group_id && (
+                            <div className="flex items-center gap-2 mt-0.5 text-blue-600/80">
+                              <Boxes className="h-3.5 w-3.5" /> 
+                              {orderGroups.find((g: any) => g.id === order.order_group_id)?.name || 'Grupo'}
+                            </div>
+                          )}
                         </div>
                       )}
                       
@@ -145,9 +192,15 @@ export default function SalesOrders() {
                     {/* Right Side */}
                     <div className="flex flex-col justify-between items-end h-full min-h-[80px]">
                       {getStatusBadge(order.status)}
+                      {!isEditable && (
+                        <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-muted-foreground/30 inline-block"></span> Somente Leitura
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))

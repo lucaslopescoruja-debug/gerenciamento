@@ -258,5 +258,51 @@ export const salesApi = {
     }
 
     return true
+  },
+
+  // ============================================
+  // Order Groups
+  // ============================================
+  async getOrderGroups() {
+    const { data, error } = await supabase
+      .from('order_groups')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data
+  },
+
+  async createOrderGroup(group: any) {
+    const { data, error } = await supabase
+      .from('order_groups')
+      .insert(group)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async updateOrderGroup(id: string, group: any) {
+    const { data, error } = await supabase
+      .from('order_groups')
+      .update(group)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async deleteOrderGroup(id: string) {
+    const { error } = await supabase
+      .from('order_groups')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return true
   }
 }
