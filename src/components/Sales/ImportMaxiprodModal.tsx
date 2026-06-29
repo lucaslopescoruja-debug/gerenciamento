@@ -146,11 +146,9 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       .from('customers')
       .select('id, document, fantasy_name, price_table_id, sales_rep_id, company_id')
 
-    const codes = [...new Set(hydratedOrders.flatMap(o => o.items.map(i => i.code)).filter(Boolean))]
     const { data: products } = await supabase
       .from('products')
       .select('id, code, external_code')
-      .in('code', codes)
 
     const priceTableIds = [...new Set(customers?.map((c: any) => c.price_table_id).filter(Boolean) || [])]
     const productIds = products?.map((p: any) => p.id) || []
@@ -161,7 +159,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         .from('price_table_items')
         .select('price_table_id, product_id, unit_price')
         .in('price_table_id', priceTableIds)
-        .in('product_id', productIds)
+      
       if (pti) priceTableItems = pti
     }
 
@@ -174,7 +172,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
 
       if (!customer) {
         order.isValid = false
-        order.error = 'Cliente não encontrado pelo CNPJ.'
+        order.error = 'Cliente não encontrado.'
         continue
       }
       
@@ -185,7 +183,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
 
       if (!order.priceTableId) {
         order.isValid = false
-        order.error = 'Cliente sem tabela de preços.'
+        order.error = 'Cliente sem tab. de preços.'
         continue
       }
 
@@ -196,11 +194,17 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       }
 
       for (const item of order.items) {
-        const product = products?.find((p: any) => p.code === item.code || p.external_code === item.code)
+        const c1 = String(item.code).trim().replace(/^0+/, '')
+        const product = products?.find((p: any) => {
+          const pc = String(p.code || '').trim().replace(/^0+/, '')
+          const pec = String(p.external_code || '').trim().replace(/^0+/, '')
+          return pc === c1 || pec === c1 || String(p.code).trim() === String(item.code).trim()
+        })
+
         if (!product) {
           item.isValid = false
           order.isValid = false
-          order.error = `Produto ${item.code} não encontrado.`
+          order.error = `Prod ${item.code} não enc.`
           continue
         }
         item.productId = product.id
@@ -213,7 +217,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         if (!priceItem) {
           item.isValid = false
           order.isValid = false
-          order.error = `Produto ${item.code} sem preço na tabela do cliente.`
+          order.error = `Prod ${item.code} s/ preço.`
           continue
         }
 
@@ -288,7 +292,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Importar Pedidos (Maxiprod)</DialogTitle>
           <DialogDescription>
@@ -353,9 +357,12 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
                               <CheckCircle className="h-4 w-4 mr-1" /> OK
                             </span>
                           ) : (
-                            <span className="flex items-center text-red-600 text-sm font-medium" title={order.error}>
-                              <AlertCircle className="h-4 w-4 mr-1" /> Inválido
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="flex items-center text-red-600 text-sm font-medium">
+                                <AlertCircle className="h-4 w-4 mr-1" /> Inválido
+                              </span>
+                              <span className="text-xs text-red-500 mt-1">{order.error}</span>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
