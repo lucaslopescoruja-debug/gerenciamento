@@ -84,7 +84,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         if (!currentOrder) continue
 
         if (row[1] === 'CNPJ:') {
-          currentOrder.customerCnpj = String(row[2] || '').replace(/[^\d]/g, '')
+          currentOrder.customerCnpj = String(row[2] || '').trim()
           continue
         }
 
@@ -141,11 +141,10 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
   const validateAndHydrateOrders = async (orders: ParsedOrder[]) => {
     const hydratedOrders = [...orders]
 
-    const cnpjs = [...new Set(hydratedOrders.map(o => o.customerCnpj).filter(Boolean))]
+    // Fetch all customers for safe CNPJ matching
     const { data: customers } = await supabase
       .from('customers')
       .select('id, document, fantasy_name, price_table_id, sales_rep_id, company_id')
-      .in('document', cnpjs)
 
     const codes = [...new Set(hydratedOrders.flatMap(o => o.items.map(i => i.code)).filter(Boolean))]
     const { data: products } = await supabase
@@ -170,7 +169,9 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       order.isValid = true
       order.error = ''
 
-      const customer = customers?.find((c: any) => c.document === order.customerCnpj)
+      const cleanOrderCnpj = order.customerCnpj.replace(/[^\d]/g, '')
+      const customer = customers?.find((c: any) => (c.document || '').replace(/[^\d]/g, '') === cleanOrderCnpj)
+
       if (!customer) {
         order.isValid = false
         order.error = 'Cliente não encontrado pelo CNPJ.'
