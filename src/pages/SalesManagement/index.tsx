@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesApi } from '@/api/sales'
 import { Card, CardContent } from '@/components/ui/card'
@@ -37,6 +37,7 @@ export default function SalesManagement() {
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['sales_orders'],
@@ -153,10 +154,17 @@ export default function SalesManagement() {
         <div>
           <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
             <FileText className="h-7 w-7 text-primary" />
-            GestÃ£o de Pedidos
+            GestÃƒÂ£o de Pedidos
           </h1>
           <p className="text-muted-foreground mt-1">Acompanhe e fature os pedidos enviados pelos vendedores.</p>
         </div>
+        <Button 
+          variant="outline" 
+          className="text-blue-600 border-blue-500 hover:bg-blue-50 font-bold px-4 h-10 shadow-sm rounded-md"
+          onClick={() => setIsImportModalOpen(true)}
+        >
+          <Upload className="h-4 w-4 mr-2" /> Importar Planilha
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -198,12 +206,12 @@ export default function SalesManagement() {
                   Vendedor {renderSortIcon('sales_rep')}
                 </th>
                 <th className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('net_amount')}>
-                  Valor LÃ­quido {renderSortIcon('net_amount')}
+                  Valor LÃƒÂ­quido {renderSortIcon('net_amount')}
                 </th>
                 <th className="px-4 py-3 font-medium text-center cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('status')}>
                   Status {renderSortIcon('status')}
                 </th>
-                <th className="px-4 py-3 font-medium text-right">AÃ§Ãµes</th>
+                <th className="px-4 py-3 font-medium text-right">AÃƒÂ§ÃƒÂµes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -264,7 +272,7 @@ export default function SalesManagement() {
                             salesApi.deleteSalesOrder(order.id)
                               .then(() => {
                                 queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
-                                toast.success('Pedido excluÃ­do com sucesso')
+                                toast.success('Pedido excluÃƒÂ­do com sucesso')
                               })
                               .catch((e: any) => toast.error('Erro ao excluir pedido: ' + e.message))
                           }
@@ -320,7 +328,7 @@ export default function SalesManagement() {
                     <TableRow>
                       <TableHead>Produto</TableHead>
                       <TableHead className="text-right w-24">Qtd</TableHead>
-                      <TableHead className="text-right w-32">PreÃ§o Unit.</TableHead>
+                      <TableHead className="text-right w-32">PreÃƒÂ§o Unit.</TableHead>
                       <TableHead className="text-right w-24">Desc. %</TableHead>
                       <TableHead className="text-right w-32">Total</TableHead>
                     </TableRow>
@@ -330,7 +338,7 @@ export default function SalesManagement() {
                       <TableRow key={item.id}>
                         <TableCell>
                           <div className="font-medium text-sm">{item.product?.description}</div>
-                          <div className="text-xs text-muted-foreground">CÃ³d: {item.product?.code}</div>
+                          <div className="text-xs text-muted-foreground">CÃƒÂ³d: {item.product?.code}</div>
                         </TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
@@ -354,14 +362,14 @@ export default function SalesManagement() {
                   <span>- {formatCurrency(selectedOrderDetails.total_discount || 0)}</span>
                 </div>
                 <div className="flex justify-between w-full sm:w-64 text-base font-bold pt-2 border-t border-border">
-                  <span>Total LÃ­quido:</span>
+                  <span>Total LÃƒÂ­quido:</span>
                   <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(selectedOrderDetails.net_amount || 0)}</span>
                 </div>
               </div>
 
               {selectedOrderDetails.notes && (
                 <div>
-                  <p className="text-sm font-medium mb-1">ObservaÃ§Ãµes:</p>
+                  <p className="text-sm font-medium mb-1">ObservaÃƒÂ§ÃƒÂµes:</p>
                   <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border border-border/50">
                     {selectedOrderDetails.notes}
                   </p>
@@ -374,7 +382,9 @@ export default function SalesManagement() {
           </div>
         </DialogContent>
       </Dialog>
+      <ImportOrdersModal isOpen={isImportModalOpen} onOpenChange={setIsImportModalOpen} />
     </div>
   )
 }
+
 
