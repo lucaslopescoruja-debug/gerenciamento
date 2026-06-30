@@ -260,7 +260,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         const newGroup = await salesApi.createOrderGroup({
           name: newGroupName.trim(),
           company_id: companyId,
-          status: 'aberto'
+          active: true
         })
         finalGroupId = newGroup.id
       }
