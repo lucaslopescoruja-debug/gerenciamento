@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/components/ui/toaster'
 import { Upload, AlertCircle, CheckCircle } from 'lucide-react'
 import * as XLSX from 'xlsx'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 import { salesApi } from '@/api/sales'
 
 interface ImportMaxiprodModalProps {
@@ -142,24 +142,28 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
     const hydratedOrders = [...orders]
 
     // Fetch all customers for safe CNPJ matching
-    const { data: customers } = await supabase
+    const customersQuery = supabase
       .from('customers')
       .select('id, document, fantasy_name, price_table_id, sales_rep_id, company_id')
+    
+    const customers = await fetchAllRows(customersQuery)
 
-    const { data: products } = await supabase
+    const productsQuery = supabase
       .from('products')
       .select('id, code, external_code')
+    
+    const products = await fetchAllRows(productsQuery)
 
     const priceTableIds = [...new Set(customers?.map((c: any) => c.price_table_id).filter(Boolean) || [])]
-    const productIds = products?.map((p: any) => p.id) || []
     
     let priceTableItems: any[] = []
-    if (priceTableIds.length > 0 && productIds.length > 0) {
-      const { data: pti } = await supabase
+    if (priceTableIds.length > 0) {
+      const ptiQuery = supabase
         .from('price_table_items')
         .select('price_table_id, product_id, unit_price')
         .in('price_table_id', priceTableIds)
       
+      const pti = await fetchAllRows(ptiQuery)
       if (pti) priceTableItems = pti
     }
 
