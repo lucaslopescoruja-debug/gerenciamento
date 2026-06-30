@@ -263,7 +263,7 @@ export function ImportOrdersModal({ isOpen, onOpenChange }: ImportOrdersModalPro
             price_table_id: null,
             payment_condition_id: null,
             order_group_id: selectedGroupId || null,
-            status: 'Pedido Criado' as any,
+            status: 'Enviado' as any,
             total_amount: total_amount,
             total_discount: 0,
             net_amount: total_amount,
