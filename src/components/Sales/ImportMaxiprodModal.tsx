@@ -287,7 +287,8 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
           delivery_date: null,
           price_table_id: order.priceTableId || null,
           payment_condition_id: null,
-          order_group_id: finalGroupId
+          order_group_id: finalGroupId,
+          ...(order.orderNumber ? { order_number: parseInt(order.orderNumber, 10) } : {})
         } as any)
 
         if (!createdOrder) throw new Error('Erro ao criar pedido no banco.')

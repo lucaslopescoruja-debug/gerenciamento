@@ -268,7 +268,8 @@ export function ImportOrdersModal({ isOpen, onOpenChange }: ImportOrdersModalPro
             total_discount: 0,
             net_amount: total_amount,
             notes: `Pedido importado: ${client.name}\n${client.notes || ''}`.trim(),
-            delivery_date: null
+            delivery_date: null,
+            ...(client.order_number ? { order_number: parseInt(client.order_number, 10) } : {})
           }
 
           const createdOrder = await salesApi.createSalesOrder(order)
