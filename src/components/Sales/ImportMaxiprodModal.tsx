@@ -212,12 +212,21 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       }
 
       for (const item of order.items) {
-        const c1 = String(item.code).trim().replace(/^0+/, '')
-        const product = products?.find((p: any) => {
-          const pc = String(p.code || '').trim().replace(/^0+/, '')
-          const pec = String(p.external_code || '').trim().replace(/^0+/, '')
-          return pc === c1 || pec === c1 || String(p.code).trim() === String(item.code).trim()
-        })
+        const itemCodeStr = String(item.code).trim()
+        
+        let product = products?.find((p: any) => 
+          String(p.code || '').trim() === itemCodeStr || 
+          String(p.external_code || '').trim() === itemCodeStr
+        )
+
+        if (!product) {
+          const c1 = itemCodeStr.replace(/^0+/, '')
+          product = products?.find((p: any) => {
+            const pc = String(p.code || '').trim().replace(/^0+/, '')
+            const pec = String(p.external_code || '').trim().replace(/^0+/, '')
+            return pc === c1 || pec === c1
+          })
+        }
 
         if (!product) {
           item.isValid = false
