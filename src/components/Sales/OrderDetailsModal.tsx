@@ -231,7 +231,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
                 <div>
                   <p className="text-sm font-medium mb-1">Observações:</p>
                   <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border border-border/50">
-                    {details.notes}
+                    {details.notes.replace(/\s*\[Origem: Importação Planilha\]\s*/g, '').trim()}
                   </p>
                 </div>
               )}

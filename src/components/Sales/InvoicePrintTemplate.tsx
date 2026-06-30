@@ -111,7 +111,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
         <div className="flex justify-between items-start gap-4">
           <div className="w-1/2 border border-black p-2 min-h-[80px]">
             <strong>Observações:</strong>
-            <p className="mt-1 whitespace-pre-wrap">{details.notes || 'Nenhuma observação.'}</p>
+            <p className="mt-1 whitespace-pre-wrap">{details.notes?.replace(/\s*\[Origem: Importação Planilha\]\s*/g, '').trim() || 'Nenhuma observação.'}</p>
             <p className="mt-2 text-[10px] text-gray-600">Emissão: {new Date().toLocaleString('pt-BR')}</p>
           </div>
           <div className="w-1/3">
