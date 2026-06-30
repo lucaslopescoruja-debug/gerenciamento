@@ -371,7 +371,11 @@ export default function AppLayout() {
                   {group.items.map((item) => {
                     if (item.masterOnly && !isMaster) return null;
                     if (!hasPermission(item.permission as any)) return null;
-                    const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                    const isActive = location.pathname === item.path || (
+                      item.path !== '/dashboard' && 
+                      location.pathname.startsWith(item.path) &&
+                      !(item.path === '/vendas' && location.pathname.startsWith('/vendas/gestao'))
+                    );
                     const isLocked = isFeatureLocked(item.path);
 
                     return (
