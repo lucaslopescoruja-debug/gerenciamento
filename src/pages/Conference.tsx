@@ -17,6 +17,7 @@ import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check
 import { useAuth } from '@/contexts/AuthContext'
 import * as XLSX from 'xlsx'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
+import { ShortageResolverModal, Shortage } from '@/components/ShortageResolverModal'
 
 export default function Conference() {
   const { id } = useParams()
@@ -36,6 +37,9 @@ export default function Conference() {
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [isLoadedListOpen, setIsLoadedListOpen] = useState(!isRetorno)
   const [isReturnListOpen, setIsReturnListOpen] = useState(true)
+  
+  const [isShortageResolverOpen, setIsShortageResolverOpen] = useState(false)
+  const [pendingShortages, setPendingShortages] = useState<Shortage[]>([])
   
   // Return state: maps product_code to quantity returned
   const [returnedItems, setReturnedItems] = useState<Record<string, number>>({})
@@ -635,8 +639,22 @@ export default function Conference() {
   const handleDispatch = () => {
     const missing = items.filter(i => i.quantity_scanned < i.quantity_expected)
     if (missing.length > 0) {
-      const ok = window.confirm(`Faltam ${missing.length} item(ns). Despachar rota mesmo assim?`)
-      if (!ok) return
+      if (op?.type === 'LOAD') {
+        const shortages = missing.map(i => ({
+          product_id: i.product_id || '',
+          product_code: i.product_code || '',
+          description: i.description || '',
+          quantity_expected: i.quantity_expected,
+          quantity_scanned: i.quantity_scanned,
+          quantity_missing: i.quantity_expected - i.quantity_scanned
+        }))
+        setPendingShortages(shortages)
+        setIsShortageResolverOpen(true)
+        return
+      } else {
+        const ok = window.confirm(`Faltam ${missing.length} item(ns). Despachar rota mesmo assim?`)
+        if (!ok) return
+      }
     }
     dispatchMutation.mutate()
   }
@@ -1425,6 +1443,20 @@ export default function Conference() {
           }
         }}
       />
+
+      {op && (
+        <ShortageResolverModal
+          isOpen={isShortageResolverOpen}
+          onClose={() => setIsShortageResolverOpen(false)}
+          onResolved={() => {
+            setIsShortageResolverOpen(false)
+            // Once resolved, continue with the dispatch process
+            dispatchMutation.mutate()
+          }}
+          shortages={pendingShortages}
+          operationId={op.id}
+        />
+      )}
     </div>
   )
 }

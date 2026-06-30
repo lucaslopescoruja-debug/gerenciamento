@@ -7,6 +7,7 @@ import { Boxes } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { salesApi } from '@/api/sales'
 import { operationsApi } from '@/api/operations'
+import { deliveriesApi } from '@/api/deliveries'
 import { useNavigate } from 'react-router-dom'
 
 interface ImportLoadModalProps {
@@ -85,6 +86,7 @@ export function ImportLoadModal({ isOpen, onOpenChange }: ImportLoadModalProps) 
 
       const groupName = orderGroups.find(g => g.id === selectedGroupId)?.name || ''
 
+      // Create the Load Operation first
       const newOp: any = {
         company_id: company!.id,
         type: 'LOAD',
@@ -96,8 +98,74 @@ export function ImportLoadModal({ isOpen, onOpenChange }: ImportLoadModalProps) 
 
       const op = await operationsApi.createOperation(newOp, aggregatedItems)
 
-      toast.success('Carga criada com sucesso!')
+      // Automatically generate the Delivery Route and Clients linked to the Load
+      const route = await deliveriesApi.createDeliveryRoute(
+        op.id, // Linked to the Load operation!
+        null,
+        null,
+        undefined,
+        `Rota: ${groupName}`
+      )
+
+      // Group orders by customer for the route
+      const ordersByCustomer = groupOrders.reduce((acc: any, order: any) => {
+        const custId = order.customer_id
+        if (!custId) return acc
+        if (!acc[custId]) {
+          acc[custId] = { customer: order.customer, orders: [], items: [] }
+        }
+        acc[custId].orders.push(order)
+        const orderItems = allItems?.filter(i => i.sales_order_id === order.id) || []
+        acc[custId].items.push(...orderItems)
+        return acc
+      }, {})
+
+      // Create DeliveryClient and DeliveryItems for each customer
+      for (const custId of Object.keys(ordersByCustomer)) {
+        const { customer, orders: custOrders, items } = ordersByCustomer[custId]
+        const orderNumbers = custOrders.map((o: any) => o.order_number).join(', ')
+        
+        const client = await deliveriesApi.createDeliveryClient({
+          company_id: company!.id,
+          delivery_route_id: route.id,
+          customer_id: custId,
+          name: customer.fantasy_name || customer.legal_name || 'Desconhecido',
+          order_number: orderNumbers,
+          address: `${customer.address || ''}, ${customer.number || ''} - ${customer.city || ''}/${customer.state || ''}`,
+          phone: customer.phone1,
+          latitude: customer.latitude,
+          longitude: customer.longitude,
+          status: 'pending'
+        })
+
+        // Aggregate items by product_id for this specific customer
+        const clientItemsMap = items.reduce((acc: any, item: any) => {
+          if (!acc[item.product_id]) {
+            acc[item.product_id] = { ...item }
+          } else {
+            acc[item.product_id].quantity += item.quantity
+          }
+          return acc
+        }, {})
+
+        for (const prodId of Object.keys(clientItemsMap)) {
+          const item = clientItemsMap[prodId]
+          await deliveriesApi.createDeliveryItem({
+            company_id: company!.id,
+            delivery_client_id: client.id,
+            product_id: item.product_id,
+            product_code: item.product?.code || item.product_code || '',
+            description: item.product?.description || 'Produto',
+            quantity_expected: item.quantity,
+            quantity_scanned: 0,
+            status: 'pending'
+          })
+        }
+      }
+
+      toast.success('Carga e Rota de Entrega criadas com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['operations'] })
+      queryClient.invalidateQueries({ queryKey: ['delivery_routes'] })
       onOpenChange(false)
       navigate(`/conferencia/${op.id}`)
 
