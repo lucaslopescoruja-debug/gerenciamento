@@ -282,25 +282,39 @@ export default function AccessControl() {
                 <Label className="mb-3 block font-bold text-primary">Permissões Específicas (Baseadas no Menu Lateral)</Label>
                 
                 <div className="space-y-4">
-                  {/* Visão Geral */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={perms.can_view_dashboard} onChange={() => togglePerm('can_view_dashboard')} className="w-4 h-4 accent-primary" />
-                    <span className="text-sm font-semibold">Dashboard (Visão Geral)</span>
-                  </label>
+                  {/* Menu Principal */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_view_dashboard} onChange={() => togglePerm('can_view_dashboard')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm font-semibold">Dashboard</span>
+                    </label>
+                    {company?.plan === 'platina' && (
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_use_sales_app} onChange={() => togglePerm('can_use_sales_app')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm font-semibold">App Força de Vendas</span>
+                      </label>
+                    )}
+                  </div>
 
                   {/* Operações */}
                   <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Operações Logísticas</Label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Operações</Label>
+                    {company?.plan === 'platina' && (
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={perms.can_manage_sales} onChange={() => togglePerm('can_manage_sales')} className="w-4 h-4 accent-primary" />
+                        <span className="text-sm">Gestão de Pedidos (e Grupos)</span>
+                      </label>
+                    )}
                     {(!company?.plan || company.plan !== 'bronze') && (
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={perms.can_manage_loads} onChange={() => togglePerm('can_manage_loads')} className="w-4 h-4 accent-primary" />
-                        <span className="text-sm">Gerenciar Cargas/Rotas</span>
+                        <span className="text-sm">Cargas</span>
                       </label>
                     )}
                     {(company?.plan === 'ouro' || company?.plan === 'platina') && (
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={perms.can_do_delivery} onChange={() => togglePerm('can_do_delivery')} className="w-4 h-4 accent-primary" />
-                        <span className="text-sm">Realizar Entregas (App Mobile)</span>
+                        <span className="text-sm">Entregas</span>
                       </label>
                     )}
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -309,27 +323,12 @@ export default function AccessControl() {
                     </label>
                   </div>
 
-                  {/* Vendas */}
-                  {company?.plan === 'platina' && (
-                    <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                      <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Força de Vendas</Label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={perms.can_use_sales_app} onChange={() => togglePerm('can_use_sales_app')} className="w-4 h-4 accent-primary" />
-                        <span className="text-sm">Acessar App Força de Vendas</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={perms.can_manage_sales} onChange={() => togglePerm('can_manage_sales')} className="w-4 h-4 accent-primary" />
-                        <span className="text-sm">Gestão de Vendas (Painel Web)</span>
-                      </label>
-                    </div>
-                  )}
-
-                  {/* Estoque e Precificação */}
+                  {/* Estoque */}
                   <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Estoque e Precificação</Label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Estoque</Label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_products} onChange={() => togglePerm('can_manage_products')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Cadastro e Gestão de Estoque</span>
+                      <span className="text-sm">Estoque (Produtos)</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_price_tables} onChange={() => togglePerm('can_manage_price_tables')} className="w-4 h-4 accent-primary" />
@@ -341,29 +340,12 @@ export default function AccessControl() {
                     </label>
                   </div>
 
-                  {/* CRM e Cadastros */}
+                  {/* Comodatos */}
                   <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">CRM e Cadastros Principais</Label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={perms.can_manage_customers} onChange={() => togglePerm('can_manage_customers')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Cadastro de Clientes</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={perms.can_manage_reps} onChange={() => togglePerm('can_manage_reps')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Cadastro de Representantes</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={perms.can_manage_regions} onChange={() => togglePerm('can_manage_regions')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Cadastro de Regiões</span>
-                    </label>
-                  </div>
-
-                  {/* Gestão de Comodatos */}
-                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Gestão de Comodatos</Label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Comodatos</Label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_equipments} onChange={() => togglePerm('can_manage_equipments')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Gestão de Equipamentos</span>
+                      <span className="text-sm">Equipamentos</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_os} onChange={() => togglePerm('can_manage_os')} className="w-4 h-4 accent-primary" />
@@ -379,12 +361,29 @@ export default function AccessControl() {
                     </label>
                   </div>
 
+                  {/* CRM e Cadastros */}
+                  <div className="space-y-2 pl-2 border-l-2 border-border/50">
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">CRM & Cadastros</Label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_customers} onChange={() => togglePerm('can_manage_customers')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Clientes</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_reps} onChange={() => togglePerm('can_manage_reps')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Representantes</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" checked={perms.can_manage_regions} onChange={() => togglePerm('can_manage_regions')} className="w-4 h-4 accent-primary" />
+                      <span className="text-sm">Regiões</span>
+                    </label>
+                  </div>
+
                   {/* Administração */}
                   <div className="space-y-2 pl-2 border-l-2 border-border/50">
-                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Administração</Label>
+                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Sistema</Label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_users} onChange={() => togglePerm('can_manage_users')} className="w-4 h-4 accent-primary" />
-                      <span className="text-sm">Controle de Acessos (Usuários)</span>
+                      <span className="text-sm">Minha Empresa e Acessos (Usuários)</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={perms.can_manage_integrations} onChange={() => togglePerm('can_manage_integrations')} className="w-4 h-4 accent-primary" />
