@@ -218,7 +218,7 @@ export default function CreateLoad() {
   const updateQty = (tempId: string, qty: number) => {
     setItems(prev => prev.map(i => {
       if (i.tempId === tempId) {
-        const product = products.find(p => p.code === i.product_code)
+        const product = products.find(p => (i.product_id && p.id === i.product_id) || normalizeCode(p.code) === normalizeCode(i.product_code))
         const maxQty = product?.stock || 0
         const targetQty = Math.max(1, qty)
         if (targetQty > maxQty) {
@@ -621,7 +621,7 @@ export default function CreateLoad() {
     }
 
     const itemsData = items.map(i => {
-      const product = products.find(p => p.code === i.product_code)
+      const product = products.find(p => (i.product_id && p.id === i.product_id) || normalizeCode(p.code) === normalizeCode(i.product_code))
       const systemStock = product ? product.stock : 0
       return {
         product_id: i.product_id || null,
@@ -743,7 +743,7 @@ export default function CreateLoad() {
             ) : (
               <div className="space-y-2">
                 {items.map(item => {
-                  const product = products.find(p => p.code === item.product_code)
+                  const product = products.find(p => (item.product_id && p.id === item.product_id) || normalizeCode(p.code) === normalizeCode(item.product_code))
                   const stock = product ? product.stock : 0
                   const hasAlert = stock <= 0 || stock < item.quantity_expected
                   return (

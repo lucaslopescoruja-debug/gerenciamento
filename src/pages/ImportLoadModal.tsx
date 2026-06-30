@@ -74,7 +74,8 @@ export function ImportLoadModal({ isOpen, onOpenChange }: ImportLoadModalProps) 
             product_id: item.product_id,
             product_code: item.product?.code || item.product_id,
             description: item.product?.description || 'Desconhecido',
-            quantity_expected: 0
+            quantity_expected: 0,
+            system_stock_at_load: item.product?.stock || 0
           })
         }
         itemsMap.get(item.product_id).quantity_expected += item.quantity
