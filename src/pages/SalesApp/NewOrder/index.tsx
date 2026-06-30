@@ -26,6 +26,7 @@ export default function NewOrder() {
   const { user, company } = useAuth()
   
   const orderId = searchParams.get('id')
+  const returnTo = searchParams.get('returnTo') || '/vendas/pedidos'
   const creatingRef = useRef(false)
 
   const [customerSearch, setCustomerSearch] = useState('')
@@ -158,7 +159,7 @@ export default function NewOrder() {
     },
     onError: (err: any) => {
       toast.error('Erro ao gerar rascunho de pedido: ' + err.message)
-      navigate('/vendas/pedidos')
+      navigate(returnTo)
     }
   })
 
@@ -256,7 +257,7 @@ export default function NewOrder() {
         const { salesApi } = await import('@/api/sales')
         await salesApi.deleteSalesOrder(orderId!)
         toast.success('Pedido apagado com sucesso!')
-        navigate('/vendas/pedidos')
+        navigate(returnTo)
       } catch (e: any) {
         toast.error('Erro ao apagar pedido: ' + e.message)
       }
@@ -390,7 +391,7 @@ export default function NewOrder() {
       })
       toast.success('Orçamento salvo com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
-      navigate('/vendas/pedidos')
+      navigate(returnTo)
     } catch (e: any) {
       toast.error('Erro ao gerar pedido: ' + e.message)
     }
@@ -417,7 +418,7 @@ export default function NewOrder() {
       })
       toast.success('Pedido enviado com sucesso!')
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
-      navigate('/vendas/pedidos')
+      navigate(returnTo)
     } catch (e: any) {
       toast.error('Erro ao concluir pedido: ' + e.message)
     }
@@ -477,7 +478,7 @@ export default function NewOrder() {
             )}
           </div>
           
-          <Button variant="ghost" onClick={() => navigate('/vendas/pedidos')} className="h-9 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" onClick={() => navigate(returnTo)} className="h-9 text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4 mr-2" /> Fechar
           </Button>
         </div>
@@ -801,7 +802,7 @@ export default function NewOrder() {
             )}
           </div>
           
-          <Button variant="ghost" onClick={() => navigate('/vendas/pedidos')} className="h-9 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" onClick={() => navigate(returnTo)} className="h-9 text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4 mr-2" /> Fechar
           </Button>
         </div>
@@ -826,7 +827,7 @@ export default function NewOrder() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={() => {
             if (currentStep > 1 && currentStep !== 2) setCurrentStep(2)
-            else navigate('/vendas/pedidos')
+            else navigate(returnTo)
           }} className="h-8 w-8 -ml-2">
             <ChevronLeft className="h-5 w-5" />
           </Button>

@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { salesApi } from '@/api/sales'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload } from 'lucide-react'
+import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload, Edit } from 'lucide-react'
 import { ImportMaxiprodModal } from '@/components/Sales/ImportMaxiprodModal'
 import type { SalesOrder } from '@/types/database'
 
@@ -32,6 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function SalesManagement() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
 
@@ -264,6 +266,9 @@ export default function SalesManagement() {
                             </Button>
                           </>
                         )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-50 text-blue-600 hover:text-blue-700" title="Editar Pedido (Completo)" onClick={() => navigate(`/vendas/novo?id=${order.id}&returnTo=/vendas/gestao`)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" title="Ver Detalhes" onClick={() => openDetails(order.id)}>
                           <FileSignature className="h-4 w-4" />
                         </Button>
