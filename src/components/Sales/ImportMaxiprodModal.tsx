@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from '@/components/ui/toaster'
 import { Upload, AlertCircle, CheckCircle } from 'lucide-react'
@@ -44,6 +45,15 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
   const queryClient = useQueryClient()
   const [isParsing, setIsParsing] = useState(false)
   const [parsedOrders, setParsedOrders] = useState<ParsedOrder[]>([])
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [newGroupName, setNewGroupName] = useState('')
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+
+  const { data: orderGroups = [] } = useQuery({
+    queryKey: ['order_groups'],
+    queryFn: salesApi.getOrderGroups
+  })
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -244,6 +254,17 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       const userRes = await supabase.from('users').select('company_id').eq('id', session.session?.user.id).single()
       const companyId = userRes.data?.company_id
 
+      let finalGroupId = selectedGroupId || null
+
+      if (isCreatingGroup && newGroupName.trim()) {
+        const newGroup = await salesApi.createOrderGroup({
+          name: newGroupName.trim(),
+          company_id: companyId,
+          status: 'aberto'
+        })
+        finalGroupId = newGroup.id
+      }
+
       for (const order of validOrders) {
         const totalAmount = order.items.reduce((sum, item) => sum + (item.quantity * (item.unitPrice || 0)), 0)
 
@@ -259,7 +280,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
           delivery_date: null,
           price_table_id: order.priceTableId || null,
           payment_condition_id: null,
-          order_group_id: null
+          order_group_id: finalGroupId
         } as any)
 
         if (!createdOrder) throw new Error('Erro ao criar pedido no banco.')
@@ -369,6 +390,39 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="space-y-3 p-4 border rounded-md bg-muted/20">
+                <h3 className="font-semibold text-sm">Agrupar Pedidos (Opcional)</h3>
+                <div className="flex flex-col gap-3">
+                  <select 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={isCreatingGroup ? 'new' : selectedGroupId}
+                    onChange={(e) => {
+                      if (e.target.value === 'new') {
+                        setIsCreatingGroup(true)
+                        setSelectedGroupId('')
+                      } else {
+                        setIsCreatingGroup(false)
+                        setSelectedGroupId(e.target.value)
+                      }
+                    }}
+                  >
+                    <option value="">Nenhum grupo</option>
+                    {orderGroups.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                    <option value="new">+ Criar Novo Grupo</option>
+                  </select>
+                  
+                  {isCreatingGroup && (
+                    <Input 
+                      placeholder="Nome do novo grupo..." 
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                    />
+                  )}
+                </div>
               </div>
 
               {validCount > 0 && (
