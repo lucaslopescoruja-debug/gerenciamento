@@ -251,18 +251,13 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
           sales_rep_id: order.salesRepId!,
           status: 'Pedido Criado',
           total_amount: totalAmount,
-          discount_amount: 0,
+          total_discount: 0,
           net_amount: totalAmount,
           notes: order.observations,
-          expected_delivery_date: null,
+          delivery_date: null,
           price_table_id: order.priceTableId,
           payment_condition_id: null,
-          payment_method: null,
-          billing_type: null,
-          shipping_type: null,
-          shipping_amount: 0,
-          order_group_id: null,
-          delivery_route_id: null
+          order_group_id: null
         } as any)
 
         if (!createdOrder) throw new Error('Erro ao criar pedido no banco.')
