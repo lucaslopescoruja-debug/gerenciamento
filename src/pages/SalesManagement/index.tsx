@@ -109,15 +109,16 @@ export default function SalesManagement() {
       if (filterRegion !== 'all' && o.customer?.region?.id !== filterRegion) return false
       if (filterOrderGroup !== 'all' && o.order_group_id !== filterOrderGroup) return false
       
-      if (filterDateFrom) {
+      if (filterDateFrom || filterDateTo) {
         const orderDate = new Date(o.created_at)
-        const fromDate = new Date(filterDateFrom)
-        fromDate.setHours(0, 0, 0, 0)
-        if (orderDate < fromDate) return false
-      }
-      if (filterDateTo) {
-        const orderDate = new Date(o.created_at)
-        const toDate = new Date(filterDateTo)
+        
+        if (filterDateFrom) {
+          const fromDate = new Date(filterDateFrom)
+          fromDate.setHours(0, 0, 0, 0)
+          if (orderDate < fromDate) return false
+        }
+        
+        const toDate = filterDateTo ? new Date(filterDateTo) : new Date()
         toDate.setHours(23, 59, 59, 999)
         if (orderDate > toDate) return false
       }
