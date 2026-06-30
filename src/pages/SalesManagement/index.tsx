@@ -99,7 +99,7 @@ export default function SalesManagement() {
       if (filterOrderNumber && String(o.order_number) !== filterOrderNumber.trim()) return false
       if (filterSalesRep !== 'all' && o.sales_rep_id !== filterSalesRep) return false
       if (filterRegion !== 'all' && o.customer?.region?.id !== filterRegion) return false
-      if (filterOrderGroup && !o.order_group_id?.toLowerCase().includes(filterOrderGroup.toLowerCase())) return false
+      if (filterOrderGroup && !o.order_group?.name?.toLowerCase().includes(filterOrderGroup.toLowerCase())) return false
       
       if (filterDateFrom || filterDateTo) {
         const orderDate = new Date(o.created_at)

@@ -95,7 +95,8 @@ export const salesApi = {
         customer:customers(*),
         sales_rep:sales_reps(*),
         payment_condition:payment_conditions(*),
-        price_table:price_tables(*)
+        price_table:price_tables(*),
+        order_group:order_groups(*)
       `)
       .order('created_at', { ascending: false })
 
