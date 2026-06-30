@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload, Edit, Eye } from 'lucide-react'
+import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload, Edit, Eye, Filter, ChevronDown, ChevronUp } from 'lucide-react'
 import { ImportMaxiprodModal } from '@/components/Sales/ImportMaxiprodModal'
 import type { SalesOrder } from '@/types/database'
 
@@ -40,6 +40,13 @@ export default function SalesManagement() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+  const [filterOrderNumber, setFilterOrderNumber] = useState('')
+  const [filterSalesRep, setFilterSalesRep] = useState('all')
+  const [filterRegion, setFilterRegion] = useState('all')
+  const [filterOrderGroup, setFilterOrderGroup] = useState('all')
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['sales_orders'],
@@ -62,16 +69,62 @@ export default function SalesManagement() {
     onError: (e: any) => toast.error(`Erro: ${e.message}`)
   })
 
+  const uniqueSalesReps = useMemo(() => {
+    const reps = new Map()
+    orders.forEach(o => {
+      if (o.sales_rep) reps.set(o.sales_rep.id, o.sales_rep.nickname || o.sales_rep.legal_name || 'Desconhecido')
+    })
+    return Array.from(reps.entries()).map(([id, name]) => ({ id, name }))
+  }, [orders])
+
+  const uniqueRegions = useMemo(() => {
+    const regions = new Map()
+    orders.forEach(o => {
+      if (o.customer?.region) regions.set(o.customer.region.id, o.customer.region.name)
+    })
+    return Array.from(regions.entries()).map(([id, name]) => ({ id, name }))
+  }, [orders])
+
+  const uniqueGroups = useMemo(() => {
+    const groups = new Set<string>()
+    orders.forEach(o => {
+      if (o.order_group_id) groups.add(o.order_group_id)
+    })
+    return Array.from(groups)
+  }, [orders])
+
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       const searchMatch = 
+        !searchTerm || 
         o.customer?.fantasy_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.customer?.legal_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        o.customer?.legal_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.customer?.document && o.customer.document.includes(searchTerm))
+      
+      if (!searchMatch) return false
       
       if (filterStatus !== 'all' && o.status !== filterStatus) return false
-      return searchMatch
+      if (filterOrderNumber && String(o.order_number) !== filterOrderNumber.trim()) return false
+      if (filterSalesRep !== 'all' && o.sales_rep_id !== filterSalesRep) return false
+      if (filterRegion !== 'all' && o.customer?.region?.id !== filterRegion) return false
+      if (filterOrderGroup !== 'all' && o.order_group_id !== filterOrderGroup) return false
+      
+      if (filterDateFrom) {
+        const orderDate = new Date(o.created_at)
+        const fromDate = new Date(filterDateFrom)
+        fromDate.setHours(0, 0, 0, 0)
+        if (orderDate < fromDate) return false
+      }
+      if (filterDateTo) {
+        const orderDate = new Date(o.created_at)
+        const toDate = new Date(filterDateTo)
+        toDate.setHours(23, 59, 59, 999)
+        if (orderDate > toDate) return false
+      }
+      
+      return true
     })
-  }, [orders, searchTerm, filterStatus])
+  }, [orders, searchTerm, filterStatus, filterOrderNumber, filterSalesRep, filterRegion, filterOrderGroup, filterDateFrom, filterDateTo])
 
   type SortFieldType = 'created_at' | 'customer_name' | 'sales_rep' | 'net_amount' | 'status' | null
   const [sortField, setSortField] = useState<SortFieldType>(null)
@@ -169,27 +222,107 @@ export default function SalesManagement() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Buscar por nome do cliente..." 
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+      <div className="bg-card rounded-xl border border-border p-4 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar por nome do cliente ou CNPJ/CPF..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <select 
+            className="flex h-10 w-full sm:w-48 rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Todos os Status</option>
+            <option value="Rascunho">Em Rascunho</option>
+            <option value="Pedido Criado">Pedido Criado</option>
+            <option value="Enviado">Aguardando Faturamento (Enviado)</option>
+            <option value="Faturado">Faturados</option>
+            <option value="Cancelado">Cancelados</option>
+          </select>
+          <Button 
+            variant="outline"
+            className={`gap-2 ${showAdvancedFilters ? 'bg-primary/5 border-primary text-primary' : ''}`}
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            <Filter className="h-4 w-4" />
+            Filtros Avançados
+            {showAdvancedFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
-        <select 
-          className="flex h-10 w-full sm:w-48 rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="all">Todos os Status</option>
-          <option value="Rascunho">Em Rascunho</option>
-          <option value="Enviado">Aguardando Faturamento (Enviado)</option>
-          <option value="Faturado">Faturados</option>
-          <option value="Cancelado">Cancelados</option>
-        </select>
+
+        {showAdvancedFilters && (
+          <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 animate-in slide-in-from-top-2">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Emissão (De)</label>
+              <Input 
+                type="date" 
+                value={filterDateFrom}
+                onChange={e => setFilterDateFrom(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Emissão (Até)</label>
+              <Input 
+                type="date" 
+                value={filterDateTo}
+                onChange={e => setFilterDateTo(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Número do Pedido</label>
+              <Input 
+                placeholder="Ex: 12345" 
+                value={filterOrderNumber}
+                onChange={e => setFilterOrderNumber(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Vendedor</label>
+              <select 
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={filterSalesRep}
+                onChange={e => setFilterSalesRep(e.target.value)}
+              >
+                <option value="all">Todos</option>
+                {uniqueSalesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Região</label>
+              <select 
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={filterRegion}
+                onChange={e => setFilterRegion(e.target.value)}
+              >
+                <option value="all">Todas</option>
+                {uniqueRegions.map(reg => (
+                  <option key={reg.id} value={reg.id}>{reg.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Grupo de Pedido</label>
+              <select 
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={filterOrderGroup}
+                onChange={e => setFilterOrderGroup(e.target.value)}
+              >
+                <option value="all">Todos</option>
+                {uniqueGroups.map(group => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
