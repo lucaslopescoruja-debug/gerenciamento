@@ -113,6 +113,24 @@ export function ShortageResolverModal({ isOpen, onClose, onResolved, shortages, 
           }
         }
       }
+
+      // Also update the operation_items expected quantity so the load no longer shows as having a shortage for the resolved items
+      for (const shortage of shortages) {
+        const totalCutForThisProduct = Object.entries(cuts).reduce((sum, [itemId, val]) => {
+          const item = clients.flatMap(c => c.delivery_items).find((i: any) => i.id === itemId)
+          return item && item.product_code === shortage.product_code ? sum + val : sum
+        }, 0)
+        
+        if (totalCutForThisProduct > 0) {
+          promises.push(
+            supabase.from('operation_items')
+              .update({ quantity_expected: shortage.quantity_expected - totalCutForThisProduct })
+              .eq('operation_id', operationId)
+              .eq('product_code', shortage.product_code)
+          )
+        }
+      }
+
       await Promise.all(promises)
       toast.success('Faltas resolvidas e pedidos ajustados com sucesso!')
       onResolved()

@@ -640,7 +640,7 @@ export default function Conference() {
   const handleDispatch = () => {
     const missing = items.filter(i => i.quantity_scanned < i.quantity_expected)
     if (missing.length > 0) {
-      if (op?.type === 'LOAD') {
+      if (op?.type === 'LOAD' && isManager) {
         const shortages = missing.map(i => ({
           product_id: i.product_id || '',
           product_code: i.product_code || '',
@@ -1367,6 +1367,37 @@ export default function Conference() {
 
         {op.type === 'LOAD' && (
         <TabsContent value="divergences" className="flex-1 flex flex-col gap-4 mt-4">
+          {/* Nova Seção: Cortes de Pedido (Faltas na Carga) */}
+          {isManager && (op.status === 'dispatched' || op.status === 'completed') && items.filter(i => i.quantity_scanned < i.quantity_expected).length > 0 && (
+            <Card className="border-red-500/30">
+              <CardContent className="p-4">
+                <h2 className="text-lg font-bold text-red-600 dark:text-red-400 flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-5 w-5" /> Faltas (Cortes de Pedido)
+                </h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  O conferente despachou a carga com faltas. Como gestor, você precisa definir de quais clientes esses itens serão cortados.
+                </p>
+                <Button 
+                  className="w-full h-12 text-lg bg-red-600 hover:bg-red-700 text-white font-bold" 
+                  onClick={() => {
+                    const shortages = items.filter(i => i.quantity_scanned < i.quantity_expected).map(i => ({
+                      product_id: i.product_id || '',
+                      product_code: i.product_code || '',
+                      description: i.description || '',
+                      quantity_expected: i.quantity_expected,
+                      quantity_scanned: i.quantity_scanned,
+                      quantity_missing: i.quantity_expected - i.quantity_scanned
+                    }))
+                    setPendingShortages(shortages)
+                    setIsShortageResolverOpen(true)
+                  }}
+                >
+                  Resolver Cortes de Pedido ({items.filter(i => i.quantity_scanned < i.quantity_expected).length})
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border-amber-500/20">
             <CardContent className="p-4">
               <h2 className="text-lg font-bold text-amber-600 dark:text-amber-600 dark:text-amber-400 flex items-center gap-2 mb-2">
@@ -1451,8 +1482,11 @@ export default function Conference() {
           onClose={() => setIsShortageResolverOpen(false)}
           onResolved={() => {
             setIsShortageResolverOpen(false)
-            // Once resolved, continue with the dispatch process
-            dispatchMutation.mutate()
+            if (op.status !== 'dispatched' && op.status !== 'completed') {
+              dispatchMutation.mutate()
+            } else {
+              queryClient.invalidateQueries({ queryKey: ['operation', id] })
+            }
           }}
           shortages={pendingShortages}
           operationId={op.id}
