@@ -9,6 +9,7 @@ import { Upload, AlertCircle, CheckCircle } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { supabase, fetchAllRows } from '@/lib/supabase'
 import { salesApi } from '@/api/sales'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ImportMaxiprodModalProps {
   isOpen: boolean
@@ -43,6 +44,7 @@ interface ParsedItem {
 export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
+  const { company } = useAuth()
   const [isParsing, setIsParsing] = useState(false)
   const [parsedOrders, setParsedOrders] = useState<ParsedOrder[]>([])
 
@@ -251,8 +253,13 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       if (validOrders.length === 0) throw new Error('Nenhum pedido válido para importar')
 
       const { data: session } = await supabase.auth.getSession()
-      const userRes = await supabase.from('users').select('company_id').eq('id', session.session?.user.id).single()
-      const companyId = userRes.data?.company_id
+      let companyId = company?.id
+      if (!companyId && session.session?.user.id) {
+        const userRes = await supabase.from('users').select('company_id').eq('id', session.session.user.id).single()
+        companyId = userRes.data?.company_id
+      }
+      
+      if (!companyId) throw new Error('Empresa não identificada.')
 
       let finalGroupId = selectedGroupId || null
 
