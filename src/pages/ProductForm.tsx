@@ -20,6 +20,9 @@ export default function ProductForm() {
   const isEditing = Boolean(id)
 
   const [activeTab, setActiveTab] = useState('geral')
+  const [isCustomUnit, setIsCustomUnit] = useState(false)
+
+  const commonUnits = ["UN", "KG", "CX", "LT", "PC", "M", "M2", "M3", "PR", "FD", "PCT", "GL", "TON"]
 
   const [formData, setFormData] = useState({
     code: '',
@@ -236,12 +239,50 @@ export default function ProductForm() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unit_measure" className="text-xs font-bold uppercase text-muted-foreground">Unidade de Medida</Label>
-                <Input 
-                  id="unit_measure" 
-                  value={formData.unit_measure} 
-                  onChange={e => setFormData({...formData, unit_measure: e.target.value})} 
-                  placeholder="Ex: UN, KG, CX"
-                />
+                {!isCustomUnit ? (
+                  <select
+                    id="unit_measure"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={commonUnits.includes(formData.unit_measure?.toUpperCase()) ? formData.unit_measure?.toUpperCase() : (formData.unit_measure ? 'custom_existing' : '')}
+                    onChange={e => {
+                      if (e.target.value === 'custom') {
+                        setIsCustomUnit(true)
+                        setFormData({...formData, unit_measure: ''})
+                      } else if (e.target.value === 'custom_existing') {
+                         // do nothing, keep existing value
+                      } else {
+                        setFormData({...formData, unit_measure: e.target.value})
+                      }
+                    }}
+                  >
+                    <option value="">Selecione...</option>
+                    {commonUnits.map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                    {formData.unit_measure && !commonUnits.includes(formData.unit_measure?.toUpperCase()) && (
+                      <option value="custom_existing">{formData.unit_measure.toUpperCase()}</option>
+                    )}
+                    <option value="custom" className="font-bold text-primary bg-primary/10">+ Adicionar nova medida</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input 
+                      id="unit_measure" 
+                      value={formData.unit_measure} 
+                      onChange={e => setFormData({...formData, unit_measure: e.target.value.toUpperCase()})} 
+                      placeholder="Ex: PCT"
+                      autoFocus
+                    />
+                    <Button 
+                      variant="outline" 
+                      type="button"
+                      onClick={() => setIsCustomUnit(false)}
+                      className="px-3"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="group_name" className="text-xs font-bold uppercase text-muted-foreground">Categoria / Grupo</Label>
