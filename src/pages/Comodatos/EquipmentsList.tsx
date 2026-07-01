@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit2, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, History, CheckCircle, Clock, Save, Copy, FileText, Settings, Settings2, ShieldCheck, MapPin, X, Box, AlertCircle, ClipboardList } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, ArrowUpDown, ArrowUp, ArrowDown, History, CheckCircle, Clock, Save, Copy, FileText, Settings, Settings2, ShieldCheck, MapPin, X, Box, AlertCircle, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Equipment } from '@/types/database'
 
 import { InternalMaintenanceModal } from './InternalMaintenanceModal'
@@ -50,9 +50,16 @@ export default function EquipmentsList() {
     return defaultFilters
   })
 
+  const [sortField, setSortField] = useState<'patrimony' | 'model' | 'status' | 'customer'>('patrimony')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
+
   useEffect(() => {
     sessionStorage.setItem('equipmentsFilters', JSON.stringify(filters))
-  }, [filters])
+    setCurrentPage(1)
+  }, [filters, sortField, sortOrder])
 
   useEffect(() => {
     sessionStorage.setItem('equipmentsShowFilters', showFilters.toString())
@@ -67,8 +74,6 @@ export default function EquipmentsList() {
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null)
 
-  const [sortField, setSortField] = useState<'patrimony' | 'model' | 'status' | 'customer'>('patrimony')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   // Form
   const [patrimony, setPatrimony] = useState('')
@@ -260,6 +265,14 @@ export default function EquipmentsList() {
       if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
       return 0
     })
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages)
+  }
+
+  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   if (!hasAccess) {
     return <div className="p-8 text-center text-muted-foreground">Você não tem permissão para acessar esta página.</div>
@@ -482,7 +495,7 @@ export default function EquipmentsList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(eq => (
+              {paginated.map(eq => (
                 <TableRow key={eq.id}>
                   <TableCell className="font-mono text-sm font-semibold text-muted-foreground">{eq.patrimony}</TableCell>
                   <TableCell>
@@ -561,6 +574,46 @@ export default function EquipmentsList() {
             </TableBody>
           </Table>
         </div>
+        {filtered.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 p-4 border-t border-border/50 bg-muted/20 rounded-b-xl">
+              <span className="text-sm text-muted-foreground">
+                Exibindo itens {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
+                >
+                  <span className="sr-only">Primeira</span>
+                  <span className="text-xs font-bold">|&lt;</span>
+                </Button>
+                <Button 
+                  variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="px-3 text-sm font-medium">
+                  {currentPage} de {totalPages || 1}
+                </span>
+
+                <Button 
+                  variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" size="icon" className="h-8 w-8"
+                  onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  <span className="sr-only">Última</span>
+                  <span className="text-xs font-bold">&gt;|</span>
+                </Button>
+              </div>
+            </div>
+          )}
       </Card>
 
       {/* Mobile Layout */}
@@ -570,7 +623,7 @@ export default function EquipmentsList() {
             Nenhum equipamento encontrado.
           </Card>
         ) : (
-          filtered.map(eq => (
+          paginated.map(eq => (
             <Card key={eq.id} className="p-4 space-y-4 shadow-sm">
               <div className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
@@ -629,6 +682,47 @@ export default function EquipmentsList() {
           ))
         )}
       </div>
+
+      {filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 p-4 border-t border-border/50 bg-muted/20 rounded-b-xl md:hidden">
+          <span className="text-sm text-muted-foreground">
+            Exibindo itens {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} de {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="outline" size="icon" className="h-8 w-8"
+              onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
+            >
+              <span className="sr-only">Primeira</span>
+              <span className="text-xs font-bold">|&lt;</span>
+            </Button>
+            <Button 
+              variant="outline" size="icon" className="h-8 w-8"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <span className="px-3 text-sm font-medium">
+              {currentPage} de {totalPages || 1}
+            </span>
+
+            <Button 
+              variant="outline" size="icon" className="h-8 w-8"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" size="icon" className="h-8 w-8"
+              onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0}
+            >
+              <span className="sr-only">Última</span>
+              <span className="text-xs font-bold">&gt;|</span>
+            </Button>
+          </div>
+        </div>
+      )}
 
       <InternalMaintenanceModal 
         isOpen={isMaintenanceModalOpen}
