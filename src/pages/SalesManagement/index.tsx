@@ -208,6 +208,7 @@ export default function SalesManagement() {
       case 'Enviado': return 'warning'
       case 'Faturado': return 'success'
       case 'Cancelado': return 'destructive'
+      case 'Retornou': return 'destructive'
       default: return 'default'
     }
   }
@@ -360,7 +361,7 @@ export default function SalesManagement() {
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum pedido encontrado.</td></tr>
                : (
                 paginatedOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                  <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${order.status === 'Retornou' ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
                     <td className="px-4 py-3 font-bold text-primary">
                       #{order.order_number || order.id.slice(0, 5).toUpperCase()}
                     </td>
