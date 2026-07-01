@@ -16,7 +16,6 @@ import { operationsApi } from '@/api/operations'
 import { saasApi } from '@/api/saas'
 import { toast } from '@/components/ui/toaster'
 import { ProfileModal } from '@/components/ProfileModal'
-import { TesterNotes } from '@/components/TesterNotes'
 import type { LucideIcon } from 'lucide-react'
 
 // ATUALIZE ESTA VERSÃO PARA TESTAR SE O APLICATIVO ATUALIZOU NOS DISPOSITIVOS
@@ -654,8 +653,6 @@ export default function AppLayout() {
                    )}
                 </Link>
              )}
-             
-             <TesterNotes />
           </div>
         </header>
 
