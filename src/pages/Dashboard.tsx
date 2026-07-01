@@ -388,13 +388,14 @@ export default function Dashboard() {
               <div className="flex-1 min-w-[200px]">
                 <StatsCard 
                   title="Total de Cargas" 
-                value={loadStats.total} 
-                icon={Truck} 
-                iconBg="bg-primary" 
-                iconColor="text-white" 
-                trend="Hoje" 
-                trendColor="text-primary"
-              />
+                  value={loadStats.total} 
+                  icon={Truck} 
+                  iconBg="bg-primary" 
+                  iconColor="text-white" 
+                  trend="Hoje" 
+                  trendColor="text-primary"
+                />
+              </div>
             )}
             {showLoads && (
               <div className="flex-1 min-w-[200px]">
