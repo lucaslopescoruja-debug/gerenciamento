@@ -228,7 +228,7 @@ export default function AppLayout() {
     
     // ESTOQUE
     if (path === '/produtos') return 'bronze' // Estoque (Produtos)
-    if (path === '/cadastros/tabelas-de-preco') return 'ouro'
+    if (path === '/cadastros/tabelas-de-preco') return 'platina'
     if (path === '/cadastros/condicoes-pagamento') return 'platina'
     
     // COMODATOS
