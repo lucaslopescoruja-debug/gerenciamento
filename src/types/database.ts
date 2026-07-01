@@ -18,6 +18,7 @@ export interface UserPermissions {
   // Novas permissões
   can_use_sales_app?: boolean
   can_manage_sales?: boolean
+  can_manage_order_groups?: boolean
   can_manage_price_tables?: boolean
   can_manage_payment_conditions?: boolean
   can_manage_customers?: boolean
@@ -28,6 +29,7 @@ export interface UserPermissions {
   can_manage_os?: boolean
   can_manage_supplies?: boolean
   can_request_supplies?: boolean
+  can_manage_company?: boolean
 
   // SaaS Master Permissions
   can_manage_saas_finance?: boolean

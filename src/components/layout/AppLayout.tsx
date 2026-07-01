@@ -6,7 +6,7 @@ import {
   Settings, Users, CheckSquare, Palette, Sun, Moon, Search,
   Clock, History, UserIcon, FileSignature, Box, Building2, Banknote,
   Megaphone, StickyNote, MapPin, Bell, ShieldCheck, LogOut, Lock,
-  ChevronDown, Map, Tag, Briefcase, HelpCircle, Wifi, WifiOff
+  ChevronDown, Map, Tag, Briefcase, HelpCircle, Wifi, WifiOff, RefreshCw
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/contexts/AuthContext'
@@ -72,7 +72,7 @@ const navGroups: NavGroup[] = [
     title: 'CRM & CADASTROS',
     items: [
       { label: 'Clientes', icon: Building2, path: '/cadastros/clientes', permission: 'can_manage_customers' },
-      { label: 'Grupos de Pedidos', icon: Boxes, path: '/vendas/grupos', permission: 'can_manage_sales' },
+      { label: 'Grupos de Pedidos', icon: Boxes, path: '/vendas/grupos', permission: 'can_manage_order_groups' },
       { label: 'Representantes', icon: Users, path: '/cadastros/representantes', permission: 'can_manage_reps' },
       { label: 'Regiões', icon: Map, path: '/cadastros/regioes', permission: 'can_manage_regions' }
     ]
@@ -80,8 +80,9 @@ const navGroups: NavGroup[] = [
   {
     title: 'SISTEMA',
     items: [
-      { label: 'Minha Empresa', icon: Building2, path: '/configuracoes/empresa', permission: 'can_manage_users' },
-      { label: 'Acesso', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' }
+      { label: 'Minha Empresa', icon: Building2, path: '/configuracoes/empresa', permission: 'can_manage_company' },
+      { label: 'Acessos', icon: ShieldCheck, path: '/acesso', permission: 'can_manage_users' },
+      { label: 'Integração ERP', icon: RefreshCw, path: '/integracao', permission: 'can_manage_integrations' }
     ]
   }
 ]
