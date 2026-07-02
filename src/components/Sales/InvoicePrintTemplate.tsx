@@ -113,11 +113,6 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
 
         <div className="flex justify-between items-start mb-4 uppercase text-[11px]">
           <div className="flex-1">
-            <div className="flex gap-20 mb-4">
-              <div>Forma de pagamento: A prazo</div>
-              <div>Condição de pagamento: {details.payment_condition?.name || ''}</div>
-            </div>
-            
             <div className="font-bold mb-0.5">Número do pedido: {details.order_number}</div>
             <div className="font-bold mb-0.5">Forma de pagamento: A prazo - {details.payment_condition?.name || ''}</div>
             <div className="font-bold mb-0.5">Razão social: {details.customer?.legal_name || ''}</div>
@@ -138,15 +133,11 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
               Assinatura<br/>
               {details.receiver_name && <span>Recebedor: {details.receiver_name}<br/></span>}
               {details.receiver_doc && <span>Doc: {details.receiver_doc}<br/></span>}
-              Declaro que recebi as mercadorias acima<br/>
-              mencionadas.
+              Declaro que recebi as mercadorias acima mencionadas.
             </div>
           </div>
         </div>
 
-        <div className="font-bold mb-1 uppercase text-[11px]">
-          Forma de Cobrança: Boleto (com registro) Banco do Brasil S.A. ag 8684-3 conta 1700-0 carteira 17
-        </div>
         <div className="border-b-[1.5px] border-black mb-2"></div>
 
       </div>
