@@ -31,13 +31,14 @@ export async function drawDeliveryProofOnDoc(doc: jsPDF, client: any, company: a
 
   if (client.order_number && company?.id) {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('sales_orders')
-        .select('*, customer:customers(*), items:sales_order_items(*, product:products(*)), sales_rep:users!sales_orders_sales_rep_id_fkey(*), payment_condition:payment_conditions(*)')
+        .select('*, customer:customers(*), items:sales_order_items(*, product:products(*)), sales_rep:sales_reps(*), payment_condition:payment_conditions(*)')
         .eq('company_id', company.id)
         .eq('order_number', client.order_number)
         .single();
         
+      if (error) console.error('Supabase query error:', error);
       if (data) orderDetails = data;
     } catch (e) {
       console.error('Failed to fetch sales_order for delivery proof:', e);
