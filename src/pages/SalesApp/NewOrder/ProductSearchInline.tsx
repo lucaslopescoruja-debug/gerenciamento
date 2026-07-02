@@ -208,17 +208,33 @@ export function ProductSearchInline({ priceTableId, currentItems, onUpdateQuanti
                       Estoque: {(product.stock || 0) - (product.reserved_stock || 0)}
                     </div>
                     
-                    {qty === 0 ? (
-                      <div className="flex items-baseline justify-center flex-1 w-full gap-1 pt-1 pb-1">
-                        <span className="text-2xl font-bold">0</span>
-                        <span className="text-xs text-muted-foreground">un</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-baseline justify-center flex-1 w-full gap-1 text-primary pt-1 pb-1">
-                        <span className="text-2xl font-black">{qty}</span>
-                        <span className="text-xs">un</span>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-center flex-1 w-full gap-1 px-1 py-1">
+                      <input 
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        className={`w-14 text-center text-xl font-bold bg-transparent border-b-2 focus:outline-none focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${qty > 0 ? 'text-primary border-primary/30' : 'text-foreground border-transparent'}`}
+                        value={qty === 0 ? '' : qty}
+                        placeholder="0"
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value || '0', 10);
+                          if (isNaN(val) || val < 0) val = 0;
+                          
+                          const productItem = productsWithPrices.find(p => p.id === product.id);
+                          if (!productItem) return;
+                          
+                          const availableStock = (productItem.stock || 0) - (productItem.reserved_stock || 0);
+                          // The original handleUpdate does realAvailable = availableStock + currentQty.
+                          // However, typing directly is easier if we just cap it.
+                          // Actually, we can just call handleUpdate with delta.
+                          const delta = val - qty;
+                          handleUpdate(product.id, delta);
+                        }}
+                      />
+                      <span className={`text-xs ${qty > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {product.unit_measure?.toLowerCase() || 'un'}
+                      </span>
+                    </div>
 
                     <div className="flex w-full overflow-hidden rounded shadow-sm border border-border mt-1">
                       <button 
