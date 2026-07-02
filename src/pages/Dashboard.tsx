@@ -211,7 +211,9 @@ export default function Dashboard() {
                 return (
                 <tr key={route.id} className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => navigate(`/entregas/${route.id}`)}>
                   <td className="px-5 py-3.5 font-medium text-foreground">
-                    {route.operation?.load_number ? `Carga ${route.operation.load_number}` : `Rota ${route.id?.split('-')[0] || 'Sem Nome'}`}
+                    {route.operation?.load_number 
+                      ? `Rota - ${route.operation.load_number.replace(/^Carga\s*-\s*/i, '')}` 
+                      : `Rota - ${route.id?.split('-')[0] || 'Sem Nome'}`}
                   </td>
                   <td className="px-5 py-3.5">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border ${config.colorClass}`}>
