@@ -196,7 +196,7 @@ export default function NewOrder() {
   }
 
   if (!order) {
-    return <div className="text-center py-20">Pedido nÃ£o encontrado.</div>
+    return <div className="text-center py-20">Pedido não encontrado.</div>
   }
 
   const handleUpdateQuantityFromSearch = async (productId: string, quantity: number, price: number) => {
@@ -320,7 +320,7 @@ export default function NewOrder() {
   }
 
   const generatePdfFile = async () => {
-    if (!printRef.current) throw new Error("Elemento PDF nÃ£o encontrado");
+    if (!printRef.current) throw new Error("Elemento PDF não encontrado");
     setIsGeneratingPdf(true);
     try {
       const imgData = await toPng(printRef.current, {
@@ -362,13 +362,13 @@ export default function NewOrder() {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: `Pedido ${order?.order_number || ''}`,
-            text: `Segue o pedido gerado via ForÃ§a de Vendas.`,
+            text: `Segue o pedido gerado via Força de Vendas.`,
             files: [file]
           });
           toast.success('Compartilhado com sucesso!');
         } else {
           // Fallback if system share not supported (like on some desktop browsers)
-          toast.error("O compartilhamento de arquivo nÃ£o Ã© suportado pelo seu navegador.");
+          toast.error("O compartilhamento de arquivo não é suportado pelo seu navegador.");
         }
       } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -472,7 +472,7 @@ export default function NewOrder() {
           
           <div className="relative">
             <Button variant="outline" className="h-9 font-medium border-border" onClick={() => setShowOptionsTop(!showOptionsTop)}>
-              Mais opÃ§Ãµes <ChevronDown className="h-4 w-4 ml-2" />
+              Mais opções <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
             {showOptionsTop && (
               <>
@@ -596,7 +596,7 @@ export default function NewOrder() {
                   <tr>
                     <th className="px-4 py-3 font-medium">Produto</th>
                     <th className="px-4 py-3 font-medium text-right w-32">Qtd</th>
-                    <th className="px-4 py-3 font-medium text-right w-32">PreÃ§o Unit.</th>
+                    <th className="px-4 py-3 font-medium text-right w-32">Preço Unit.</th>
                     <th className="px-4 py-3 font-medium text-right w-32">Total</th>
                   </tr>
                 </thead>
@@ -607,7 +607,7 @@ export default function NewOrder() {
                         <div className="font-medium">
                           <span>{item.product?.description}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">CÃ³d: {item.product?.code}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Cód: {item.product?.code}</div>
                         <div className="text-[10px] text-muted-foreground">Saldo previsto: {(item.product?.stock || 0) - (item.product?.reserved_stock || 0)}</div>
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
@@ -640,7 +640,7 @@ export default function NewOrder() {
               <div className="font-medium">{order.order_number || '---'}</div>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground font-medium mb-1 block">Data da emissÃ£o</label>
+              <label className="text-xs text-muted-foreground font-medium mb-1 block">Data da emissão</label>
               <div className="font-medium">{new Date(order.created_at).toLocaleDateString('pt-BR')}</div>
             </div>
             <div>
@@ -676,15 +676,15 @@ export default function NewOrder() {
           </div>
 
           <div>
-            <label className="text-xs text-muted-foreground font-medium mb-2 block">InformaÃ§Ãµes Adicionais</label>
+            <label className="text-xs text-muted-foreground font-medium mb-2 block">Informações Adicionais</label>
                         <Textarea 
-              placeholder="Digite aqui observaÃ§Ãµes para a nota fiscal ou entrega..." 
-              defaultValue={order.notes?.replace(/\s*\[Origem: ImportaÃ§Ã£o Planilha\]\s*/g, '').trim() || ''}
+              placeholder="Digite aqui observações para a nota fiscal ou entrega..." 
+              defaultValue={order.notes?.replace(/\s*\[Origem: Importação Planilha\]\s*/g, '').trim() || ''}
               onBlur={(e) => {
-                const isImported = order.notes?.includes('[Origem: ImportaÃ§Ã£o Planilha]')
+                const isImported = order.notes?.includes('[Origem: Importação Planilha]')
                 let newNotes = e.target.value
-                if (isImported && !newNotes.includes('[Origem: ImportaÃ§Ã£o Planilha]')) {
-                  newNotes = newNotes ? newNotes + '\n\n[Origem: ImportaÃ§Ã£o Planilha]' : '[Origem: ImportaÃ§Ã£o Planilha]'
+                if (isImported && !newNotes.includes('[Origem: Importação Planilha]')) {
+                  newNotes = newNotes ? newNotes + '\n\n[Origem: Importação Planilha]' : '[Origem: Importação Planilha]'
                 }
                 if (newNotes !== order.notes) {
                   handleUpdate({ notes: newNotes })
@@ -704,7 +704,7 @@ export default function NewOrder() {
 
           <div className="flex gap-4 max-w-md mt-2">
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground font-medium mb-1 block">* CondiÃ§Ã£o de pagamento</label>
+              <label className="text-xs text-muted-foreground font-medium mb-1 block">* Condição de pagamento</label>
               <select 
                 className="w-full border border-border bg-background rounded-md h-12 px-3 focus:outline-none focus:ring-1 focus:ring-primary/50 text-base"
                 value={order.payment_condition_id || ''}
@@ -771,7 +771,7 @@ export default function NewOrder() {
               className="bg-primary text-primary-foreground"
               onClick={() => setCurrentStep(prev => Math.min(4, prev + 1))}
             >
-              AvanÃ§ar
+              Avançar
             </Button>
           ) : (
             <div className="flex gap-2">
@@ -786,7 +786,7 @@ export default function NewOrder() {
         </div>
       </div>
 
-      {/* AÃ‡Ã•ES RODAPÃ‰ */}
+      {/* AÇÕES RODAPÉ */}
       <div className="bg-card border-t border-border -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row gap-4 items-center justify-end mt-8 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleGenerateOrder} variant="outline" className="border-primary text-primary hover:bg-primary/5 font-bold h-9">
@@ -801,7 +801,7 @@ export default function NewOrder() {
           
           <div className="relative">
             <Button variant="outline" className="h-9 font-medium border-border" onClick={() => setShowOptionsBottom(!showOptionsBottom)}>
-              Mais opÃ§Ãµes <ChevronDown className="h-4 w-4 ml-2" />
+              Mais opções <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
             {showOptionsBottom && (
               <>
@@ -1001,7 +1001,7 @@ export default function NewOrder() {
                 <div key={item.id} className="bg-card border border-border rounded-xl p-4 shadow-sm relative">
                   <div className="pr-8">
                     <div className="font-bold text-sm text-foreground mb-1 leading-tight">{item.product?.description}</div>
-                    <div className="text-[11px] text-muted-foreground mb-3">CÃ³d: {item.product?.code}</div>
+                    <div className="text-[11px] text-muted-foreground mb-3">Cód: {item.product?.code}</div>
                     
                     <div className="flex items-center justify-between">
                       <div>
@@ -1032,17 +1032,17 @@ export default function NewOrder() {
           ) : (
             <div className="text-center py-12 px-4 border-2 border-dashed border-border rounded-xl bg-muted/10 flex flex-col items-center">
               <ShoppingCart className="h-10 w-10 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">Seu pedido ainda estÃ¡ vazio.</p>
+              <p className="text-sm text-muted-foreground mb-4">Seu pedido ainda está vazio.</p>
               <Button onClick={() => setCurrentStep(3)} className="bg-primary rounded-full px-6 shadow-md">
-                <Plus className="h-4 w-4 mr-2" /> Ver CatÃ¡logo de Produtos
+                <Plus className="h-4 w-4 mr-2" /> Ver Catálogo de Produtos
               </Button>
             </div>
           )}
 
-          {/* OpÃ§Ãµes extras na tela de Pedido */}
+          {/* Opções extras na tela de Pedido */}
           <div className="mt-8 flex flex-col gap-3">
             <Button variant="outline" className="w-full justify-between h-12 rounded-xl bg-card border-primary text-primary hover:bg-primary/5" onClick={() => setCurrentStep(4)}>
-              <span className="font-bold">Pagamento e ObservaÃ§Ãµes (obrigatÃ³rio)</span>
+              <span className="font-bold">Pagamento e Observações (obrigatório)</span>
               <ChevronDown className="h-5 w-5" />
             </Button>
 
@@ -1098,7 +1098,7 @@ export default function NewOrder() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">CondiÃ§Ã£o de Pagamento</label>
+                <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">Condição de Pagamento</label>
                 <select 
                   className="w-full border border-input bg-background rounded-lg h-11 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   value={order.payment_condition_id || ''}
@@ -1130,15 +1130,15 @@ export default function NewOrder() {
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">InformaÃ§Ãµes Adicionais</label>
+              <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">Informações Adicionais</label>
               <Textarea 
-                placeholder="Digite aqui observaÃ§Ãµes para a nota fiscal ou entrega..." 
-                defaultValue={order.notes?.replace(/\s*\[Origem: ImportaÃ§Ã£o Planilha\]\s*/g, '').trim() || ''}
+                placeholder="Digite aqui observações para a nota fiscal ou entrega..." 
+                defaultValue={order.notes?.replace(/\s*\[Origem: Importação Planilha\]\s*/g, '').trim() || ''}
                 onBlur={(e) => {
-                  const isImported = order.notes?.includes('[Origem: ImportaÃ§Ã£o Planilha]')
+                  const isImported = order.notes?.includes('[Origem: Importação Planilha]')
                   let newNotes = e.target.value
-                  if (isImported && !newNotes.includes('[Origem: ImportaÃ§Ã£o Planilha]')) {
-                    newNotes = newNotes ? `${newNotes}\n\n[Origem: ImportaÃ§Ã£o Planilha]` : '[Origem: ImportaÃ§Ã£o Planilha]'
+                  if (isImported && !newNotes.includes('[Origem: Importação Planilha]')) {
+                    newNotes = newNotes ? `${newNotes}\n\n[Origem: Importação Planilha]` : '[Origem: Importação Planilha]'
                   }
                   if (newNotes !== order.notes) {
                     handleUpdate({ notes: newNotes })
