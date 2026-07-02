@@ -48,20 +48,7 @@ export default function NewOrder() {
     }
   })
 
-  const { data: customerPaymentConditions = [], isLoading: isLoadingCustomerPC } = useQuery({
-    queryKey: ['customer_payment_conditions', order?.customer_id],
-    queryFn: async () => {
-      if (!order?.customer_id) return []
-      const { salesApi } = await import('@/api/sales')
-      const data = await salesApi.getCustomerPaymentConditions(order.customer_id)
-      return data.map((d: any) => d.payment_condition).filter(Boolean)
-    },
-    enabled: !!order?.customer_id
-  })
 
-  const paymentConditions = isLoadingCustomerPC 
-    ? [] 
-    : (customerPaymentConditions.length > 0 ? customerPaymentConditions : globalPaymentConditions)
 
   const { data: salesReps = [] } = useQuery({
     queryKey: ['sales_reps'],
@@ -109,6 +96,21 @@ export default function NewOrder() {
     },
     enabled: !!orderId
   })
+
+  const { data: customerPaymentConditions = [], isLoading: isLoadingCustomerPC } = useQuery({
+    queryKey: ['customer_payment_conditions', order?.customer_id],
+    queryFn: async () => {
+      if (!order?.customer_id) return []
+      const { salesApi } = await import('@/api/sales')
+      const data = await salesApi.getCustomerPaymentConditions(order.customer_id)
+      return data.map((d: any) => d.payment_condition).filter(Boolean)
+    },
+    enabled: !!order?.customer_id
+  })
+
+  const paymentConditions = isLoadingCustomerPC 
+    ? [] 
+    : (customerPaymentConditions.length > 0 ? customerPaymentConditions : globalPaymentConditions)
 
   useEffect(() => {
     if (order && order.items) {
