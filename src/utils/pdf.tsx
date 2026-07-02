@@ -73,6 +73,11 @@ export async function drawDeliveryProofOnDoc(doc: jsPDF, client: any, company: a
     };
   }
 
+  // Inject delivery execution data into orderDetails so the template can render it
+  orderDetails.signature_data = client.signature_data;
+  orderDetails.receiver_name = client.receiver_name;
+  orderDetails.receiver_doc = client.receiver_doc;
+
   const div = document.createElement('div');
   div.style.position = 'absolute';
   div.style.left = '-9999px';
@@ -103,17 +108,6 @@ export async function drawDeliveryProofOnDoc(doc: jsPDF, client: any, company: a
           const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
           doc.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight, undefined, 'FAST');
-          
-          if (client.signature_data) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text('Assinatura Digital Coletada:', 10, 10 + pdfHeight + 10);
-            doc.addImage(client.signature_data, 'PNG', 10, 10 + pdfHeight + 15, 60, 30);
-            if (client.receiver_name) {
-              doc.setFont('helvetica', 'normal');
-              doc.text(`Recebedor: ${client.receiver_name}`, 10, 10 + pdfHeight + 50);
-            }
-          }
           
         } catch (err) {
           console.error('Erro ao gerar imagem para o PDF de entrega:', err);
