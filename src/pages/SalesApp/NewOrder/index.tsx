@@ -738,26 +738,41 @@ export default function NewOrder() {
                 ))}
               </select>
             </div>
-            <div className="w-24">
-              <label className="text-xs text-muted-foreground font-medium mb-1 block">Desconto (%)</label>
-              <Input 
-                type="number"
-                min="0"
-                max="100"
-                className="h-9"
-                value={discountPercent}
-                onChange={(e) => {
-                  setDiscountPercent(e.target.value)
-                }}
-                onBlur={(e) => {
-                  const perc = parseFloat(e.target.value) || 0
-                  const subtotal = order.items?.reduce((acc: any, item: any) => acc + (item.quantity * item.unit_price), 0) || 0
-                  const totalItemsDiscount = order.items?.reduce((acc: any, item: any) => acc + (item.quantity * item.unit_price - item.total_price), 0) || 0
-                  const amountAfterItemsDiscount = subtotal - totalItemsDiscount
-                  const newDiscount = amountAfterItemsDiscount * (perc / 100)
-                  handleUpdate({ total_discount: newDiscount })
-                }}
-              />
+            <div className="w-[140px] flex gap-2">
+              <div className="w-1/2">
+                <label className="text-[10px] text-muted-foreground font-medium mb-1 block truncate">Desc(%)</label>
+                <Input 
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="h-9 px-1 text-center"
+                  value={discountPercent}
+                  onChange={(e) => {
+                    setDiscountPercent(e.target.value)
+                  }}
+                  onBlur={(e) => {
+                    const perc = parseFloat(e.target.value) || 0
+                    const subtotal = order.items?.reduce((acc: any, item: any) => acc + (item.quantity * item.unit_price), 0) || 0
+                    const totalItemsDiscount = order.items?.reduce((acc: any, item: any) => acc + (item.quantity * item.unit_price - item.total_price), 0) || 0
+                    const amountAfterItemsDiscount = subtotal - totalItemsDiscount
+                    const newDiscount = amountAfterItemsDiscount * (perc / 100)
+                    handleUpdate({ total_discount: newDiscount })
+                  }}
+                />
+              </div>
+              <div className="w-1/2">
+                <label className="text-[10px] text-muted-foreground font-medium mb-1 block truncate">Desc(R$)</label>
+                <Input 
+                  type="number"
+                  min="0"
+                  className="h-9 px-1 text-center"
+                  value={order.total_discount || ''}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0
+                    handleUpdate({ total_discount: val })
+                  }}
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -1139,22 +1154,37 @@ export default function NewOrder() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">Desconto Geral (%)</label>
-                <Input 
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="h-11 rounded-lg"
-                  value={discountPercent}
-                  onChange={(e) => setDiscountPercent(e.target.value)}
-                  onBlur={(e) => {
-                    const perc = parseFloat(e.target.value) || 0
-                    const amountAfterItemsDiscount = subtotal
-                    const newDiscount = amountAfterItemsDiscount * (perc / 100)
-                    handleUpdate({ total_discount: newDiscount })
-                  }}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">Desconto (%)</label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="h-11 rounded-lg"
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(e.target.value)}
+                    onBlur={(e) => {
+                      const perc = parseFloat(e.target.value) || 0
+                      const amountAfterItemsDiscount = subtotal
+                      const newDiscount = amountAfterItemsDiscount * (perc / 100)
+                      handleUpdate({ total_discount: newDiscount })
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground font-semibold mb-1.5 block">Desconto (R$)</label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    className="h-11 rounded-lg"
+                    value={order.total_discount || ''}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0
+                      handleUpdate({ total_discount: val })
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
