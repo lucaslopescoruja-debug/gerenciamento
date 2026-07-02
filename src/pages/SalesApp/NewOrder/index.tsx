@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesApi } from '@/api/sales'
@@ -40,13 +40,28 @@ export default function NewOrder() {
     }
   })
 
-  const { data: paymentConditions = [] } = useQuery({
+  const { data: globalPaymentConditions = [] } = useQuery({
     queryKey: ['payment_conditions'],
     queryFn: async () => {
       const { salesApi } = await import('@/api/sales')
       return salesApi.getPaymentConditions()
     }
   })
+
+  const { data: customerPaymentConditions = [], isLoading: isLoadingCustomerPC } = useQuery({
+    queryKey: ['customer_payment_conditions', order?.customer_id],
+    queryFn: async () => {
+      if (!order?.customer_id) return []
+      const { salesApi } = await import('@/api/sales')
+      const data = await salesApi.getCustomerPaymentConditions(order.customer_id)
+      return data.map((d: any) => d.payment_condition).filter(Boolean)
+    },
+    enabled: !!order?.customer_id
+  })
+
+  const paymentConditions = isLoadingCustomerPC 
+    ? [] 
+    : (customerPaymentConditions.length > 0 ? customerPaymentConditions : globalPaymentConditions)
 
   const { data: salesReps = [] } = useQuery({
     queryKey: ['sales_reps'],
