@@ -123,7 +123,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
             </div>
           </div>
           
-          <div className="w-[300px] text-center mt-6 font-bold text-[11px] flex flex-col justify-end relative">
+          <div className="w-[350px] text-center mt-6 font-bold text-[11px] flex flex-col justify-end relative">
             {details.signature_data && (
               <div className="flex justify-center mb-1">
                 <img src={details.signature_data} className="max-h-16 object-contain" alt="Assinatura" />
@@ -133,7 +133,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
               Assinatura<br/>
               {details.receiver_name && <span>Recebedor: {details.receiver_name}<br/></span>}
               {details.receiver_doc && <span>Doc: {details.receiver_doc}<br/></span>}
-              Declaro que recebi as mercadorias acima mencionadas.
+              <span className="whitespace-nowrap">Declaro que recebi as mercadorias acima mencionadas.</span>
             </div>
           </div>
         </div>
