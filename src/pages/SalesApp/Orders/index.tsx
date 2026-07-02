@@ -21,8 +21,9 @@ export default function SalesOrders() {
   const { user, company, isMaster } = useAuth()
 
   const { data: orderGroups = [] } = useQuery({
-    queryKey: ['order_groups'],
-    queryFn: salesApi.getOrderGroups,
+    queryKey: ['order_groups', company?.id],
+    queryFn: () => salesApi.getOrderGroups(company?.id),
+    enabled: !!company?.id,
   })
 
   const { data: orders = [], isLoading } = useQuery({

@@ -19,8 +19,9 @@ export default function ImportGroup() {
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   
   const { data: orderGroups = [] } = useQuery({
-    queryKey: ['order_groups'],
-    queryFn: salesApi.getOrderGroups,
+    queryKey: ['order_groups', company?.id],
+    queryFn: () => salesApi.getOrderGroups(company?.id),
+    enabled: !!company?.id,
   })
 
   const { data: orders = [] } = useQuery({

@@ -23,8 +23,9 @@ export function ImportLoadModal({ isOpen, onOpenChange }: ImportLoadModalProps) 
   const navigate = useNavigate()
 
   const { data: orderGroups = [] } = useQuery({
-    queryKey: ['order_groups'],
-    queryFn: salesApi.getOrderGroups,
+    queryKey: ['order_groups', company?.id],
+    queryFn: () => salesApi.getOrderGroups(company?.id),
+    enabled: !!company?.id,
   })
 
   // To get items, we might need to fetch full order details for the faturado ones

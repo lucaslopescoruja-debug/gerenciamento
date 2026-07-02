@@ -264,11 +264,16 @@ export const salesApi = {
   // ============================================
   // Order Groups
   // ============================================
-  async getOrderGroups() {
-    const { data, error } = await supabase
+  async getOrderGroups(companyId?: string) {
+    let query = supabase
       .from('order_groups')
       .select('*')
-      .order('created_at', { ascending: false })
+      
+    if (companyId) {
+      query = query.eq('company_id', companyId)
+    }
+      
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) throw error
     return data

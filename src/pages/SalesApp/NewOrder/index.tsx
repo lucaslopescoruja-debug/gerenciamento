@@ -59,11 +59,12 @@ export default function NewOrder() {
   })
 
   const { data: orderGroups = [] } = useQuery({
-    queryKey: ['order_groups'],
+    queryKey: ['order_groups', company?.id],
     queryFn: async () => {
       const { salesApi } = await import('@/api/sales')
-      return salesApi.getOrderGroups()
-    }
+      return salesApi.getOrderGroups(company?.id)
+    },
+    enabled: !!company?.id
   })
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)

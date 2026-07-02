@@ -30,8 +30,9 @@ export default function OrderGroups() {
   })
 
   const { data: groups = [], isLoading } = useQuery({
-    queryKey: ['order_groups'],
-    queryFn: salesApi.getOrderGroups,
+    queryKey: ['order_groups', company?.id],
+    queryFn: () => salesApi.getOrderGroups(company?.id),
+    enabled: !!company?.id,
   })
 
   const createMutation = useMutation({

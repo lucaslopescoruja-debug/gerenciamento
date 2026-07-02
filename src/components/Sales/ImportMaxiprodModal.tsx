@@ -53,8 +53,9 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
 
   const { data: orderGroups = [] } = useQuery({
-    queryKey: ['order_groups'],
-    queryFn: salesApi.getOrderGroups
+    queryKey: ['order_groups', company?.id],
+    queryFn: () => salesApi.getOrderGroups(company?.id),
+    enabled: !!company?.id,
   })
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
