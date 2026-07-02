@@ -32,9 +32,9 @@ export default function PriceTableForm() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [itemForm, setItemForm] = useState({
     product_id: '',
-    price: 0,
-    discount_percent: 0,
-    max_discount_percent: 0
+    price: '' as number | string,
+    discount_percent: '' as number | string,
+    max_discount_percent: '' as number | string
   })
 
   // Modal State for Import By Group
@@ -234,16 +234,16 @@ export default function PriceTableForm() {
       setItemForm({
         product_id: item.product_id,
         price: item.price,
-        discount_percent: item.discount_percent || 0,
-        max_discount_percent: item.max_discount_percent || 0
+        discount_percent: item.discount_percent || '',
+        max_discount_percent: item.max_discount_percent || ''
       })
     } else {
       setEditingItemId(null)
       setItemForm({
         product_id: '',
-        price: 0,
-        discount_percent: 0,
-        max_discount_percent: 0
+        price: '',
+        discount_percent: '',
+        max_discount_percent: ''
       })
     }
     setIsModalOpen(true)
@@ -255,11 +255,18 @@ export default function PriceTableForm() {
       toast.error('Selecione um produto')
       return
     }
-    if (itemForm.price <= 0) {
+    const finalPrice = parseFloat(String(itemForm.price).replace(',', '.')) || 0
+    if (finalPrice <= 0) {
       toast.error('O preço deve ser maior que zero')
       return
     }
-    saveItemMutation.mutate(itemForm)
+    const dataToSave = {
+      ...itemForm,
+      price: finalPrice,
+      discount_percent: parseFloat(String(itemForm.discount_percent).replace(',', '.')) || 0,
+      max_discount_percent: parseFloat(String(itemForm.max_discount_percent).replace(',', '.')) || 0
+    }
+    saveItemMutation.mutate(dataToSave)
   }
 
   const toggleGroup = (group: string) => {
@@ -528,8 +535,8 @@ export default function PriceTableForm() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={itemForm.price || ''}
-                    onChange={e => setItemForm({ ...itemForm, price: parseFloat(e.target.value) || 0 })}
+                    value={itemForm.price}
+                    onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
                   />
                 </div>
                 
@@ -540,8 +547,8 @@ export default function PriceTableForm() {
                     step="0.01"
                     min="0"
                     max="100"
-                    value={itemForm.discount_percent || ''}
-                    onChange={e => setItemForm({ ...itemForm, discount_percent: parseFloat(e.target.value) || 0 })}
+                    value={itemForm.discount_percent}
+                    onChange={e => setItemForm({ ...itemForm, discount_percent: e.target.value })}
                   />
                 </div>
 
@@ -552,8 +559,8 @@ export default function PriceTableForm() {
                     step="0.01"
                     min="0"
                     max="100"
-                    value={itemForm.max_discount_percent || ''}
-                    onChange={e => setItemForm({ ...itemForm, max_discount_percent: parseFloat(e.target.value) || 0 })}
+                    value={itemForm.max_discount_percent}
+                    onChange={e => setItemForm({ ...itemForm, max_discount_percent: e.target.value })}
                   />
                 </div>
               </div>
