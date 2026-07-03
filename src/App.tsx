@@ -26,7 +26,6 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import Landing from './pages/Landing'
 import HelpAndSupport from './pages/HelpAndSupport'
-import SystemsOverview from './pages/SLStock/SystemsOverview'
 import EquipmentsList from './pages/Comodatos/EquipmentsList'
 import EquipmentOrdersList from './pages/Comodatos/EquipmentOrdersList'
 import SuppliesList from './pages/Comodatos/SuppliesList'
@@ -172,7 +171,6 @@ function App() {
             <Route path="/configuracoes/empresa" element={<CompanySettings />} />
             <Route path="/acesso" element={<AccessControl />} />
              <Route path="/ajuda" element={<HelpAndSupport />} />
-             <Route path="/empresa/sistemas" element={<SystemsOverview />} />
              <Route path="/importar-tabelas" element={<ImportPriceTables />} />
 
 

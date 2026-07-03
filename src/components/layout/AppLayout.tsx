@@ -77,12 +77,6 @@ const navGroups: NavGroup[] = [
     ]
   },
   {
-    title: 'SL.STOCK',
-    items: [
-      { label: 'Nossos Sistemas', icon: Boxes, path: '/empresa/sistemas', permission: 'can_view_dashboard' }
-    ]
-  },
-  {
     title: 'SISTEMA',
     items: [
       { label: 'Minha Empresa', icon: Building2, path: '/configuracoes/empresa', permission: 'can_manage_company' },
