@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Coletor Coruja',
-        short_name: 'Coletor',
+        name: 'Estoque Fácil',
+        short_name: 'Estoque Fácil',
         description: 'App do Motorista',
         theme_color: '#ffffff',
         icons: [

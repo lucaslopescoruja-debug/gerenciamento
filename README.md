@@ -1,6 +1,6 @@
-# Estoque Fácil / LS Stock - Plataforma de Gestão Completa 📦
+# Estoque Fácil / SL Stock - Plataforma de Gestão Completa 📦
 
-Bem-vindo ao repositório oficial do **Estoque Fácil** (também conhecido como **LS Stock** em seu módulo mobile).
+Bem-vindo ao repositório oficial do **Estoque Fácil** (também conhecido como **SL Stock** em seu módulo mobile).
 Esta é uma plataforma unificada que conecta as pontas soltas da logística, controle de comodatos e da operação comercial de empresas distribuidoras.
 
 ---

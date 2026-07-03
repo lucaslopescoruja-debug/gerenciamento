@@ -29,7 +29,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
               <img src={company.logo_url} alt="Logo" className="max-h-12 object-contain" />
             ) : (
               <h1 className="text-4xl font-bold text-orange-500 tracking-tighter" style={{ fontFamily: 'sans-serif' }}>
-                {company?.fantasy_name || company?.name || 'Delicius'}
+                {company?.fantasy_name || company?.name || 'SL Stock'}
               </h1>
             )}
           </div>

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.estoquefacil.coletor',
-  appName: 'LS Stokc',
+  appName: 'Estoque Fácil',
   webDir: 'dist'
 };
 

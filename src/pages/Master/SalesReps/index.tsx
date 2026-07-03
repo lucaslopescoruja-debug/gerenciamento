@@ -70,7 +70,7 @@ export default function SalesRepsList() {
         
         let baseEmail = name.split(' ')[0].toLowerCase()
         baseEmail = baseEmail.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '')
-        const emailLogin = `${baseEmail}@delicius.com`
+        const emailLogin = `${baseEmail}@slstock.com`
 
         if (!existingEmails.has(emailLogin)) {
           await usersApi.createUser({

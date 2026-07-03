@@ -1,6 +1,6 @@
-# 🛠️ LS Stokc - Guia Técnico e Referência de Desenvolvimento
+# 🛠️ SL Stock - Guia Técnico e Referência de Desenvolvimento
 
-Este documento fornece um guia detalhado da arquitetura de código, fluxos de dados, estrutura de arquivos e integrações nativas do **LS Stokc** (Estoque Fácil). Ele foi elaborado para auxiliar desenvolvedores e engenheiros a compreenderem o funcionamento interno da plataforma e como dar manutenção ou estendê-la.
+Este documento fornece um guia detalhado da arquitetura de código, fluxos de dados, estrutura de arquivos e integrações nativas do **SL Stock** (Estoque Fácil). Ele foi elaborado para auxiliar desenvolvedores e engenheiros a compreenderem o funcionamento interno da plataforma e como dar manutenção ou estendê-la.
 
 ---
 
@@ -198,7 +198,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.estoquefacil.coletoria',
-  appName: 'LS Stokc',
+  appName: 'Estoque Fácil',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
@@ -218,7 +218,7 @@ Para que o leitor de câmera funcione e o feedback tátil da vibração seja emi
 *   **iOS (`ios/App/App/Info.plist`)**:
     ```xml
     <key>NSCameraUsageDescription</key>
-    <string>O LS Stokc necessita de acesso à câmera para realizar a leitura de códigos de barra dos produtos.</string>
+    <string>O Estoque Fácil necessita de acesso à câmera para realizar a leitura de códigos de barra dos produtos.</string>
     ```
 
 ---

@@ -504,7 +504,7 @@ export default function Landing() {
             <span className="text-white font-bold text-lg">Estoque Fácil</span>
           </div>
           <p className="text-slate-500 text-sm">
-            © 2025 LS Stokc. Todos os direitos reservados.
+            © 2025 SL Stock. Todos os direitos reservados.
           </p>
           <div className="flex gap-4">
             {/* Social links placeholder */}

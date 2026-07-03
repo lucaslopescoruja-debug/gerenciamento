@@ -1,12 +1,12 @@
-# 📈 Plano Comercial, de Vendas e Onboarding - LS Stokc
+# 📈 Plano Comercial, de Vendas e Onboarding - SL Stock
 
-Este documento detalha a estratégia comercial, posicionamento de mercado, modelo de monetização, funil de aquisição de novos clientes e o roteiro de onboarding (ativação) para o **LS Stokc** (Estoque Fácil).
+Este documento detalha a estratégia comercial, posicionamento de mercado, modelo de monetização, funil de aquisição de novos clientes e o roteiro de onboarding (ativação) para o **SL Stock** (Estoque Fácil).
 
 ---
 
 ## 🎯 1. Perfil de Cliente Ideal (ICP - Ideal Customer Profile)
 
-O sucesso de vendas do LS Stokc depende do foco nos segmentos corretos que mais sofrem com dores operacionais de logística. O ICP do sistema divide-se em três perfis:
+O sucesso de vendas do SL Stock depende do foco nos segmentos corretos que mais sofrem com dores operacionais de logística. O ICP do sistema divide-se em três perfis:
 
 ### A. Centros de Distribuição e Operadores Logísticos de Médio Porte
 *   **Dores Principais**: Erros frequentes na montagem de cargas (expedição de produtos ou quantidades erradas), perdas financeiras decorrentes de devoluções, falta de controle em tempo real da equipe de doca.
@@ -27,7 +27,7 @@ O sucesso de vendas do LS Stokc depende do foco nos segmentos corretos que mais 
 Ao abordar potenciais clientes, a equipe de vendas deve focar nos seguintes diferenciais exclusivos:
 
 1.  **Redução Imediata de Erros (Travas Duras)**: O conferente é fisicamente impedido pelo software de carregar produtos incorretos ou em quantidades superiores sem aprovação. Isso elimina custos de reentrega e devoluções.
-2.  **Economia Massiva de Hardware (UI Windows 2000)**: A maioria dos WMS de mercado exige smartphones caros ou coletores de última geração. O LS Stokc roda de forma extremamente fluida em coletores antigos (Honeywell, Zebra) graças ao **Modo Tradicional**, que economiza até 90% de processamento e bateria.
+2.  **Economia Massiva de Hardware (UI Windows 2000)**: A maioria dos WMS de mercado exige smartphones caros ou coletores de última geração. O SL Stock roda de forma extremamente fluida em coletores antigos (Honeywell, Zebra) graças ao **Modo Tradicional**, que economiza até 90% de processamento e bateria.
 3.  **Comprovante de Entrega Digital (POD) e Documentos Personalizados**: Assinatura na tela do smartphone, sem papelada, arquivado digitalmente. Geração de PDFs (Romaneios e Pedidos) totalmente customizados com a logomarca de cada cliente SaaS (White-labeling visual nativo).
 4.  **Liberações Remotas em Tempo Real**: Gestores tomam decisões de liberação de divergências da sala de controle ou de casa, destravando a operação dos motoristas/conferentes instantaneamente.
 5.  **Ajuste Inteligente de Estoque**: Ferramenta de inventário oficial que calcula divergências de sobras/faltas e atualiza a base do cliente com um único clique.
@@ -74,7 +74,7 @@ graph TD
 *   **Meta Ads**: Vídeos curtos gravados por operadores bipando caixas e o app bloqueando o carregamento errado, seguidos pelo gestor liberando pelo computador. O apelo visual do contraste entre o Modo Moderno e o Modo Retro atrai cliques de tomadores de decisão técnicos.
 
 #### 3. Parcerias com Integradores e Consultores de ERP
-*   **Como**: Oferecer comissionamento recorrente (Ex: 10% da mensalidade) para consultores de implantação de sistemas de gestão ERP. Muitos sistemas locais não possuem módulo WMS ou app de motorista, sendo o LS Stokc a extensão móvel perfeita.
+*   **Como**: Oferecer comissionamento recorrente (Ex: 10% da mensalidade) para consultores de implantação de sistemas de gestão ERP. Muitos sistemas locais não possuem módulo WMS ou app de motorista, sendo o SL Stock a extensão móvel perfeita.
 
 ---
 

@@ -1,6 +1,6 @@
-# 📦 LS Stokc (Estoque Fácil) - Documentação do Sistema
+# 📦 SL Stock (Estoque Fácil) - Documentação do Sistema
 
-O **LS Stokc** (também denominado *Estoque Fácil*) é uma plataforma ERP/WMS SaaS Multitenant completa, projetada para gerenciar operações em Centros de Distribuição (CD), armazéns e logística de última milha (Last-Mile). O sistema se destaca por sua renderização dupla de interface (Modo Moderno vs. Modo Tradicional Windows 2000), mecanismos eficientes de travas duras, liberação remota em tempo real e compilação híbrida nativa para dispositivos móveis.
+O **SL Stock** (também denominado *Estoque Fácil*) é uma plataforma ERP/WMS SaaS Multitenant completa, projetada para gerenciar operações em Centros de Distribuição (CD), armazéns e logística de última milha (Last-Mile). O sistema se destaca por sua renderização dupla de interface (Modo Moderno vs. Modo Tradicional Windows 2000), mecanismos eficientes de travas duras, liberação remota em tempo real e compilação híbrida nativa para dispositivos móveis.
 
 ---
 
@@ -147,7 +147,7 @@ Mapeia as contagens de inventário oficial do armazém e logs de divergência pa
 
 ## 🎨 3. Motor de Temas e UI Dupla (Moderno vs. Tradicional)
 
-Uma das maiores inovações de usabilidade do **LS Stokc** é o sistema de renderização dupla no frontend. O operador pode alternar o layout de acordo com o dispositivo utilizado:
+Uma das maiores inovações de usabilidade do **SL Stock** é o sistema de renderização dupla no frontend. O operador pode alternar o layout de acordo com o dispositivo utilizado:
 
 ### 1. Modo Moderno (Padrão)
 *   **Estética**: Inspirada no Glassmorphism moderno. Blur de fundo, gradientes vibrantes, bordas arredondadas e sombras neon.
