@@ -515,7 +515,7 @@ export default function Landing() {
       </footer>
 
       {/* Floating WhatsApp Button */}
-      <a href="https://wa.me/5531986230171" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 h-14 w-14 bg-green-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 hover:scale-110 transition-all z-50">
+      <a href="https://wa.me/5573999476822" target="_blank" rel="noopener noreferrer" className="fixed bottom-6 right-6 h-14 w-14 bg-green-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 hover:scale-110 transition-all z-50">
         <Phone className="h-6 w-6" />
       </a>
 

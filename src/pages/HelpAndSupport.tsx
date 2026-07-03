@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button'
 
 export default function HelpAndSupport() {
   const handleWhatsApp = () => {
-    // Para um número real, basta trocar os '9's
-    window.open('https://wa.me/5531986230171', '_blank') 
+    window.open('https://wa.me/5573999476822', '_blank') 
   }
 
   const handleEmail = () => {
-    window.open('mailto:suporte@estoquefacil.app', '_blank')
+    window.open('mailto:comercial.sl.stock@gmail.com', '_blank')
   }
 
   return (
