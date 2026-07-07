@@ -156,8 +156,9 @@ export const maxiprodApi = {
           }
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Erro ao sincronizar IDs de produtos:', e);
+      throw new Error(`Erro na sincronização de produtos: ${e.message || e}`);
     }
 
     // 2. Mapear Clientes
@@ -209,8 +210,9 @@ export const maxiprodApi = {
           }
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Erro ao sincronizar IDs de clientes:', e);
+      throw new Error(`Erro na sincronização de clientes: ${e.message || e}`);
     }
 
     return syncStats;
