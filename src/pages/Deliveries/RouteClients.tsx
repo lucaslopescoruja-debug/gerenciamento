@@ -9,14 +9,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered, Menu, FileDown, CheckSquare, Truck, DownloadCloud } from 'lucide-react'
+import { ArrowLeft, User, MapPin, FileSpreadsheet, Trash2, ChevronRight, AlertTriangle, Search, Plus, Map as MapIcon, ListOrdered, Menu, FileDown, CheckSquare, Truck, DownloadCloud, GitMerge } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import * as XLSX from 'xlsx'
 import { geocodeAddress, optimizeRoute } from '@/api/routing'
 import { equipmentsApi } from '@/api/equipments'
 import { ExecutionModal } from '@/pages/Comodatos/ExecutionModal'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { generateRouteReportPDF } from '@/utils/pdf'
 import { supabase } from '@/lib/supabase'
 import { OfflineSyncService } from '@/services/OfflineSyncService'
@@ -51,6 +51,16 @@ export default function RouteClients() {
   const [selectedOsToExecute, setSelectedOsToExecute] = useState<any>(null)
   const [isAddOsModalOpen, setIsAddOsModalOpen] = useState(false)
   const [osSearchTerm, setOsSearchTerm] = useState('')
+
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false)
+  const [selectedSourceRouteId, setSelectedSourceRouteId] = useState('')
+  const [isMerging, setIsMerging] = useState(false)
+
+  const { data: otherRoutes = [] } = useQuery({
+    queryKey: ['delivery_routes'],
+    queryFn: deliveriesApi.getDeliveryRoutes,
+    select: (data) => data.filter((r: any) => r.id !== id && (r.status === 'pending' || r.status === 'in_progress'))
+  })
 
   // Checklist states
   const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false)
@@ -648,6 +658,148 @@ export default function RouteClients() {
 
   const isInitialChecklistDone = !!checklist?.initial_km || (route?.status && route.status !== 'pending') || processedStops.some((g: any) => g.stops.some((s: any) => ['em_rota', 'delivered', 'delivered_with_divergence', 'concluido'].includes(s.status)))
 
+  const handleMerge = async () => {
+    if (!selectedSourceRouteId) {
+      toast.error('Selecione uma rota para mesclar')
+      return
+    }
+
+    const sourceRoute = otherRoutes.find((r: any) => r.id === selectedSourceRouteId)
+    const sourceName = sourceRoute?.title || sourceRoute?.operation?.load_number || 'Rota Origem'
+    const currentName = route?.title || route?.operation?.load_number || 'Esta Rota'
+
+    const confirmText = `Deseja realmente trazer todos os clientes e itens da rota "${sourceName}" para esta rota ("${currentName}")?\n\nA rota "${sourceName}" será excluída e seus clientes serão adicionados aqui.`
+    
+    if (!window.confirm(confirmText)) {
+      return
+    }
+
+    setIsMerging(true)
+    try {
+      // 1. Move delivery_clients to this route
+      const { error: errMoveClients } = await supabase
+        .from('delivery_clients')
+        .update({ delivery_route_id: id })
+        .eq('delivery_route_id', selectedSourceRouteId)
+
+      if (errMoveClients) throw errMoveClients
+
+      // 2. Move equipment_orders to this route
+      const { error: errMoveEquip } = await supabase
+        .from('equipment_orders')
+        .update({ delivery_route_id: id })
+        .eq('delivery_route_id', selectedSourceRouteId)
+
+      if (errMoveEquip) throw errMoveEquip
+
+      // 3. Merge operation_items
+      const targetOpId = route.operation_id
+      const sourceOpId = sourceRoute.operation_id
+
+      if (targetOpId && sourceOpId) {
+        const { data: targetItems } = await supabase
+          .from('operation_items')
+          .select('*')
+          .eq('operation_id', targetOpId)
+
+        const { data: sourceItems } = await supabase
+          .from('operation_items')
+          .select('*')
+          .eq('operation_id', sourceOpId)
+
+        const targetItemsMap = new Map<string, any>((targetItems || []).map(i => [i.product_code || i.product_id, i]))
+
+        for (const sourceItem of (sourceItems || [])) {
+          const key = sourceItem.product_code || sourceItem.product_id
+          const targetItem = targetItemsMap.get(key)
+
+          if (targetItem) {
+            const newExpected = targetItem.quantity_expected + sourceItem.quantity_expected
+            const newScanned = (targetItem.quantity_scanned || 0) + (sourceItem.quantity_scanned || 0)
+            const newStatus = newScanned >= newExpected ? 'ok' : 'pending'
+
+            const { error: errUpdateTarget } = await supabase
+              .from('operation_items')
+              .update({
+                quantity_expected: newExpected,
+                quantity_scanned: newScanned,
+                status: newStatus
+              })
+              .eq('id', targetItem.id)
+
+            if (errUpdateTarget) throw errUpdateTarget
+
+            const { error: errDeleteSource } = await supabase
+              .from('operation_items')
+              .delete()
+              .eq('id', sourceItem.id)
+
+            if (errDeleteSource) throw errDeleteSource
+          } else {
+            const { error: errAssignSource } = await supabase
+              .from('operation_items')
+              .update({ operation_id: targetOpId })
+              .eq('id', sourceItem.id)
+
+            if (errAssignSource) throw errAssignSource
+          }
+        }
+      }
+
+      // 4. Concatenate notes on operations
+      if (targetOpId && sourceOpId) {
+        const { data: opsData } = await supabase
+          .from('operations')
+          .select('id, load_number, notes')
+          .in('id', [targetOpId, sourceOpId])
+
+        if (opsData) {
+          const targetOp = opsData.find(o => o.id === targetOpId)
+          const sourceOp = opsData.find(o => o.id === sourceOpId)
+
+          const nextNotes = `${targetOp?.notes || ''}\n[Mesclado com Rota/Carga: ${sourceOp?.load_number || ''}]`.trim()
+          await supabase
+            .from('operations')
+            .update({ notes: nextNotes })
+            .eq('id', targetOpId)
+        }
+      }
+
+      // 5. Delete source route
+      const { error: errDeleteRoute } = await supabase
+        .from('delivery_routes')
+        .delete()
+        .eq('id', selectedSourceRouteId)
+
+      if (errDeleteRoute) throw errDeleteRoute
+
+      // 6. Delete source operation
+      if (sourceOpId) {
+        const { error: errDeleteOp } = await supabase
+          .from('operations')
+          .delete()
+          .eq('id', sourceOpId)
+
+        if (errDeleteOp) throw errDeleteOp
+      }
+
+      // 7. Recalculate target route status
+      await deliveriesApi.recalculateRouteStatus(id!)
+
+      toast.success('Rotas mescladas com sucesso!')
+      queryClient.invalidateQueries({ queryKey: ['delivery_route', id] })
+      queryClient.invalidateQueries({ queryKey: ['delivery_clients', id] })
+      queryClient.invalidateQueries({ queryKey: ['route_orders', id] })
+      setIsMergeDialogOpen(false)
+      setSelectedSourceRouteId('')
+    } catch (err: any) {
+      console.error(err)
+      toast.error(`Erro ao mesclar rotas: ${err.message || err}`)
+    } finally {
+      setIsMerging(false)
+    }
+  }
+
   if (isLoadingRoute || isLoadingClients) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>
 
   return (
@@ -854,6 +1006,14 @@ export default function RouteClients() {
                             onClick={() => { setShowMenu(false); setIsAddOsModalOpen(true); }}
                           >
                             <Plus className="h-4 w-4" /> Adicionar OS (Equipamento)
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="justify-start gap-3 w-full text-left text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 font-normal"
+                            onClick={() => { setShowMenu(false); setIsMergeDialogOpen(true); }}
+                          >
+                            <GitMerge className="h-4 w-4" /> Mesclar Rota
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -1150,6 +1310,69 @@ export default function RouteClients() {
               Salvar Checklist
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Mesclar com Outra Rota */}
+      <Dialog open={isMergeDialogOpen} onOpenChange={(open) => !open && !isMerging && setIsMergeDialogOpen(false)}>
+        <DialogContent className="max-w-md w-[95vw] rounded-xl overflow-hidden p-0 border border-border/80 bg-card/95 backdrop-blur-md shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-border/50">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+              <GitMerge className="h-5 w-5 text-indigo-500 animate-pulse" /> Mesclar com Outra Rota
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground mt-1">
+              Selecione uma rota ativa para trazer seus clientes e mercadorias para esta rota.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-6 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                Rota de Origem
+              </Label>
+              <select
+                className="flex h-11 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                value={selectedSourceRouteId}
+                onChange={e => setSelectedSourceRouteId(e.target.value)}
+                disabled={isMerging}
+              >
+                <option value="">Selecione a rota...</option>
+                {otherRoutes.map((r: any) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title || r.operation?.load_number || 'Rota Sem Nome'} ({r.driver?.name || 'Sem motorista'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedSourceRouteId && (
+              <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-xs text-amber-600 dark:text-amber-400 animate-in fade-in duration-200">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                <span>
+                  Ao confirmar, todos os clientes e cargas da rota selecionada serão consolidados em <strong>{route?.title || route?.operation?.load_number || 'Esta Rota'}</strong>. A rota selecionada será excluída permanentemente.
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 pt-4 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsMergeDialogOpen(false)}
+              disabled={isMerging}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleMerge}
+              disabled={isMerging || !selectedSourceRouteId}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold px-5"
+            >
+              {isMerging ? 'Mesclando...' : 'Confirmar Mesclagem'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
