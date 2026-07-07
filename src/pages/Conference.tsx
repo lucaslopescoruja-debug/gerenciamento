@@ -606,62 +606,6 @@ export default function Conference() {
     }
   }
 
-  const handleUpdateQtyScanned = (item: OperationItem, delta: number) => {
-    const cur = item.quantity_scanned || 0
-    const nq = Math.max(0, cur + delta)
-    if (nq === cur) return
-
-    let nextExpected = item.quantity_expected
-    if (nq > item.quantity_expected && op?.type !== 'RECEIPT') {
-      if (!isManager) {
-        playBeep('error')
-        window.alert(`LIMITE ATINGIDO: A quantidade de ${item.description} já foi alcançada. Procure um Gestor.`)
-        return
-      }
-      playBeep('error')
-      const ok = window.confirm(`Atenção: A quantidade escaneada (${nq}) ultrapassa o esperado (${item.quantity_expected}) para ${item.description}. Deseja adicionar o extra à rota?`)
-      if (!ok) return
-      nextExpected = nq
-    }
-
-    const ns = (op?.type === 'RECEIPT' && nq > nextExpected) ? 'divergent' : (nq >= nextExpected ? 'ok' : 'pending')
-    
-    const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
-    const systemStock = item.system_stock_at_load !== undefined && item.system_stock_at_load !== null 
-      ? item.system_stock_at_load 
-      : (matchedProduct ? matchedProduct.stock : 0)
-    const isStockAlert = op?.type === 'LOAD' && (systemStock <= 0 || systemStock < nextExpected)
-    const isDivergent = isStockAlert && ((systemStock <= 0 && nq > 0) || (systemStock > 0 && nq > systemStock))
-    
-    const extraUpdates = isStockAlert ? {
-      physical_verification: 'found' as const,
-      physical_divergence_found: isDivergent
-    } : {}
-
-    const updated = { 
-      ...item, 
-      quantity_scanned: nq, 
-      quantity_expected: nextExpected, 
-      status: ns,
-      ...extraUpdates
-    } as OperationItem
-
-    queryClient.setQueryData(['operation_items', id], (old: OperationItem[]) => 
-      old.map(i => i.id === item.id ? updated : i)
-    )
-
-    updateItemMutation.mutate({ 
-      itemId: item.id, 
-      qty: nq, 
-      expected: nextExpected !== item.quantity_expected ? nextExpected : undefined,
-      status: ns,
-      extraUpdates: isStockAlert ? extraUpdates : undefined
-    })
-
-    if (op && op.status === 'pending') {
-      updateOpMutation.mutate({ status: 'in_progress' })
-    }
-  }
 
   if (isOpLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando conferência...</div>
 
@@ -1148,48 +1092,34 @@ export default function Conference() {
                       <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <span className={`text-lg font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
+                        <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
+                      </div>
                       {op.status !== 'dispatched' && op.status !== 'completed' ? (
-                        <div className="flex items-center bg-muted/40 rounded-lg p-0.5 border border-muted-foreground/10 shrink-0">
-                          <Button 
-                            type="button"
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 hover:bg-muted shrink-0" 
-                            onClick={(e) => { e.stopPropagation(); handleUpdateQtyScanned(item, -1) }}
-                            disabled={!item.quantity_scanned || item.quantity_scanned <= 0}
-                          >
-                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                          
-                          <div className="text-center px-1.5 min-w-[36px]">
-                            <span className={`text-sm font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
-                            <span className="text-muted-foreground text-[10px] block font-mono">/ {item.quantity_expected}</span>
-                          </div>
-                          
-                          <Button 
-                            type="button"
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 hover:bg-muted shrink-0" 
-                            onClick={(e) => { e.stopPropagation(); handleUpdateQtyScanned(item, 1) }}
-                          >
-                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCheckItem(item)}
+                          className="hover:scale-105 active:scale-95 transition-transform"
+                          title={done ? "Desmarcar item" : "Marcar como conferido"}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 hover:border-emerald-500/50" />
+                          )}
+                        </button>
                       ) : (
-                        <div className="text-right">
-                          <span className={`text-lg font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
-                          <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
-                        </div>
-                      )}
-
-                      {done && (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        done ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
+                        )
                       )}
                       
                       {isManager && (
-                        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
-                          <Pencil className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       )}
                     </div>
