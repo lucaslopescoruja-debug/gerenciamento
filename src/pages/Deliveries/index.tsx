@@ -25,7 +25,8 @@ import {
   Pencil,
   CalendarDays,
   Boxes,
-  GitMerge
+  GitMerge,
+  Menu
 } from 'lucide-react'
 import type { DeliveryRoute } from '@/types/database'
 import { MergeRoutesModal } from '@/components/MergeRoutesModal'
@@ -48,6 +49,7 @@ export default function DeliveriesList() {
   const [editDriver, setEditDriver] = useState('')
   const [editHelper, setEditHelper] = useState('')
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
 
   const { data: routes = [], isLoading } = useQuery({
     queryKey: ['delivery_routes'],
@@ -138,30 +140,55 @@ export default function DeliveriesList() {
           </p>
         </div>
         {isManager && (
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-            <Link to="/historico">
+          <div className="flex gap-2 flex-wrap sm:flex-nowrap items-center">
+            <Link to="/historico" className="w-full sm:w-auto">
               <Button variant="outline" className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm">
                 <FileSignature className="h-5 w-5 sm:h-4 sm:w-4" /> Comprovantes
               </Button>
             </Link>
-            <Link to="/entregas/importar-grupo">
-              <Button variant="outline" className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm border-emerald-500 text-emerald-600 hover:bg-emerald-50">
-                <Boxes className="h-5 w-5 sm:h-4 sm:w-4" /> Importar Grupo
-              </Button>
-            </Link>
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={() => setIsMergeModalOpen(true)}
-              className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm border-indigo-500 text-indigo-600 hover:bg-indigo-50"
-            >
-              <GitMerge className="h-5 w-5 sm:h-4 sm:w-4" /> Mesclar Rotas
-            </Button>
-            <Link to="/entregas/nova">
+            <Link to="/entregas/nova" className="w-full sm:w-auto">
               <Button className="gap-2 w-full sm:w-auto h-12 sm:h-10 text-lg sm:text-sm">
                 <Plus className="h-5 w-5 sm:h-4 sm:w-4" /> Criar Rota
               </Button>
             </Link>
+
+            <div className="relative w-full sm:w-auto">
+              <Button 
+                variant="outline"
+                size="icon"
+                className="h-12 w-full sm:w-10 sm:h-10 shrink-0 gap-2 sm:gap-0"
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sm:hidden text-lg">Menu</span>
+              </Button>
+
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-background border rounded-md shadow-lg z-50 flex flex-col p-2 space-y-1 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                    <Label className="text-xs text-muted-foreground px-2 py-1 uppercase font-semibold">Ações Gestor</Label>
+                    <Link to="/entregas/importar-grupo" onClick={() => setShowMenu(false)} className="w-full">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="justify-start gap-3 w-full text-left font-normal text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      >
+                        <Boxes className="h-4 w-4" /> Importar Grupo
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="justify-start gap-3 w-full text-left font-normal text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                      onClick={() => { setShowMenu(false); setIsMergeModalOpen(true); }}
+                    >
+                      <GitMerge className="h-4 w-4" /> Mesclar Rotas
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
