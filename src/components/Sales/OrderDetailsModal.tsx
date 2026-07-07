@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import { supabase } from '@/lib/supabase'
-import { Printer, Download, Copy } from 'lucide-react'
+import { Printer, Download, Copy, Send } from 'lucide-react'
 import jsPDF from 'jspdf'
 import { toPng } from 'html-to-image'
 import { toast } from '@/components/ui/toaster'
@@ -23,6 +23,7 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
   const [details, setDetails] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
   const { company } = useAuth()
   const navigate = useNavigate()
@@ -95,6 +96,27 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
 
 
 
+  const handleSendToMaxiprod = async () => {
+    if (!orderId || !details) return
+    setIsSending(true)
+    toast.info('Enviando pedido para o Maxiprod...', { duration: 3000 })
+    try {
+      const { maxiprodApi } = await import('@/api/maxiprod')
+      await maxiprodApi.sendSalesOrder(orderId)
+      
+      const { salesApi } = await import('@/api/sales')
+      await salesApi.updateSalesOrder(orderId, { status: 'Faturado' })
+      
+      toast.success('Pedido enviado com sucesso e faturado!')
+      loadDetails(orderId)
+    } catch (e: any) {
+      console.error(e)
+      toast.error(`Erro ao enviar pedido: ${e.message || e}`)
+    } finally {
+      setIsSending(false)
+    }
+  }
+
   const handlePrint = () => {
     window.print()
   }
@@ -147,6 +169,15 @@ export function OrderDetailsModal({ orderId, isOpen, onOpenChange }: OrderDetail
             {details && (
               <div className="flex items-center gap-2">
 
+                {details.status === 'Enviado' && (
+                  <Button 
+                    onClick={handleSendToMaxiprod} 
+                    disabled={isSending} 
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 text-xs font-bold gap-1.5"
+                  >
+                    <Send className="h-4 w-4" /> {isSending ? 'Enviando...' : 'Enviar Maxiprod'}
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={handleDownloadPDF} disabled={isGeneratingPdf} className="h-9">
                   <Download className="h-4 w-4 mr-2" /> {isGeneratingPdf ? 'Gerando...' : 'Download PDF'}
                 </Button>

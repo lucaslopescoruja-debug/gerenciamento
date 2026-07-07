@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/toaster'
-import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload, Edit, Eye, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { FileText, Search, FileSignature, CheckCircle, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Upload, Edit, Eye, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Send } from 'lucide-react'
 import { ImportMaxiprodModal } from '@/components/Sales/ImportMaxiprodModal'
 import { Pagination } from '@/components/ui/Pagination'
 import type { SalesOrder } from '@/types/database'
@@ -48,6 +48,7 @@ export default function SalesManagement() {
   const [filterSalesRep, setFilterSalesRep] = useState('all')
   const [filterRegion, setFilterRegion] = useState('all')
   const [filterOrderGroup, setFilterOrderGroup] = useState('')
+  const [sendingOrderId, setSendingOrderId] = useState<string | null>(null)
   
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 50
@@ -195,6 +196,26 @@ export default function SalesManagement() {
   const handleUpdateStatus = (id: string, currentStatus: string, newStatus: SalesOrder['status']) => {
     if (window.confirm(`Tem certeza que deseja alterar o status de "${currentStatus}" para "${newStatus}"?`)) {
       updateStatusMutation.mutate({ id, status: newStatus })
+    }
+  }
+
+  const handleSendToMaxiprod = async (orderId: string) => {
+    setSendingOrderId(orderId)
+    toast.info('Enviando pedido para o Maxiprod...', { duration: 3000 })
+    try {
+      const { maxiprodApi } = await import('@/api/maxiprod')
+      await maxiprodApi.sendSalesOrder(orderId)
+      
+      // Update local status to Faturado
+      await salesApi.updateSalesOrder(orderId, { status: 'Faturado' })
+      queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
+      
+      toast.success('Pedido enviado com sucesso e faturado!')
+    } catch (e: any) {
+      console.error(e)
+      toast.error(`Erro ao enviar pedido: ${e.message || e}`)
+    } finally {
+      setSendingOrderId(null)
     }
   }
 
@@ -406,8 +427,16 @@ export default function SalesManagement() {
                       <div className="flex items-center justify-end gap-2">
                         {order.status === 'Enviado' && (
                           <>
+                            <Button 
+                              size="sm" 
+                              className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white" 
+                              onClick={() => handleSendToMaxiprod(order.id)}
+                              disabled={sendingOrderId === order.id}
+                            >
+                              <Send className="h-4 w-4 mr-1" /> Enviar Maxiprod
+                            </Button>
                             <Button size="sm" variant="outline" className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => handleUpdateStatus(order.id, order.status, 'Faturado')}>
-                              <CheckCircle className="h-4 w-4 mr-1" /> Faturar
+                              <CheckCircle className="h-4 w-4 mr-1" /> Faturar Local
                             </Button>
                             <Button size="sm" variant="outline" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleUpdateStatus(order.id, order.status, 'Cancelado')}>
                               <XCircle className="h-4 w-4 mr-1" /> Cancelar
