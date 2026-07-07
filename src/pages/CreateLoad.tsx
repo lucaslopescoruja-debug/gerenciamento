@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, Plus, Trash2, ClipboardList, Truck, User, Search, Upload, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ClipboardList, Truck, User, Search, Upload, AlertTriangle, RefreshCw } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { Navigate } from 'react-router-dom'
+import { SyncGroupModal } from '@/components/SyncGroupModal'
 
 interface NewItem {
   tempId: string
@@ -85,6 +86,20 @@ export default function CreateLoad() {
     queryFn: () => operationsApi.getOperationItems(id!),
     enabled: !!id,
   })
+
+  const { data: route } = useQuery({
+    queryKey: ['delivery_route_by_op', id],
+    queryFn: () => deliveriesApi.getDeliveryRouteByOperationId(id!),
+    enabled: !!id && existingOp?.type === 'LOAD',
+  })
+
+  const { data: routeClients = [] } = useQuery({
+    queryKey: ['delivery_clients', route?.id],
+    queryFn: () => deliveriesApi.getDeliveryClients(route!.id),
+    enabled: !!route?.id,
+  })
+
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
 
   useEffect(() => {
     if (existingOp) {
@@ -651,12 +666,24 @@ export default function CreateLoad() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
-        <div>
-          <h1 className="text-2xl font-bold gradient-text">{id ? 'Editar Rota' : 'Nova Rota'}</h1>
-          <p className="text-sm text-muted-foreground">{id ? 'Atualizar operação existente' : 'Criar operação de expedição'}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
+          <div>
+            <h1 className="text-2xl font-bold gradient-text">{id ? 'Editar Rota' : 'Nova Rota'}</h1>
+            <p className="text-sm text-muted-foreground">{id ? 'Atualizar operação existente' : 'Criar operação de expedição'}</p>
+          </div>
         </div>
+        {id && existingOp?.type === 'LOAD' && (existingOp.status === 'pending' || existingOp.status === 'in_progress') && (
+          <Button 
+            type="button"
+            variant="outline"
+            className="gap-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 shrink-0"
+            onClick={() => setIsSyncModalOpen(true)}
+          >
+            <RefreshCw className="h-4 w-4" /> Sincronizar Grupo
+          </Button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -779,6 +806,23 @@ export default function CreateLoad() {
           {(createMutation.isPending || updateMutation.isPending) ? 'Salvando...' : (id ? 'Salvar Alterações' : 'Criar Rota')}
         </Button>
       </form>
+
+      {existingOp && (
+        <SyncGroupModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          operationId={existingOp.id}
+          currentClientName={existingOp.client_name || ''}
+          companyId={company?.id || ''}
+          currentItems={existingItems}
+          currentClients={routeClients}
+          route={route}
+          allProducts={products}
+          onSyncComplete={() => {
+            window.location.reload()
+          }}
+        />
+      )}
     </div>
   )
 }
