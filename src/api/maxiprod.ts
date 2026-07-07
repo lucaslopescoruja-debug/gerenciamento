@@ -162,19 +162,29 @@ export const maxiprodApi = {
         clientesList = Array.isArray(clientesDataAlt) ? clientesDataAlt : (clientesDataAlt.itens || clientesDataAlt.Itens || clientesDataAlt.data || clientesDataAlt.Data || []);
       }
       
-      const { data: supaCustomers } = await supabase.from('customers').select('id, document').eq('company_id', comp.id);
+      const { data: supaCustomers } = await supabase.from('customers').select('id, document, legal_name, fantasy_name').eq('company_id', comp.id);
       
       if (supaCustomers && supaCustomers.length > 0) {
         for (const emp of clientesList) {
           const cnpj = emp.CnpjCpf || emp.cnpjCpf || emp.Cnpj || emp.cnpj;
           const empId = emp.Id || emp.id;
+          const maxiName = emp.RazaoSocial || emp.razaoSocial || emp.Nome || emp.nome || emp.NomeFantasia || emp.nomeFantasia || '';
           
-          if (cnpj && empId) {
-            const cleanMaxiCnpj = String(cnpj).replace(/\D/g, '');
+          if (empId) {
             const matched = supaCustomers.find(c => {
-              if (!c.document) return false;
-              const cleanSupaCnpj = String(c.document).replace(/\D/g, '');
-              return cleanSupaCnpj === cleanMaxiCnpj;
+              if (cnpj && c.document) {
+                const cleanSupaCnpj = String(c.document).replace(/\D/g, '');
+                const cleanMaxiCnpj = String(cnpj).replace(/\D/g, '');
+                if (cleanSupaCnpj && cleanMaxiCnpj && cleanSupaCnpj === cleanMaxiCnpj) return true;
+              }
+              // Fallback to name matching
+              const supaName = c.legal_name || c.fantasy_name || '';
+              if (supaName && maxiName) {
+                const cleanSupaName = supaName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const cleanMaxiName = maxiName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (cleanSupaName === cleanMaxiName) return true;
+              }
+              return false;
             });
             
             if (matched) {

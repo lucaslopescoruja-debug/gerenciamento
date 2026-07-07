@@ -653,6 +653,27 @@ export default function CompanySettings() {
             <div className="pt-4 border-t border-border mt-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
+                  <h4 className="font-bold text-sm text-foreground">Mapeamento de IDs (Recomendado)</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Vincula produtos e clientes do Estoque Fácil aos cadastros do Maxiprod (por Código e CPF/CNPJ). Obrigatório para poder transmitir pedidos.
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSyncIds} 
+                  disabled={isSyncingIds || !erpToken} 
+                  type="button" 
+                  className="shrink-0 border-indigo-200 hover:bg-indigo-50 text-indigo-700 h-10"
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isSyncingIds ? 'animate-spin' : ''}`} />
+                  {isSyncingIds ? 'Mapeando IDs...' : 'Sincronizar IDs (Vincular)'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-border mt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
                   <h4 className="font-bold text-sm text-foreground">Sincronização Total (Legado)</h4>
                   <p className="text-xs text-muted-foreground">
                     Puxe clientes, produtos e tabelas de preço do Maxiprod para o Estoque Fácil (substitui dados).
