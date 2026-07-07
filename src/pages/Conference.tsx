@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
-import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil, Download, PackageCheck, Undo2, PenTool, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ScanLine, CheckCircle2, AlertTriangle, Camera, Search, Check, FileSignature, Zap, Truck, Plus, Trash2, Pencil, Download, PackageCheck, Undo2, PenTool, ChevronDown, ChevronRight, RefreshCw, Minus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import * as XLSX from 'xlsx'
 import { BarcodeCameraScanner } from '@/components/BarcodeCameraScanner'
@@ -606,6 +606,63 @@ export default function Conference() {
     }
   }
 
+  const handleUpdateQtyScanned = (item: OperationItem, delta: number) => {
+    const cur = item.quantity_scanned || 0
+    const nq = Math.max(0, cur + delta)
+    if (nq === cur) return
+
+    let nextExpected = item.quantity_expected
+    if (nq > item.quantity_expected && op?.type !== 'RECEIPT') {
+      if (!isManager) {
+        playBeep('error')
+        window.alert(`LIMITE ATINGIDO: A quantidade de ${item.description} já foi alcançada. Procure um Gestor.`)
+        return
+      }
+      playBeep('error')
+      const ok = window.confirm(`Atenção: A quantidade escaneada (${nq}) ultrapassa o esperado (${item.quantity_expected}) para ${item.description}. Deseja adicionar o extra à rota?`)
+      if (!ok) return
+      nextExpected = nq
+    }
+
+    const ns = (op?.type === 'RECEIPT' && nq > nextExpected) ? 'divergent' : (nq >= nextExpected ? 'ok' : 'pending')
+    
+    const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
+    const systemStock = item.system_stock_at_load !== undefined && item.system_stock_at_load !== null 
+      ? item.system_stock_at_load 
+      : (matchedProduct ? matchedProduct.stock : 0)
+    const isStockAlert = op?.type === 'LOAD' && (systemStock <= 0 || systemStock < nextExpected)
+    const isDivergent = isStockAlert && ((systemStock <= 0 && nq > 0) || (systemStock > 0 && nq > systemStock))
+    
+    const extraUpdates = isStockAlert ? {
+      physical_verification: 'found' as const,
+      physical_divergence_found: isDivergent
+    } : {}
+
+    const updated = { 
+      ...item, 
+      quantity_scanned: nq, 
+      quantity_expected: nextExpected, 
+      status: ns,
+      ...extraUpdates
+    } as OperationItem
+
+    queryClient.setQueryData(['operation_items', id], (old: OperationItem[]) => 
+      old.map(i => i.id === item.id ? updated : i)
+    )
+
+    updateItemMutation.mutate({ 
+      itemId: item.id, 
+      qty: nq, 
+      expected: nextExpected !== item.quantity_expected ? nextExpected : undefined,
+      status: ns,
+      extraUpdates: isStockAlert ? extraUpdates : undefined
+    })
+
+    if (op && op.status === 'pending') {
+      updateOpMutation.mutate({ status: 'in_progress' })
+    }
+  }
+
   if (isOpLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando conferência...</div>
 
   if (!op) return (
@@ -1039,14 +1096,14 @@ export default function Conference() {
               }
 
               const hasAlert = hasStockAlert(item)
-              const isExcedente = op?.type === 'RECEIPT' && item.quantity_scanned > item.quantity_expected
+              const isExcedente = item.quantity_scanned > item.quantity_expected
               const isFalta = op?.type === 'RECEIPT' && item.status === 'divergent' && item.quantity_scanned < item.quantity_expected
               const isDivergent = item.status === 'divergent' || isExcedente
               const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
               const groupName = matchedProduct?.group_name
 
               const cardClass = isExcedente 
-                ? 'border-yellow-500/40 bg-yellow-500/5' 
+                ? (op?.type === 'LOAD' ? 'border-rose-500 bg-rose-500/5 dark:bg-rose-500/10 shadow-[0_0_8px_rgba(239,68,68,0.15)]' : 'border-yellow-500/40 bg-yellow-500/5')
                 : isFalta || item.status === 'divergent'
                 ? 'border-red-500/40 bg-red-500/5' 
                 : done 
@@ -1056,7 +1113,7 @@ export default function Conference() {
                 : ''
 
               const textClass = isExcedente
-                ? 'text-yellow-600 dark:text-yellow-400'
+                ? (op?.type === 'LOAD' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-yellow-600 dark:text-yellow-400')
                 : isFalta || item.status === 'divergent'
                 ? 'text-red-600 dark:text-red-400'
                 : done
@@ -1064,10 +1121,12 @@ export default function Conference() {
                 : 'text-foreground'
 
               const badgeClass = isExcedente
-                ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                ? (op?.type === 'LOAD' ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20 animate-pulse' : 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400')
                 : 'bg-red-500/20 text-red-600'
 
-              const badgeText = isExcedente ? 'Excedente' : isFalta ? 'Falta' : 'Divergente'
+              const badgeText = isExcedente 
+                ? (op?.type === 'LOAD' ? 'Remover Excesso' : 'Excedente') 
+                : isFalta ? 'Falta' : 'Divergente'
 
               return (
                 <div key={item.id} className={`glass-card p-3 flex flex-col gap-2 slide-up transition-all ${cardClass}`} style={{ animationDelay: `${i * 10}ms` }}>
@@ -1089,34 +1148,48 @@ export default function Conference() {
                       <p className="text-xs text-muted-foreground font-mono">{item.product_code}</p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <span className={`text-lg font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
-                        <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
-                      </div>
                       {op.status !== 'dispatched' && op.status !== 'completed' ? (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleCheckItem(item)}
-                          className="hover:scale-105 active:scale-95 transition-transform"
-                          title={done ? "Desmarcar item" : "Marcar como conferido"}
-                        >
-                          {done ? (
-                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                          ) : (
-                            <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 hover:border-emerald-500/50" />
-                          )}
-                        </button>
+                        <div className="flex items-center bg-muted/40 rounded-lg p-0.5 border border-muted-foreground/10 shrink-0">
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 hover:bg-muted shrink-0" 
+                            onClick={(e) => { e.stopPropagation(); handleUpdateQtyScanned(item, -1) }}
+                            disabled={!item.quantity_scanned || item.quantity_scanned <= 0}
+                          >
+                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                          
+                          <div className="text-center px-1.5 min-w-[36px]">
+                            <span className={`text-sm font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
+                            <span className="text-muted-foreground text-[10px] block font-mono">/ {item.quantity_expected}</span>
+                          </div>
+                          
+                          <Button 
+                            type="button"
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 hover:bg-muted shrink-0" 
+                            onClick={(e) => { e.stopPropagation(); handleUpdateQtyScanned(item, 1) }}
+                          >
+                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
                       ) : (
-                        done ? (
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                        ) : (
-                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />
-                        )
+                        <div className="text-right">
+                          <span className={`text-lg font-bold font-mono ${textClass}`}>{item.quantity_scanned || 0}</span>
+                          <span className="text-muted-foreground text-sm">/{item.quantity_expected}</span>
+                        </div>
+                      )}
+
+                      {done && (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       )}
                       
                       {isManager && (
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setEditQty(item.quantity_expected) }}>
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
