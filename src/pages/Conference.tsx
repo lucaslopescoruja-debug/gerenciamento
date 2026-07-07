@@ -606,6 +606,43 @@ export default function Conference() {
     }
   }
 
+  const handleRemoveExcess = (item: OperationItem) => {
+    const nq = item.quantity_expected
+    const ns = 'ok' as const
+
+    const matchedProduct = allProducts.find(p => p.id === item.product_id || normalizeCode(p.code) === normalizeCode(item.product_code))
+    const systemStock = item.system_stock_at_load !== undefined && item.system_stock_at_load !== null 
+      ? item.system_stock_at_load 
+      : (matchedProduct ? matchedProduct.stock : 0)
+    const isStockAlert = op?.type === 'LOAD' && (systemStock <= 0 || systemStock < nq)
+    const isDivergent = isStockAlert && ((systemStock <= 0 && nq > 0) || (systemStock > 0 && nq > systemStock))
+    
+    const extraUpdates = isStockAlert ? {
+      physical_verification: 'found' as const,
+      physical_divergence_found: isDivergent
+    } : {}
+
+    const updated = { 
+      ...item, 
+      quantity_scanned: nq, 
+      status: ns,
+      ...extraUpdates
+    } as OperationItem
+
+    queryClient.setQueryData(['operation_items', id], (old: OperationItem[]) => 
+      old.map(i => i.id === item.id ? updated : i)
+    )
+
+    updateItemMutation.mutate({ 
+      itemId: item.id, 
+      qty: nq, 
+      status: ns,
+      extraUpdates: isStockAlert ? extraUpdates : undefined
+    })
+
+    toast.success(`Excesso removido de "${item.description}"! Contagem ajustada para ${nq}.`)
+  }
+
 
   if (isOpLoading || isItemsLoading) return <div className="p-8 text-center text-muted-foreground">Carregando conferência...</div>
 
@@ -1079,9 +1116,26 @@ export default function Conference() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className={`font-medium truncate ${textClass}`}>{item.description}</p>
                         {isDivergent && (
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${badgeClass}`}>
-                            {badgeText}
-                          </span>
+                          isExcedente && op?.type === 'LOAD' && op.status !== 'completed' && op.status !== 'dispatched' ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const excess = item.quantity_scanned - item.quantity_expected;
+                                if (window.confirm(`Deseja confirmar que foram removidas ${excess} unidades excedentes de "${item.description}" do caminhão e ajustar a contagem para ${item.quantity_expected}?`)) {
+                                  handleRemoveExcess(item);
+                                }
+                              }}
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase cursor-pointer hover:opacity-85 active:scale-95 transition-all ${badgeClass} hover:bg-red-500/25`}
+                              title="Clique para remover o excesso e ajustar contagem"
+                            >
+                              {badgeText}
+                            </button>
+                          ) : (
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${badgeClass}`}>
+                              {badgeText}
+                            </span>
+                          )
                         )}
                         {groupName && (
                           <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase">
