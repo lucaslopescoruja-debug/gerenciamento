@@ -88,19 +88,16 @@ export const maxiprodApi = {
     }
 
     const payload = {
-      ClienteId: order.customer.maxiprod_id,
-      MoedaId: comp.maxiprod_moeda_id || 1, 
-      OperacaoFiscalId: comp.maxiprod_operacao_id || 1, 
-      Observacoes: order.notes || '',
-      DescontoTotal: order.total_discount || 0,
-      ValorTotal: order.net_amount,
-      ItensDoPedidoDeVenda: order.items.map((i: any) => ({
-        ItemId: i.product.maxiprod_id,
-        Quantidade: i.quantity,
-        ValorUnitario: i.unit_price,
-        DescontoPercentual: i.discount_percent || 0,
-        UnidadeId: comp.maxiprod_unidade_id || 1, 
-        PagamentoCom: false
+      clienteId: order.customer.maxiprod_id,
+      operacaoFiscalId: comp.maxiprod_operacao_id || 1,
+      moedaId: comp.maxiprod_moeda_id || 1,
+      emitirEAguardarAprovacao: false,
+      emitirEAprovar: false,
+      itensDoPedidoDeVenda: order.items.map((i: any) => ({
+        itemId: i.product.maxiprod_id,
+        quantidade: i.quantity,
+        valorUnitario: i.unit_price,
+        unidadeId: comp.maxiprod_unidade_id || 1
       }))
     }
 
