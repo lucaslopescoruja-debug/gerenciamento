@@ -271,6 +271,15 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
       
       if (!companyId) throw new Error('Empresa não identificada.')
 
+      // Obter números de pedidos existentes no banco para esta empresa
+      const { data: existingOrders } = await supabase
+        .from('sales_orders')
+        .select('order_number')
+        .eq('company_id', companyId)
+        .not('order_number', 'is', null);
+
+      const existingNumbers = new Set(existingOrders?.map(o => o.order_number) || []);
+
       let finalGroupId = selectedGroupId || null
 
       if (isCreatingGroup && newGroupName.trim()) {
@@ -282,7 +291,18 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         finalGroupId = newGroup.id
       }
 
+      let skippedCount = 0
+      let importedCount = 0
+
       for (const order of validOrders) {
+        const orderNum = order.orderNumber ? parseInt(order.orderNumber, 10) : null
+        
+        // Pula o pedido se o número dele já existir no banco para essa empresa
+        if (orderNum && existingNumbers.has(orderNum)) {
+          skippedCount++
+          continue
+        }
+
         const totalAmount = order.items.reduce((sum, item) => sum + (item.quantity * (item.unitPrice || 0)), 0)
 
         const createdOrder = await salesApi.createSalesOrder({
@@ -298,7 +318,7 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
           price_table_id: order.priceTableId || null,
           payment_condition_id: null,
           order_group_id: finalGroupId,
-          ...(order.orderNumber ? { order_number: parseInt(order.orderNumber, 10) } : {})
+          ...(orderNum ? { order_number: orderNum } : {})
         } as any)
 
         if (!createdOrder) throw new Error('Erro ao criar pedido no banco.')
@@ -314,10 +334,19 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
         }))
 
         await salesApi.addSalesOrderItems(itemsToInsert as any)
+        importedCount++
       }
+
+      return { importedCount, skippedCount }
     },
-    onSuccess: () => {
-      toast.success('Os pedidos válidos foram importados com sucesso.')
+    onSuccess: (data) => {
+      const skipped = data?.skippedCount || 0
+      const imported = data?.importedCount || 0
+      if (skipped > 0) {
+        toast.success(`${imported} novos pedidos importados. ${skipped} duplicados foram pulados.`)
+      } else {
+        toast.success('Os pedidos válidos foram importados com sucesso.')
+      }
       queryClient.invalidateQueries({ queryKey: ['sales_orders'] })
       onOpenChange(false)
       setParsedOrders([])
