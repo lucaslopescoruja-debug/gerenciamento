@@ -97,7 +97,8 @@ export const maxiprodApi = {
         itemId: i.product.maxiprod_id,
         quantidade: i.quantity,
         valorUnitario: i.unit_price,
-        unidadeId: comp.maxiprod_unidade_id || 1
+        unidadeId: comp.maxiprod_unidade_id || 1,
+        pagamentoCom: false
       }))
     }
 
