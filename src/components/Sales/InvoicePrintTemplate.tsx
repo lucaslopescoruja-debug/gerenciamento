@@ -14,7 +14,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
     const computedOrderDiscount = details?.total_discount || 0
     const totalDiscount = computedItemsDiscount + computedOrderDiscount
     const computedNetAmount = computedSubtotal - totalDiscount
-    const totalItemsCount = details?.items?.length || 0
+    const totalVolume = details?.items?.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0) || 0
 
     // Safely get date
     const emissionDate = details.created_at ? new Date(details.created_at).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')
@@ -99,7 +99,7 @@ export const InvoicePrintTemplate = React.forwardRef<HTMLDivElement, InvoicePrin
             </div>
           </div>
           <div className="absolute top-8 right-24">
-            Quantidade de Itens:{totalItemsCount}
+            Quantidade de Volumes: {totalVolume.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
           </div>
         </div>
         
