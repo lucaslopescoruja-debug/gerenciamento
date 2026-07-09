@@ -359,8 +359,8 @@ export function ImportMaxiprodModal({ isOpen, onOpenChange }: ImportMaxiprodModa
   const validCount = parsedOrders.filter(o => o.isValid).length
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onOpenChange} className="items-start pt-10 sm:pt-16 overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Importar Pedidos (Maxiprod)</DialogTitle>
           <DialogDescription>
