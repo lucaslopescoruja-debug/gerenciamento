@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from '@/components/ui/toaster'
 import { ArrowLeft, CheckCircle2, Eraser, PenTool } from 'lucide-react'
 import SignatureCanvas from 'react-signature-canvas'
-import { isValidCPFOrCNPJ } from '@/utils/documentValidation'
+import { isValidCPFOrCNPJ, formatDocument } from '@/utils/documentValidation'
 
 export default function SignaturePad() {
   const { clientId } = useParams()
@@ -123,7 +123,7 @@ export default function SignaturePad() {
             <Label>Documento (CPF) *</Label>
             <Input 
               value={receiverDoc}
-              onChange={e => setReceiverDoc(e.target.value)}
+              onChange={e => setReceiverDoc(formatDocument(e.target.value))}
               placeholder="Ex: 123.456.789-00"
               required
             />

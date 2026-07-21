@@ -169,7 +169,7 @@ export default function SalesRepForm() {
             <label className="text-sm font-medium">CNPJ / CPF</label>
             <Input
               value={formData.document || ''}
-              onChange={e => setFormData({ ...formData, document: e.target.value })}
+              onChange={e => setFormData({ ...formData, document: formatDocument(e.target.value) })}
             />
           </div>
           <div className="space-y-2">

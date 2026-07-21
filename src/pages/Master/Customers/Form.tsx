@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Link } from 'react-router-dom'
 import { geocodeAddress } from '@/api/routing'
 import { generateContractPDF } from '@/utils/pdf'
-import { isValidCPFOrCNPJ } from '@/utils/documentValidation'
+import { isValidCPFOrCNPJ, formatDocument } from '@/utils/documentValidation'
 
 export default function CustomerForm() {
   const { id } = useParams()
@@ -347,7 +347,7 @@ export default function CustomerForm() {
               <div className="flex gap-2">
                 <Input 
                   value={formData.document} 
-                  onChange={e => setFormData({...formData, document: e.target.value})} 
+                  onChange={e => setFormData({...formData, document: formatDocument(e.target.value, formData.document_type)})} 
                   placeholder={formData.document_type === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                 />
                 {formData.document_type === 'CNPJ' && (

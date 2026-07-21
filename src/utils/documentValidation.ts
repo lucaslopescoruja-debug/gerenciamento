@@ -85,3 +85,23 @@ export function isValidCPFOrCNPJ(document: string): boolean {
   }
   return false;
 }
+
+export function formatDocument(value: string, type?: 'CPF' | 'CNPJ'): string {
+  if (!value) return '';
+  const numbers = value.replace(/\D/g, '');
+  
+  if (type === 'CPF' || (type === undefined && numbers.length <= 11)) {
+    return numbers
+      .slice(0, 11)
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    return numbers
+      .slice(0, 14)
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  }
+}

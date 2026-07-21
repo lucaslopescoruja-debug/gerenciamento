@@ -12,7 +12,7 @@ import { maxiprodApi } from '@/api/maxiprod'
 import { backupApi } from '@/api/backup'
 import { saasApi } from '@/api/saas'
 import { Database, Download, Upload, Crown, Star, CheckCircle2, ArrowUpCircle, Image as ImageIcon } from 'lucide-react'
-import { isValidCPFOrCNPJ } from '@/utils/documentValidation'
+import { isValidCPFOrCNPJ, formatDocument } from '@/utils/documentValidation'
 
 export default function CompanySettings() {
   const queryClient = useQueryClient()
@@ -394,7 +394,7 @@ export default function CompanySettings() {
               <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">CNPJ</label>
               <Input 
                 value={formData.cnpj} 
-                onChange={e => setFormData({...formData, cnpj: e.target.value})} 
+                onChange={e => setFormData({...formData, cnpj: formatDocument(e.target.value)})} 
                 placeholder="00.000.000/0000-00"
               />
             </div>

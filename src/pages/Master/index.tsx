@@ -15,7 +15,7 @@ import { toast } from '@/components/ui/toaster';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import type { Company } from '@/types/database';
-import { isValidCPFOrCNPJ } from '@/utils/documentValidation';
+import { isValidCPFOrCNPJ, formatDocument } from '@/utils/documentValidation';
 
 export default function MasterPanel() {
   const { isMaster, switchCompany, exitCompany, company: currentCompany } = useAuth();
@@ -419,7 +419,7 @@ export default function MasterPanel() {
               <div className="space-y-2">
                 <Label>CNPJ ou CPF *</Label>
                 <div className="flex gap-2">
-                  <Input value={cnpj} onChange={e => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" required />
+                  <Input value={cnpj} onChange={e => setCnpj(formatDocument(e.target.value))} placeholder="00.000.000/0000-00" required />
                   <Button 
                     type="button" 
                     variant="outline" 
