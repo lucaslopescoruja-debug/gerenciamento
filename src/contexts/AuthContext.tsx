@@ -103,18 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const isCompanyActive = compData ? compData.active : true;
 
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const limitDateStr = sevenDaysAgo.toISOString().split('T')[0];
-
-      const { data: unpaidPayments } = await supabase
-        .from('company_payments')
-        .select('id')
-        .eq('company_id', profile.company_id)
-        .neq('status', 'pago')
-        .lt('due_date', limitDateStr);
-
-      const hasOverdueDebt = unpaidPayments && unpaidPayments.length > 0;
+      const { data: hasOverdueDebt } = await supabase
+        .rpc('check_overdue_debt', { p_company_id: profile.company_id });
 
       if (!isCompanyActive || hasOverdueDebt) {
         // Se tem débitos há mais de 7 dias, inativa a empresa no banco de forma preventiva
