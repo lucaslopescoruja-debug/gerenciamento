@@ -16,6 +16,7 @@ import { operationsApi } from '@/api/operations'
 import { saasApi } from '@/api/saas'
 import { toast } from '@/components/ui/toaster'
 import { ProfileModal } from '@/components/ProfileModal'
+import { supabase } from '@/lib/supabase'
 import type { LucideIcon } from 'lucide-react'
 
 // ATUALIZE ESTA VERSÃO PARA TESTAR SE O APLICATIVO ATUALIZOU NOS DISPOSITIVOS
@@ -178,6 +179,65 @@ export default function AppLayout() {
     const interval = setInterval(checkBackupReminder, 1000 * 60 * 60); // Verifica a cada 1 hora
     return () => clearInterval(interval);
   }, [isManager]);
+
+  // Lembrete de pagamento para gestores
+  useEffect(() => {
+    if (!isManager || !company?.id) return;
+
+    const checkPaymentReminder = async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastAlert = localStorage.getItem('last_payment_alert');
+      
+      if (lastAlert === todayStr) return; // Já verificou hoje
+
+      try {
+        const { data: upcomingPayment, error } = await supabase
+          .from('company_payments')
+          .select('due_date, status')
+          .eq('company_id', company.id)
+          .neq('status', 'pago')
+          .order('due_date', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (upcomingPayment) {
+          const dueDateStr = upcomingPayment.due_date; // Formato YYYY-MM-DD
+          
+          // Tratar dueDate considerando o fuso horário local
+          const [year, month, day] = dueDateStr.split('-');
+          const dueDate = new Date(Number(year), Number(month) - 1, Number(day));
+          
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          
+          const timeDiff = dueDate.getTime() - today.getTime();
+          const diffDays = Math.round(timeDiff / (1000 * 3600 * 24));
+          
+          if (diffDays <= 3 && diffDays > -7) {
+            let message = '';
+            if (diffDays > 0) {
+              message = `💳 Lembrete de Pagamento: A fatura da sua assinatura vence em ${diffDays} dia(s) (${day}/${month}/${year}).`;
+            } else if (diffDays === 0) {
+              message = `💳 Lembrete de Pagamento: A fatura da sua assinatura vence HOJE. Evite bloqueios no sistema!`;
+            } else {
+              message = `💳 Lembrete de Pagamento: Sua fatura está atrasada há ${Math.abs(diffDays)} dia(s). O acesso será bloqueado após 7 dias de atraso.`;
+            }
+
+            toast.info(message, { 
+              duration: 0, // Fica na tela
+            });
+            localStorage.setItem('last_payment_alert', todayStr);
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao buscar lembrete de pagamento', e);
+      }
+    };
+
+    // Delay curto para não competir com notificações de login e renderização inicial
+    const timeout = setTimeout(checkPaymentReminder, 2000);
+    return () => clearTimeout(timeout);
+  }, [isManager, company?.id]);
 
   const { data: pendingApprovals = [] } = useQuery({
     queryKey: ['pending_approvals', company?.id],
