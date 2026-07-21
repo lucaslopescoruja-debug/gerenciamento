@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setCompany(null);
         localStorage.removeItem('offline_user_profile');
-        toast.error('Acesso bloqueado! Sua empresa está inativa ou possui mensalidades pendentes de pagamento há mais de 7 dias. Entre em contato com a administração.');
+        toast.error('Acesso bloqueado\n\nO acesso a esta empresa está temporariamente bloqueado.\n\nSolicite ao gestor da empresa que entre em contato com o suporte para obter mais informações e realizar a liberação do acesso.');
         return;
       }
     }
